@@ -1,0 +1,46 @@
+{
+  "name": "lark-sentry",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Sentry sdk",
+  "scripts": {
+    "prepare": "husky",
+    "lint": "eslint ./ --quiet --ext .js,.jsx,.ts,.tsx --fix",
+    "format": "prettier --write ./client ./packages",
+    "build": "rollup -c ./rollup.config.js",
+    "start": "pnpm build && cd ./client && pnpm start"
+  },
+  "keywords": [
+    "sentry",
+    "sdk"
+  ],
+  "author": "github.com/161043261",
+  "license": "MIT",
+  "devDependencies": {
+    "@eslint/js": "^9.39.2",
+    "@rollup/plugin-commonjs": "^29.0.0",
+    "@rollup/plugin-node-resolve": "^16.0.3",
+    "@rollup/plugin-terser": "^0.4.4",
+    "@types/node": "^25.0.6",
+    "eslint": "^9.39.2",
+    "globals": "^17.0.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
+    "prettier": "^3.7.4",
+    "rollup": "^4.55.1",
+    "rollup-plugin-dts": "^6.3.0",
+    "rollup-plugin-esbuild": "^6.2.1",
+    "tslib": "^2.8.1",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.52.0"
+  },
+  "type": "module",
+  "dependencies": {
+    "@rollup/plugin-json": "^6.1.0"
+  },
+  "lint-staged": {
+    "*.{json,jsonc,js,jsx,ts,tsx,html,vue,css,md,mdx}": [
+      "pnpm format"
+    ]
+  }
+}

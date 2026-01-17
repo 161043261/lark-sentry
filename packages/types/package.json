@@ -1,0 +1,32 @@
+{
+  "name": "@lark-sentry/types",
+  "version": "1.0.0",
+  "description": "Sentry sdk types",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "sentry",
+    "sdk",
+    "types"
+  ],
+  "author": "github.com/161043261",
+  "license": "MIT",
+  "dependencies": {
+    "web-vitals": "^5.1.0"
+  }
+}

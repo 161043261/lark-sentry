@@ -1,0 +1,36 @@
+{
+  "name": "@lark-sentry/performance",
+  "version": "1.0.0",
+  "description": "Sentry sdk performance",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "sentry",
+    "sdk",
+    "performance"
+  ],
+  "author": "github.com/161043261",
+  "license": "MIT",
+  "dependencies": {
+    "@lark-sentry/core": "workspace:^",
+    "@lark-sentry/reporter": "workspace:^",
+    "@lark-sentry/types": "workspace:^",
+    "@lark-sentry/utils": "workspace:^",
+    "web-vitals": "^5.1.0"
+  }
+}

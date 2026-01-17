@@ -1,0 +1,26 @@
+server:
+  port: 8080
+  body_limit: 1048576 # 1MB
+  allowed_origins:
+    - "http://127.0.0.1:4200"
+    - "http://127.0.0.1:5173"
+    - "http://127.0.0.1:5174"
+    - "http://127.0.0.1:5175"
+    - "http://127.0.0.1:8080"
+    - "http://127.0.0.1:8081"
+    - "http://127.0.0.1:8082"
+
+kafka:
+  enabled: false # 是否启用 Kafka, false 则直接写文件
+  brokers:
+    - localhost:9092
+  topic: sdk-logs
+  group_id: log-consumer-group
+  retry_max: 5
+  retry_interval: 5s
+
+log:
+  dir: ./logs
+  max_size: 104857600
+  file_prefix: sdk
+  rotate_daily: true

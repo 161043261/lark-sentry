@@ -1,0 +1,4 @@
+# rm -rf ./client/src/example-browser.js
+# rm -rf ./client/src/profiler-browser.js
+
+pnpm exec lint-staged

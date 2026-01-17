@@ -1,0 +1,45 @@
+{
+  "name": "@lark-sentry/core",
+  "version": "1.0.0",
+  "description": "Sentry sdk core",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "sentry",
+    "sdk",
+    "core"
+  ],
+  "author": "github.com/161043261",
+  "license": "MIT",
+  "dependencies": {
+    "@lark-sentry/constants": "workspace:^",
+    "@lark-sentry/reporter": "workspace:^",
+    "@lark-sentry/types": "workspace:^",
+    "@lark-sentry/utils": "workspace:^"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "react": "^19.2.3",
+    "vue": "^3.5.26"
+  },
+  "peerDependencies": {
+    "react": "^19.2.3",
+    "vue": "^3.5.26"
+  }
+}
