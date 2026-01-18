@@ -113,3 +113,12 @@ uv run ./main.py
   }
 }
 ```
+
+## npm
+
+```bash
+npm whoami
+npm login
+
+pnpm publish -r --access public --no-git-checks
+```
