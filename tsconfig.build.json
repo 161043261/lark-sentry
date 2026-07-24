@@ -1,9 +1,0 @@
-{
-  "extends": "./sentry/tsconfig.json",
-  "compilerOptions": {
-    "rootDir": "./sentry/src",
-    "outDir": "./sentry/dist"
-  },
-  "include": ["./sentry/src/**/*"],
-  "exclude": ["./node_modules", "./sentry/dist"]
-}
