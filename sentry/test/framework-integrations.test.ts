@@ -24,12 +24,12 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { createApp, h } from "vue";
 import type { ErrorInfo, ReactNode } from "react";
 
-import { DEFAULT_OPTIONS } from "../src/constants/index.js";
-import { destroy } from "../src/index.js";
-import { ReactErrorBoundary } from "../src/react.js";
-import { EventType } from "../src/types/index.js";
-import { sentry } from "../src/utils/index.js";
-import { vuePlugin } from "../src/vue.js";
+import { DEFAULT_OPTIONS } from "@/constants/index.js";
+import { destroy } from "@/index.js";
+import { ReactErrorBoundary } from "@/react.js";
+import { EventType } from "@/types/index.js";
+import { sentry } from "@/utils/index.js";
+import { vuePlugin } from "@/vue.js";
 import { findPayload, getPayloads } from "./report-payloads.js";
 
 function getFrameworkPayload(name: string): Readonly<Record<string, unknown>> | null {
@@ -78,8 +78,8 @@ describe("framework integrations", () => {
       dsn: "/api/log",
       cacheMaxLength: 1,
     });
-    const fallback = (error: Error, errorInfo: ErrorInfo): ReactNode =>
-      `${error.message}:${errorInfo.componentStack}`;
+    const fallback = (error: Error, errorInfo?: ErrorInfo): ReactNode =>
+      `${error.message}:${errorInfo?.componentStack}`;
     const boundary = new ReactErrorBoundary({
       fallback,
       children: "child",

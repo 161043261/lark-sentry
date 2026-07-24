@@ -22,17 +22,11 @@
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { DEFAULT_OPTIONS } from "../src/constants/index.js";
-import { handleHttp } from "../src/core/handlers.js";
-import { destroy, init } from "../src/index.js";
-import {
-  EventType,
-  HttpMethod,
-  HttpStatusCode,
-  Status,
-  type IHttpData,
-} from "../src/types/index.js";
-import { sentry } from "../src/utils/index.js";
+import { DEFAULT_OPTIONS } from "@/constants/index.js";
+import { handleHttp } from "@/core/handlers.js";
+import { destroy, init } from "@/index.js";
+import { EventType, HttpMethod, HttpStatusCode, Status, type IHttpData } from "@/types/index.js";
+import { sentry } from "@/utils/index.js";
 import { findPayload, getPayloads } from "./report-payloads.js";
 
 function createHttpData(statusCode: number, serverTiming: readonly string[] = []): IHttpData {

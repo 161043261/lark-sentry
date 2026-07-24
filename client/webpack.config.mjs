@@ -32,10 +32,10 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // Reuse the vite index.html, stripping the vite-specific module script
 // (webpack injects its own bundles via HtmlWebpackPlugin).
-const htmlTemplate = readFileSync(resolve(__dirname, "index.html"), "utf8").replace(
-  /\s*<script type="module" src="\/src\/main\.tsx"><\/script>/,
-  "",
-);
+const htmlTemplate = readFileSync(
+  resolve(__dirname, "index.html"),
+  "utf8",
+).replace(/\s*<script type="module" src="\/src\/main\.tsx"><\/script>/, "");
 
 export default (env, argv) => {
   const isDev = argv.mode !== "production";
@@ -97,7 +97,13 @@ export default (env, argv) => {
       new CopyWebpackPlugin({
         patterns: [{ from: "public", to: "." }],
       }),
-      ...(isDev ? [] : [new MiniCssExtractPlugin({ filename: "[name].[contenthash:8].css" })]),
+      ...(isDev
+        ? []
+        : [
+            new MiniCssExtractPlugin({
+              filename: "[name].[contenthash:8].css",
+            }),
+          ]),
       ...(env?.WEBPACK_SERVE ? [sentryPlugin({ dsn: "/api/log" })] : []),
     ],
   };

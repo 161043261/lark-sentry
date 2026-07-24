@@ -22,12 +22,12 @@
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { DEFAULT_OPTIONS } from "../src/constants/index.js";
-import { destroy, pluginEnable } from "../src/index.js";
-import ExposurePlugin from "../src/plugins/exposure/index.js";
-import ScreenRecordPlugin, { unzipScreenRecord } from "../src/plugins/screen-record/index.js";
-import { EventType, SentryPlugin } from "../src/types/index.js";
-import { sentry } from "../src/utils/index.js";
+import { DEFAULT_OPTIONS } from "@/constants/index.js";
+import { destroy, enablePlugin } from "@/index.js";
+import ExposurePlugin from "@/plugins/exposure/index.js";
+import ScreenRecordPlugin, { unzipScreenRecord } from "@/plugins/screen-record/index.js";
+import { EventType, SentryPlugin } from "@/types/index.js";
+import { sentry } from "@/utils/index.js";
 import { FakeIntersectionObserver } from "./fake-intersection-observer.js";
 import { findPayload, getPayloads } from "./report-payloads.js";
 
@@ -61,7 +61,7 @@ describe("plugin public surface", () => {
     vi.useRealTimers();
   });
 
-  it("destroys plugins registered through pluginEnable", () => {
+  it("destroys plugins registered through enablePlugin", () => {
     const destroyPlugin = vi.fn();
 
     class TestPlugin extends SentryPlugin {
@@ -76,7 +76,7 @@ describe("plugin public surface", () => {
       }
     }
 
-    pluginEnable(TestPlugin);
+    enablePlugin(new TestPlugin());
     destroy();
 
     expect(destroyPlugin).toHaveBeenCalledTimes(1);
@@ -97,7 +97,8 @@ describe("plugin public surface", () => {
     });
     const target = document.createElement("div");
 
-    const plugin = pluginEnable(ExposurePlugin);
+    const plugin = new ExposurePlugin();
+    enablePlugin(plugin);
     plugin.observe({ target, threshold: 0.5, params: { id: "hero" } });
     FakeIntersectionObserver.instances[0]?.emit(target, true);
     vi.setSystemTime(1_120);
@@ -122,7 +123,8 @@ describe("plugin public surface", () => {
     const first = document.createElement("div");
     const second = document.createElement("div");
 
-    const plugin = pluginEnable(ExposurePlugin);
+    const plugin = new ExposurePlugin();
+    enablePlugin(plugin);
     plugin.observe([
       { target: first, threshold: 0.5 },
       { target: second, threshold: 0.5 },
@@ -141,7 +143,7 @@ describe("plugin public surface", () => {
       cacheMaxLength: 1,
       screenRecordDurationMs: 100,
     });
-    pluginEnable(ScreenRecordPlugin, { durationMs: 100 });
+    enablePlugin(new ScreenRecordPlugin({ durationMs: 100 }));
     await vi.waitFor(() => {
       expect(recordEmit).not.toBeNull();
     });

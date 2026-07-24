@@ -20,6 +20,8 @@
  * SOFTWARE.
  */
 
+import { dirname, resolve } from "path";
+import { fileURLToPath } from "url";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
@@ -42,6 +44,11 @@ export default defineConfig({
         branches: 70,
         statements: 70,
       },
+    },
+  },
+  resolve: {
+    alias: {
+      "@": resolve(dirname(fileURLToPath(new URL(import.meta.url))), "src"),
     },
   },
 });

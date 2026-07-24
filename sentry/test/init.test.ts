@@ -27,12 +27,12 @@ import {
   getIdentity,
   init,
   isInitialized,
-  pluginEnable,
+  enablePlugin,
   setUserId,
   setVisitorId,
-} from "../src/index.js";
-import setup from "../src/core/setup.js";
-import { EventType, SentryPlugin } from "../src/types/index.js";
+} from "@/index.js";
+import setup from "@/core/setup.js";
+import { EventType, SentryPlugin } from "@/types/index.js";
 
 const fingerprintGet = vi.hoisted(() => vi.fn(() => Promise.resolve({ visitorId: "anonymous-1" })));
 const fingerprintLoad = vi.hoisted(() => vi.fn(() => Promise.resolve({ get: fingerprintGet })));
@@ -88,7 +88,7 @@ describe("init", () => {
   });
 });
 
-describe("pluginEnable", () => {
+describe("enablePlugin", () => {
   it("initializes plugin instances", () => {
     const initPlugin = vi.fn();
 
@@ -102,7 +102,7 @@ describe("pluginEnable", () => {
       }
     }
 
-    const plugin = pluginEnable(TestPlugin);
+    const plugin = enablePlugin(new TestPlugin());
 
     expect(initPlugin).toHaveBeenCalledTimes(1);
     expect(plugin).toBeInstanceOf(TestPlugin);

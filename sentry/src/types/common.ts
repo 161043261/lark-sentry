@@ -185,10 +185,16 @@ export interface IDataReporter {
   flushOfflineCache(): Promise<void>;
 }
 
-export interface IExtendedErrorEvent extends ErrorEvent {
+/**
+ * Resource load failures (img/script/link/...) dispatch a plain `Event`
+ * (not an `ErrorEvent`) whose target is the failed element. `<img>` and
+ * `<script>` expose `src`, `<link>` exposes `href` — never both, so both
+ * fields are optional and at least one is present on a real resource error.
+ */
+export interface IExtendedErrorEvent extends Event {
   target: EventTarget & {
-    src: string;
-    href: string;
+    src?: string;
+    href?: string;
     localName: string;
   };
 }

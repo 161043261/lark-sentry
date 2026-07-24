@@ -22,10 +22,10 @@
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { DataReporter } from "../src/reporter/index.js";
-import { DEFAULT_OPTIONS } from "../src/constants/index.js";
-import { EventType, Status, type TReportPayload } from "../src/types/index.js";
-import { sentry } from "../src/utils/index.js";
+import { DataReporter } from "@/reporter/index.js";
+import { DEFAULT_OPTIONS } from "@/constants/index.js";
+import { EventType, Status, type TReportPayload } from "@/types/index.js";
+import { sentry } from "@/utils/index.js";
 
 function createPayload(): TReportPayload {
   return {

@@ -24,6 +24,7 @@ import {
   EventType,
   Status,
   type IBaseDataWithEvent,
+  type IExtendedErrorEvent,
   type IResourceError,
   type TEventHandler,
 } from "../types";
@@ -59,12 +60,13 @@ export const handleError: TEventHandler<IBaseDataWithEvent> = ({ extra: err, ...
 };
 
 function reportResourceError(
-  err: ErrorEvent & {
-    target: { localName: string; src: string; href: string };
-  },
+  err: IExtendedErrorEvent,
   rest: Omit<IBaseDataWithEvent, "extra">,
 ): void {
-  const { localName, src, href } = err.target;
+  const { localName } = err.target;
+  // <img>/<script> expose src, <link> exposes href — never both
+  const src = err.target.src ?? "";
+  const href = err.target.href ?? "";
   const resourceError: IResourceError = {
     ...rest,
     type: EventType.Resource,
@@ -72,7 +74,8 @@ function reportResourceError(
     name: localName,
     src,
     href,
-    message: err.message,
+    // Resource failures dispatch a plain Event with no message of its own
+    message: `Failed to load ${localName}: ${src || href}`,
   };
   breadcrumb.push({
     ...resourceError,

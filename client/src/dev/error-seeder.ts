@@ -82,7 +82,9 @@ function seedUncaughtTypeError(): void {
  */
 function seedUncaughtReferenceError(): void {
   setTimeout(() => {
-    type LooseGlobal = typeof globalThis & { __definitelyMissingFn__: () => void };
+    type LooseGlobal = typeof globalThis & {
+      __definitelyMissingFn__: () => void;
+    };
     // Intentional crash: __definitelyMissingFn__ is not a function
     (globalThis as LooseGlobal).__definitelyMissingFn__();
   }, 0);
@@ -155,7 +157,9 @@ function seedNetworkError(): void {
  * instead of rethrowing them.
  */
 function seedConsoleError(): void {
-  console.error(new Error("Seeded console.error: recoverable subsystem failure"));
+  console.error(
+    new Error("Seeded console.error: recoverable subsystem failure"),
+  );
 }
 
 /**
@@ -187,12 +191,24 @@ function seedBatchErrorBurst(): void {
   const message = "Seeded batch burst: repeated pipeline failure";
   // Six distinct throw sites (different line/column) are intentional: they
   // bypass per-location dedup while still grouping into one batch report.
-  setTimeout(() => { throw new Error(message); }, 0);
-  setTimeout(() => { throw new Error(message); }, 50);
-  setTimeout(() => { throw new Error(message); }, 100);
-  setTimeout(() => { throw new Error(message); }, 150);
-  setTimeout(() => { throw new Error(message); }, 200);
-  setTimeout(() => { throw new Error(message); }, 250);
+  setTimeout(() => {
+    throw new Error(message);
+  }, 0);
+  setTimeout(() => {
+    throw new Error(message);
+  }, 50);
+  setTimeout(() => {
+    throw new Error(message);
+  }, 100);
+  setTimeout(() => {
+    throw new Error(message);
+  }, 150);
+  setTimeout(() => {
+    throw new Error(message);
+  }, 200);
+  setTimeout(() => {
+    throw new Error(message);
+  }, 250);
 }
 
 /** A seed pairs a per-tick trigger probability with its error generator. */
@@ -205,15 +221,47 @@ interface ErrorSeed {
 }
 
 const SEEDS: readonly ErrorSeed[] = [
-  { probability: 0.08, label: "uncaught TypeError", trigger: seedUncaughtTypeError },
-  { probability: 0.06, label: "uncaught ReferenceError", trigger: seedUncaughtReferenceError },
-  { probability: 0.08, label: "unhandled rejection", trigger: seedUnhandledRejection },
-  { probability: 0.06, label: "resource load error", trigger: seedResourceError },
+  {
+    probability: 0.08,
+    label: "uncaught TypeError",
+    trigger: seedUncaughtTypeError,
+  },
+  {
+    probability: 0.06,
+    label: "uncaught ReferenceError",
+    trigger: seedUncaughtReferenceError,
+  },
+  {
+    probability: 0.08,
+    label: "unhandled rejection",
+    trigger: seedUnhandledRejection,
+  },
+  {
+    probability: 0.06,
+    label: "resource load error",
+    trigger: seedResourceError,
+  },
   { probability: 0.08, label: "fetch HTTP 404", trigger: seedHttpNotFound },
-  { probability: 0.04, label: "fetch network failure", trigger: seedNetworkError },
-  { probability: 0.06, label: "console.error report", trigger: seedConsoleError },
-  { probability: 0.05, label: "manual traceError", trigger: seedManualTraceError },
-  { probability: 0.03, label: "batch error burst", trigger: seedBatchErrorBurst },
+  {
+    probability: 0.04,
+    label: "fetch network failure",
+    trigger: seedNetworkError,
+  },
+  {
+    probability: 0.06,
+    label: "console.error report",
+    trigger: seedConsoleError,
+  },
+  {
+    probability: 0.05,
+    label: "manual traceError",
+    trigger: seedManualTraceError,
+  },
+  {
+    probability: 0.03,
+    label: "batch error burst",
+    trigger: seedBatchErrorBurst,
+  },
 ];
 
 let timerId: ReturnType<typeof setInterval> | undefined;

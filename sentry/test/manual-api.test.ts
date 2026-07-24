@@ -22,7 +22,7 @@
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { DEFAULT_OPTIONS } from "../src/constants/index.js";
+import { DEFAULT_OPTIONS } from "@/constants/index.js";
 import {
   afterSendData,
   beforePushEventList,
@@ -35,9 +35,9 @@ import {
   traceCustomEvent,
   tracePageView,
   tracePerformance,
-} from "../src/index.js";
-import { EventType } from "../src/types/index.js";
-import { sentry } from "../src/utils/index.js";
+} from "@/index.js";
+import { EventType } from "@/types/index.js";
+import { sentry } from "@/utils/index.js";
 
 describe("manual public APIs", () => {
   afterEach(() => {

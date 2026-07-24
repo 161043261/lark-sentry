@@ -22,7 +22,7 @@
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { destroy, init } from "../src/index.js";
+import { destroy, init } from "@/index.js";
 
 describe("lifecycle", () => {
   afterEach(() => {

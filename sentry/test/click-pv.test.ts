@@ -22,10 +22,10 @@
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { DEFAULT_OPTIONS } from "../src/constants/index.js";
-import { destroy, init } from "../src/index.js";
-import { EventType } from "../src/types/index.js";
-import { sentry } from "../src/utils/index.js";
+import { DEFAULT_OPTIONS } from "@/constants/index.js";
+import { destroy, init } from "@/index.js";
+import { EventType } from "@/types/index.js";
+import { sentry } from "@/utils/index.js";
 
 function getSentPayload(call: readonly unknown[]) {
   const body = typeof call[1] === "string" ? call[1] : "[]";

@@ -24,7 +24,7 @@ import { EventType, Status, type IBaseDataWithEvent, type TEventHandler } from "
 import {
   event2breadcrumb,
   getDeclarativeClickData,
-  isIExtendedErrorEvent,
+  isErrorEvent,
   sentryLogger,
   sentry,
 } from "../utils";
@@ -38,7 +38,9 @@ export const handleUnhandledRejection: TEventHandler<IBaseDataWithEvent> = (
   data: IBaseDataWithEvent,
 ) => {
   sentryLogger.error("Unhandled rejection captured", data.extra);
-  if (!isIExtendedErrorEvent(data.extra)) {
+  // Only ErrorEvent reasons carry filename/line/column and can be treated as
+  // code errors; every other rejection reason goes through the generic pipeline.
+  if (!isErrorEvent(data.extra)) {
     handleError(data);
     return;
   }

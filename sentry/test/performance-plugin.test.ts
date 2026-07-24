@@ -22,10 +22,10 @@
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { DEFAULT_OPTIONS } from "../src/constants/index.js";
-import PerformancePlugin from "../src/plugins/performance/index.js";
-import { EventType } from "../src/types/index.js";
-import { sentry } from "../src/utils/index.js";
+import { DEFAULT_OPTIONS } from "@/constants/index.js";
+import PerformancePlugin from "@/plugins/performance/index.js";
+import { EventType } from "@/types/index.js";
+import { sentry } from "@/utils/index.js";
 import { findPayload, getPayloads } from "./report-payloads.js";
 
 vi.mock("web-vitals", () => ({

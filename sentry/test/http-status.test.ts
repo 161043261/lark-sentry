@@ -22,14 +22,8 @@
 
 import { describe, expect, it } from "vitest";
 
-import transformHttpData from "../src/utils/transform-http-data.js";
-import {
-  EventType,
-  HttpMethod,
-  HttpStatusCode,
-  Status,
-  type IHttpData,
-} from "../src/types/index.js";
+import transformHttpData from "@/utils/transform-http-data.js";
+import { EventType, HttpMethod, HttpStatusCode, Status, type IHttpData } from "@/types/index.js";
 
 function createHttpData(statusCode: number): IHttpData {
   return {

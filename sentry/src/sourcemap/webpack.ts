@@ -24,7 +24,7 @@
 // Collects `.map` assets emitted by webpack (works with the in-memory dev-server file system)
 // and resolves reported error positions against them.
 
-import { type MapLoader, splitScriptUrl } from "./sourcemap-core.js";
+import { type MapLoader, splitScriptUrl } from "./sourcemap.js";
 
 export {
   enrichReportData,
@@ -35,7 +35,7 @@ export {
   type RawFrame,
   type ResolvedFrame,
   type SnippetLine,
-} from "./sourcemap-core.js";
+} from "./sourcemap.js";
 
 export interface AssetMapStore {
   /** Record an emitted asset; non-`.map` files are ignored. */
