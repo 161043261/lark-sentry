@@ -28,6 +28,21 @@ import type Koa from "koa";
 import { cfg } from "./config.js";
 import { logger } from "./logger.js";
 import { getAllMovies } from "./movie.js";
+import { enrichReportRecord, isSourcemapEnabled } from "./sourcemap.js";
+
+async function enrichSdkLogBody(body: Buffer): Promise<Buffer | string> {
+  if (!isSourcemapEnabled()) return body;
+  try {
+    const parsed: unknown = JSON.parse(body.toString("utf-8"));
+    if (!Array.isArray(parsed)) return body;
+    for (const record of parsed) {
+      await enrichReportRecord(record);
+    }
+    return JSON.stringify(parsed);
+  } catch {
+    return body;
+  }
+}
 
 export function registerRoutes(app: Koa) {
   const router = new Router();
@@ -56,7 +71,7 @@ export function registerRoutes(app: Koa) {
     }
 
     try {
-      logger.writeSdkLog(body);
+      logger.writeSdkLog(await enrichSdkLogBody(body));
     } catch (error) {
       const errorLogger = logger.getErrorLogger();
       if (errorLogger) {

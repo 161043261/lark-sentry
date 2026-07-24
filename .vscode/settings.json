@@ -1,6 +1,7 @@
 {
   "cSpell.words": [
     "adduser",
+    "beforeunload",
     "Cascadia",
     "esbuild",
     "fingerprintjs",
@@ -10,6 +11,7 @@
     "oxfmt",
     "protobufjs",
     "rrweb",
-    "swifty"
+    "swifty",
+    "Vite"
   ]
 }

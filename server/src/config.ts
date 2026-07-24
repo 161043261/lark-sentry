@@ -36,9 +36,15 @@ export interface LogConfig {
   rotate_daily: boolean; // Default: true
 }
 
+export interface SourcemapConfig {
+  enabled: boolean; // Default: false
+  dir: string; // Default: ./sourcemaps
+}
+
 export interface Config {
   server: ServerConfig;
   log: LogConfig;
+  sourcemap: SourcemapConfig;
 }
 
 const defaultConfig: Config = {
@@ -52,6 +58,10 @@ const defaultConfig: Config = {
     max_size: 104857600, // 100MB
     file_prefix: "sdk",
     rotate_daily: true,
+  },
+  sourcemap: {
+    enabled: false,
+    dir: "./sourcemaps",
   },
 };
 
@@ -78,6 +88,7 @@ export class ConfigManager {
     const data = yaml.parse(readFileSync(configPath, "utf-8"));
     const serverData = data.server ?? {};
     const logData = data.log ?? {};
+    const sourcemapData = data.sourcemap ?? {};
     this.config = {
       server: {
         port: serverData.port ?? defaultConfig.server.port,
@@ -89,6 +100,10 @@ export class ConfigManager {
         max_size: logData.max_size ?? defaultConfig.log.max_size,
         file_prefix: logData.file_prefix ?? defaultConfig.log.file_prefix,
         rotate_daily: logData.rotate_daily ?? defaultConfig.log.rotate_daily,
+      },
+      sourcemap: {
+        enabled: sourcemapData.enabled ?? defaultConfig.sourcemap.enabled,
+        dir: sourcemapData.dir ?? defaultConfig.sourcemap.dir,
       },
     };
   }

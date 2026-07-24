@@ -34,3 +34,7 @@ log:
   max_size: 104857600
   file_prefix: sdk
   rotate_daily: true
+
+sourcemap:
+  enabled: true
+  dir: ../client/dist/.sourcemaps

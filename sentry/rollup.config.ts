@@ -36,6 +36,7 @@ const external = [
   "pako",
   "preact",
   "react",
+  "source-map",
   "ua-parser-js",
   "vite",
   "vue",

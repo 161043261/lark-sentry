@@ -20,21 +20,61 @@
  * SOFTWARE.
  */
 
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
-// import sentryPlugin from "@swifty.js/sentry/vite";
+import sentryPlugin from "@swifty.js/sentry/vite";
+import { mkdirSync, readdirSync, renameSync } from "node:fs";
+import { join, resolve } from "node:path";
+
+/** Moves all emitted .map files into <outDir>/.sourcemaps after the bundle is written. */
+function moveSourcemaps(): Plugin {
+  let outDir = "dist";
+  return {
+    name: "move-sourcemaps",
+    apply: "build",
+    configResolved(config) {
+      outDir = resolve(config.root, config.build.outDir);
+    },
+    closeBundle() {
+      const mapDir = join(outDir, ".sourcemaps");
+      const mapFiles: string[] = [];
+      const walk = (dir: string) => {
+        for (const entry of readdirSync(dir, { withFileTypes: true })) {
+          const fullPath = join(dir, entry.name);
+          if (entry.isDirectory()) {
+            if (fullPath !== mapDir) walk(fullPath);
+          } else if (entry.name.endsWith(".map")) {
+            mapFiles.push(fullPath);
+          }
+        }
+      };
+      walk(outDir);
+      if (mapFiles.length === 0) return;
+      mkdirSync(mapDir, { recursive: true });
+      for (const file of mapFiles) {
+        renameSync(file, join(mapDir, file.slice(file.lastIndexOf("/") + 1)));
+      }
+      this.info(`moved ${mapFiles.length} sourcemap file(s) to ${mapDir}`);
+    },
+  };
+}
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    // sentryPlugin({ dsn: "/api/log" })
+    sentryPlugin({ dsn: "/api/log" }),
+    moveSourcemaps(),
   ],
   optimizeDeps: {
     // 禁止预构建依赖
     exclude: ["@swifty.js/sentry"],
+  },
+  build: {
+    // hidden: 生成 map 但不在产物中追加 sourceMappingURL 注释
+    sourcemap: "hidden",
   },
   server: {
     proxy: {

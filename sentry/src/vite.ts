@@ -30,6 +30,7 @@ import { Buffer } from "node:buffer";
 import { join } from "node:path";
 import { createWriteStream, existsSync, mkdirSync, WriteStream } from "node:fs";
 import { sentryLogger, sentry } from "./utils";
+import { enrichReportData } from "./vite-sourcemap.js";
 
 function appendChunk(body: string, chunk: unknown): string {
   if (typeof chunk === "string") {
@@ -61,11 +62,12 @@ const configureServer7: (
       req.on("data", (chunk: unknown) => {
         body = appendChunk(body, chunk);
       });
-      req.on("end", () => {
+      req.on("end", async () => {
         if (body) {
           try {
             const parsedBody = parseSentryPayload(body);
-            fileStream.write(JSON.stringify(parsedBody) + "\n");
+            const enrichedBody = await enrichReportData(server, parsedBody);
+            fileStream.write(JSON.stringify(enrichedBody) + "\n");
           } catch {
             fileStream.write(body + "\n");
           }
@@ -90,11 +92,12 @@ const configureServer: (
       req.on("data", (chunk: unknown) => {
         body = appendChunk(body, chunk);
       });
-      req.on("end", () => {
+      req.on("end", async () => {
         if (body) {
           try {
             const parsedBody = parseSentryPayload(body);
-            fileStream.write(JSON.stringify(parsedBody) + "\n");
+            const enrichedBody = await enrichReportData(server, parsedBody);
+            fileStream.write(JSON.stringify(enrichedBody) + "\n");
           } catch {
             fileStream.write(body + "\n");
           }

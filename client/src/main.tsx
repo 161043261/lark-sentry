@@ -24,16 +24,21 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App.tsx";
 
-import { init, enablePlugin } from "@swifty.js/sentry";
-import {
-  PerformancePlugin,
-  ScreenRecordPlugin,
-  ExposurePlugin,
-} from "@swifty.js/sentry/plugins";
+import { init } from "@swifty.js/sentry";
+// import {
+//   PerformancePlugin,
+//   ScreenRecordPlugin,
+//   ExposurePlugin,
+// } from "@swifty.js/sentry/plugins";
+import { startErrorSeeder } from "./dev/error-seeder";
 
 init({ dsn: "/api/log", debug: true });
-enablePlugin(new PerformancePlugin());
-enablePlugin(new ScreenRecordPlugin());
-enablePlugin(new ExposurePlugin());
+// enablePlugin(new PerformancePlugin());
+// enablePlugin(new ScreenRecordPlugin());
+// enablePlugin(new ExposurePlugin());
+
+// Plant probabilistic errors of every SDK-collectible type (must run after
+// init so the capture listeners are already installed). See ./dev/error-seeder.
+startErrorSeeder();
 
 createRoot(document.getElementById("root")!).render(<App />);

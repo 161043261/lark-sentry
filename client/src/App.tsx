@@ -27,6 +27,7 @@ import { FavoriteList } from "./pages/favorite-list";
 import type { TPage } from "./types";
 import { Home } from "./pages/home";
 import { Toolbar } from "./components/toolbar";
+import { RandomCrash } from "./dev/random-crash";
 
 function App() {
   const [currentPage, setCurrentPage] = useState<TPage>("home");
@@ -61,6 +62,9 @@ function App() {
         <main className="container mx-auto flex-1 px-4 py-4">
           {renderPage()}
         </main>
+        {/* Invisible probe that randomly throws during render to seed
+            EventType.React reports via the SDK's ReactErrorBoundary. */}
+        <RandomCrash />
       </div>
     </FavoriteProvider>
   );

@@ -185,7 +185,8 @@ rules.ninja
 
 *.swp
 *.swo
+dist-webpack
+**/dist-webpack
 
-Tracker
-web-*/
-TODO_zh.md
+.playwright-cli
+**/.playwright-cli

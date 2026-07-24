@@ -29,6 +29,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import type { Compiler, WebpackPluginInstance } from "webpack";
 import type DevServer from "webpack-dev-server";
 import { sentry, sentryLogger } from "./utils";
+import { createAssetMapStore, enrichReportData, type MapLoader } from "./webpack-sourcemap.js";
 
 // `webpack-dev-server` already augments `webpack.Configuration` with the devServer` field
 
@@ -74,18 +75,23 @@ function parseSentryPayload(body: string): unknown {
   return JSON.parse(body);
 }
 
-function createMiddleware(url: string, fileStream: WriteStream): SentryDevMiddleware {
+function createMiddleware(
+  url: string,
+  fileStream: WriteStream,
+  loadMap?: MapLoader,
+): SentryDevMiddleware {
   return (req, res, next) => {
     if (req.url === url && req.method === "POST") {
       let body = "";
       req.on("data", (chunk: unknown) => {
         body = appendChunk(body, chunk);
       });
-      req.on("end", () => {
+      req.on("end", async () => {
         if (body) {
           try {
             const parsedBody = parseSentryPayload(body);
-            fileStream.write(JSON.stringify(parsedBody) + "\n");
+            const enrichedBody = loadMap ? await enrichReportData(loadMap, parsedBody) : parsedBody;
+            fileStream.write(JSON.stringify(enrichedBody) + "\n");
           } catch {
             fileStream.write(body + "\n");
           }
@@ -173,7 +179,16 @@ export class SentryWebpackPlugin implements WebpackPluginInstance {
 
     const { fileStream, logFile } = ensureLogStream();
     const url = this.dsn || sentry.options.dsn || "/sentry";
-    const middleware = createMiddleware(url, fileStream);
+    const mapStore = createAssetMapStore();
+    const middleware = createMiddleware(url, fileStream, mapStore.loadMap);
+
+    // Collect emitted `.map` assets (fires for the in-memory dev-server file
+    // system too) so reported errors can be resolved back to original sources.
+    compiler.hooks.assetEmitted.tap("SentryWebpackPlugin", (file, { content }) => {
+      if (file.endsWith(".map")) {
+        mapStore.put(file, content.toString("utf8"));
+      }
+    });
 
     sentryLogger.info(`Sentry mock plugin initialized, logs will be written to ${logFile}`);
 

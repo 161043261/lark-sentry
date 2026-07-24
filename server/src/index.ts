@@ -30,6 +30,7 @@ import { cfg } from "./config.js";
 import { logger } from "./logger.js";
 import { registerRoutes } from "./routes.js";
 import { initMovieCache, destroyMovieCache } from "./movie.js";
+import { initSourcemap, destroySourcemap } from "./sourcemap.js";
 
 const app = new Koa();
 
@@ -70,6 +71,12 @@ async function startup() {
   } catch (error) {
     console.error(`Failed to init movie cache: ${error}`);
     process.exit(1);
+  }
+
+  // Initialize sourcemap resolution
+  initSourcemap(cfg.getConfig().sourcemap);
+  if (infoLogger && cfg.getConfig().sourcemap.enabled) {
+    infoLogger.info(`Sourcemap resolution enabled, dir: ${cfg.getConfig().sourcemap.dir}`);
   }
 
   // Configure CORS
@@ -140,6 +147,7 @@ async function startup() {
 
     // Close resources
     destroyMovieCache();
+    destroySourcemap();
     logger.close();
 
     if (infoLogger) {
