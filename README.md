@@ -294,30 +294,30 @@ tracePageView({
 
 ## Declarative Clicks
 
-Declarative click tracking uses `s-swifty-*` attributes. Plain clicks are not reported unless the clicked element or one of its composed path ancestors has a tracking attribute.
+Declarative click tracking uses `swifty-sentry-*` attributes. Plain clicks are not reported unless the clicked element or one of its composed path ancestors has a tracking attribute.
 
 ```html
-<section s-swifty-view="profile-card" s-swifty-src="home">
-  <button s-swifty-ev="save-profile" s-swifty-msg="Save">Save</button>
+<section swifty-sentry-el="profile-card" swifty-sentry-src="home">
+  <button swifty-sentry-ev="save-profile" swifty-sentry-msg="Save">Save</button>
 </section>
 ```
 
 Reserved attributes:
 
-| Attribute       | Description                    |
-| --------------- | ------------------------------ |
-| `s-swifty-ev`   | Explicit event ID.             |
-| `s-swifty-msg`  | Human-readable message.        |
-| `s-swifty-view` | View ID and event ID fallback. |
+| Attribute           | Description                    |
+| ------------------- | ------------------------------ |
+| `swifty-sentry-ev`  | Explicit event ID.             |
+| `swifty-sentry-msg` | Human-readable message.        |
+| `swifty-sentry-el`  | View ID and event ID fallback. |
 
-Custom `s-swifty-*` attributes become `params`.
+Custom `swifty-sentry-*` attributes become `params`.
 
 ```html
 <a
-  s-swifty-ev="open-banner"
-  s-swifty-msg="Open campaign banner"
-  s-swifty-campaign="spring"
-  s-swifty-rank="1"
+  swifty-sentry-ev="open-banner"
+  swifty-sentry-msg="Open campaign banner"
+  swifty-sentry-campaign="spring"
+  swifty-sentry-rank="1"
 >
   Campaign
 </a>
@@ -325,16 +325,16 @@ Custom `s-swifty-*` attributes become `params`.
 
 The reported click payload (`DeclarativeClickData`) includes:
 
-| Field            | Type                                       | Description                                                               |
-| ---------------- | ------------------------------------------ | ------------------------------------------------------------------------- |
-| `ev`             | `string`                                   | Event ID (from `s-swifty-ev`, `title`, `s-swifty-view`, or tag).          |
-| `msg`            | `string`                                   | Human-readable message (from `s-swifty-msg`, text, `aria-label`, or tag). |
-| `triggerPageUrl` | `string`                                   | Current page URL (`location.href`).                                       |
-| `x`              | `number`                                   | Click X coordinate (element offset + scroll offset).                      |
-| `y`              | `number`                                   | Click Y coordinate (element offset + scroll offset).                      |
-| `params`         | `Readonly<Record<string, string \| null>>` | Custom `s-swifty-*` attributes (excluding reserved keys).                 |
-| `elementPath`    | `string`                                   | XPath-like path from element to body (max 128 characters).                |
-| `triggerTime`    | `number`                                   | `Date.now()` at click time.                                               |
+| Field            | Type                                       | Description                                                                    |
+| ---------------- | ------------------------------------------ | ------------------------------------------------------------------------------ |
+| `ev`             | `string`                                   | Event ID (from `swifty-sentry-ev`, `title`, `swifty-sentry-el`, or tag).       |
+| `msg`            | `string`                                   | Human-readable message (from `swifty-sentry-msg`, text, `aria-label`, or tag). |
+| `triggerPageUrl` | `string`                                   | Current page URL (`location.href`).                                            |
+| `x`              | `number`                                   | Click X coordinate (element offset + scroll offset).                           |
+| `y`              | `number`                                   | Click Y coordinate (element offset + scroll offset).                           |
+| `params`         | `Readonly<Record<string, string \| null>>` | Custom `swifty-sentry-*` attributes (excluding reserved keys).                 |
+| `elementPath`    | `string`                                   | XPath-like path from element to body (max 128 characters).                     |
+| `triggerTime`    | `number`                                   | `Date.now()` at click time.                                                    |
 
 ## White-Screen Detection
 

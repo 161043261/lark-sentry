@@ -20,15 +20,15 @@
  * SOFTWARE.
  */
 
-const trackPrefix = "s-swifty-";
+const trackPrefix = "swifty-sentry-";
 const reservedKeys = new Set(["view", "msg", "ev"]);
 
 export interface DeclarativeClickData {
-  readonly ev: string; // s-swifty-ev
-  readonly msg: string; // s-swifty-msg
-  readonly triggerPageUrl: string; // s-swifty-view
-  readonly x: number; // s-swifty-view
-  readonly y: number; // s-swifty-view
+  readonly ev: string; // swifty-sentry-ev
+  readonly msg: string; // swifty-sentry-msg
+  readonly triggerPageUrl: string; // swifty-sentry-el
+  readonly x: number; // swifty-sentry-el
+  readonly y: number; // swifty-sentry-el
   readonly params: Readonly<Record<string, string | null>>;
   readonly elementPath: string;
   readonly triggerTime: number;
@@ -53,9 +53,9 @@ function getComposedElementPath(event: MouseEvent): HTMLElement[] {
 
 function hasTrackingAttribute(element: HTMLElement): boolean {
   return (
-    element.hasAttribute("s-swifty-view") ||
-    element.hasAttribute("s-swifty-ev") ||
-    element.hasAttribute("s-swifty-msg")
+    element.hasAttribute("swifty-sentry-el") ||
+    element.hasAttribute("swifty-sentry-ev") ||
+    element.hasAttribute("swifty-sentry-msg")
   );
 }
 
@@ -63,7 +63,7 @@ function getNodeTitle(element: HTMLElement | null): string {
   if (!element) {
     return "";
   }
-  return element.getAttribute("s-swifty-msg") ?? element.title;
+  return element.getAttribute("swifty-sentry-msg") ?? element.title;
 }
 
 function getMessage(target: HTMLElement): string {
@@ -86,7 +86,7 @@ function findAttribute(path: readonly HTMLElement[], attrName: string): string |
 }
 
 function getEventId(path: readonly HTMLElement[]): string {
-  const explicitEventId = findAttribute(path, "s-swifty-ev");
+  const explicitEventId = findAttribute(path, "swifty-sentry-ev");
   if (explicitEventId) {
     return explicitEventId;
   }
@@ -94,7 +94,7 @@ function getEventId(path: readonly HTMLElement[]): string {
   if (title) {
     return title;
   }
-  const container = findAttribute(path, "s-swifty-view");
+  const container = findAttribute(path, "swifty-sentry-el");
   if (container) {
     return container;
   }

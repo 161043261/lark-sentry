@@ -7,7 +7,7 @@ description: >-
   exposure tracking, white-screen detection, screen recording, Web Vitals, PV/dwell-time,
   offline report caching, or any task involving integrating browser observability into
   a React, Vue, or vanilla TypeScript/JavaScript project. Also trigger when the user
-  asks about s-swifty-* attributes, ReactErrorBoundary from this SDK, vuePlugin, or the
+  asks about swifty-sentry-* attributes, ReactErrorBoundary from this SDK, vuePlugin, or the
   Vite dev-server mock plugin (sentryPlugin / sentryPlugin7). Even if the user simply
   says "add monitoring" or "add tracking" in a frontend context, consult this skill first.
 ---
@@ -326,26 +326,26 @@ tracePageView({
 
 ## Declarative Click Tracking
 
-Declarative click tracking uses `s-swifty-*` HTML attributes. Plain clicks are not reported unless the clicked element or one of its composed path ancestors has a tracking attribute.
+Declarative click tracking uses `swifty-sentry-*` HTML attributes. Plain clicks are not reported unless the clicked element or one of its composed path ancestors has a tracking attribute.
 
 ### Reserved Attributes
 
-| Attribute       | Description                                                          |
-| --------------- | -------------------------------------------------------------------- |
-| `s-swifty-ev`   | Explicit event ID. First priority for event identification.          |
-| `s-swifty-msg`  | Human-readable message. Used for the reported `msg` field.           |
-| `s-swifty-view` | View/container ID. Fallback for event ID if `s-swifty-ev` is absent. |
+| Attribute           | Description                                                               |
+| ------------------- | ------------------------------------------------------------------------- |
+| `swifty-sentry-ev`  | Explicit event ID. First priority for event identification.               |
+| `swifty-sentry-msg` | Human-readable message. Used for the reported `msg` field.                |
+| `swifty-sentry-el`  | View/container ID. Fallback for event ID if `swifty-sentry-ev` is absent. |
 
 ### Custom Attributes
 
-Any `s-swifty-*` attribute other than the reserved keys (`view`, `msg`, `ev`) becomes a param in the reported payload:
+Any `swifty-sentry-*` attribute other than the reserved keys (`view`, `msg`, `ev`) becomes a param in the reported payload:
 
 ```html
 <a
-  s-swifty-ev="open-banner"
-  s-swifty-msg="Open campaign banner"
-  s-swifty-campaign="spring"
-  s-swifty-rank="1"
+  swifty-sentry-ev="open-banner"
+  swifty-sentry-msg="Open campaign banner"
+  swifty-sentry-campaign="spring"
+  swifty-sentry-rank="1"
 >
   Campaign
 </a>
@@ -357,9 +357,9 @@ The `params` field will contain `{ campaign: "spring", rank: "1" }`.
 
 The event ID (`ev`) is resolved by searching the composed path in this order:
 
-1. `s-swifty-ev` attribute on any ancestor.
+1. `swifty-sentry-ev` attribute on any ancestor.
 2. `title` attribute on any ancestor.
-3. `s-swifty-view` attribute on any ancestor.
+3. `swifty-sentry-el` attribute on any ancestor.
 4. The clicked element's tag name (lowercased).
 
 ### Click Payload
@@ -373,7 +373,7 @@ interface DeclarativeClickData {
   readonly triggerPageUrl: string; // current page URL
   readonly x: number; // click X coordinate (element offset + scroll offset)
   readonly y: number; // click Y coordinate (element offset + scroll offset)
-  readonly params: Readonly<Record<string, string | null>>; // custom s-swifty-* attributes
+  readonly params: Readonly<Record<string, string | null>>; // custom swifty-sentry-* attributes
   readonly elementPath: string; // XPath-like path from element to body (max 128 characters)
   readonly triggerTime: number; // Date.now() at click time
 }
@@ -1072,25 +1072,30 @@ document.querySelectorAll(".product-card").forEach((card) => {
 ### Declarative Click Tracking in Templates
 
 ```html
-<nav s-swifty-view="main-nav">
-  <a s-swifty-ev="nav-home" s-swifty-msg="Go to homepage" href="/">Home</a>
-  <a s-swifty-ev="nav-products" s-swifty-msg="Browse products" href="/products"
+<nav swifty-sentry-el="main-nav">
+  <a swifty-sentry-ev="nav-home" swifty-sentry-msg="Go to homepage" href="/"
+    >Home</a
+  >
+  <a
+    swifty-sentry-ev="nav-products"
+    swifty-sentry-msg="Browse products"
+    href="/products"
     >Products</a
   >
   <button
-    s-swifty-ev="nav-search"
-    s-swifty-msg="Open search"
-    s-swifty-type="icon"
+    swifty-sentry-ev="nav-search"
+    swifty-sentry-msg="Open search"
+    swifty-sentry-type="icon"
   >
     Search
   </button>
 </nav>
 
-<section s-swifty-view="product-list" s-swifty-category="electronics">
+<section swifty-sentry-el="product-list" swifty-sentry-category="electronics">
   <article
-    s-swifty-ev="product-click"
-    s-swifty-msg="View product"
-    s-swifty-sku="SKU-001"
+    swifty-sentry-ev="product-click"
+    swifty-sentry-msg="View product"
+    swifty-sentry-sku="SKU-001"
   >
     Product Name
   </article>

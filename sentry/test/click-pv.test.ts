@@ -44,8 +44,8 @@ describe("declarative click and page view dwell tracking", () => {
   it("reports @swifty.js/sentry declarative click metadata", async () => {
     const sendBeacon = vi.spyOn(navigator, "sendBeacon").mockReturnValue(true);
     document.body.innerHTML = `
-      <section s-swifty-view="profile-card" s-swifty-src="home">
-        <button s-swifty-ev="save-profile" s-swifty-msg="Save profile">
+      <section swifty-sentry-el="profile-card" swifty-sentry-src="home">
+        <button swifty-sentry-ev="save-profile" swifty-sentry-msg="Save profile">
           Save
         </button>
       </section>
@@ -84,7 +84,7 @@ describe("declarative click and page view dwell tracking", () => {
   it("reports container params when the clicked child has no track attrs", async () => {
     const sendBeacon = vi.spyOn(navigator, "sendBeacon").mockReturnValue(true);
     document.body.innerHTML = `
-      <section s-swifty-view="card" s-swifty-area="hero">
+      <section swifty-sentry-el="card" swifty-sentry-area="hero">
         <span>Open</span>
       </section>
     `;
