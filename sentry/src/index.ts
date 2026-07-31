@@ -35,8 +35,8 @@ import {
   tracePageView,
   tracePerformance,
 } from "./core/api.js";
-export { reportFrameworkError } from './core/framework-error.js'
-export type { InitOptions } from './core/options-schema.js'
+export { reportFrameworkError } from "./core/framework-error.js";
+export type { InitOptions } from "./core/options-schema.js";
 export {
   init,
   destroy,
