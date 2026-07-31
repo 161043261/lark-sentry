@@ -25,7 +25,7 @@ import { EventType, Status } from "../types/index.js";
 import { getBaseData } from "../utils/index.js";
 
 interface FrameworkErrorInput {
-  readonly type: EventType.React | EventType.Vue | EventType.Swifty;
+  readonly type: EventType.React | EventType.Vue | EventType.OtherFrameworks;
   readonly error: unknown;
   readonly context: unknown;
 }

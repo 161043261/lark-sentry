@@ -67,7 +67,7 @@ export enum EventType {
   Error = "Error",
   Vue = "Vue",
   React = "React",
-  Swifty = "Swifty",
+  OtherFrameworks = "OtherFrameworks",
   Performance = "Performance",
   ScreenRecord = "ScreenRecord",
   Exposure = "Exposure",
