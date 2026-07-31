@@ -1,6 +1,6 @@
 {
   "name": "@swifty.js/sentry",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Framework-agnostic sentry sdk with first-class support for react, vue3+, and preact",
   "keywords": [
     "preact",
@@ -74,6 +74,7 @@
     "format": "oxfmt --write ./",
     "prepublishOnly": "pnpm build",
     "build": "rollup -c ./rollup.config.ts",
+    "build:watch": "rollup -c ./rollup.config.ts -w",
     "build:tsup": "tsup --config ./tsup.config.ts"
   },
   "dependencies": {
