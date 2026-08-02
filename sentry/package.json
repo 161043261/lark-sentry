@@ -3,6 +3,8 @@
   "version": "0.0.3",
   "description": "Framework-agnostic sentry sdk with first-class support for react, vue3+, and preact",
   "keywords": [
+    "error-tracking",
+    "monitoring",
     "preact",
     "react",
     "sdk",
