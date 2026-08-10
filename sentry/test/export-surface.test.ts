@@ -28,7 +28,6 @@ import PerformancePlugin from "@/plugins/performance/index.js";
 import ScreenRecordPlugin, { unzipScreenRecord } from "@/plugins/screen-record/index.js";
 import { ReactErrorBoundary } from "@/react.js";
 import { vuePlugin } from "@/vue.js";
-import { PreactErrorBoundary } from "@/preact.js";
 
 describe("export surface", () => {
   it("keeps the root entry framework agnostic", () => {
@@ -38,7 +37,6 @@ describe("export surface", () => {
     expect(root.traceError).toBeTypeOf("function");
     expect(Object.hasOwn(root, "ReactErrorBoundary")).toBe(false);
     expect(Object.hasOwn(root, "vuePlugin")).toBe(false);
-    expect(Object.hasOwn(root, "PreactErrorBoundary")).toBe(false);
   });
 
   it("exports plugin and framework subpath entries", () => {
@@ -48,6 +46,5 @@ describe("export surface", () => {
     expect(ExposurePlugin).toBeTypeOf("function");
     expect(ReactErrorBoundary).toBeTypeOf("function");
     expect(vuePlugin).toBeTypeOf("function");
-    expect(PreactErrorBoundary).toBeTypeOf("function");
   });
 });

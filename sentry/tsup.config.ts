@@ -26,7 +26,6 @@ const external = [
   "@fingerprintjs/fingerprintjs",
   "@rrweb/record",
   "pako",
-  "preact",
   "react",
   "tslib",
   "ua-parser-js",
@@ -40,7 +39,6 @@ const external = [
 export default defineConfig({
   entry: {
     index: "./src/index.ts",
-    preact: "./src/preact.ts",
     react: "./src/react.ts",
     vue: "./src/vue.ts",
     vite: "./src/vite.ts",
