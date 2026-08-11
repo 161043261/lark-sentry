@@ -24,6 +24,7 @@ import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import sentryPlugin from "@swifty.js/sentry/vite";
+import pageRoutes from "./vite-plugin-page-routes";
 import { mkdirSync, readdirSync, renameSync } from "node:fs";
 import { join, resolve } from "node:path";
 
@@ -63,6 +64,7 @@ function moveSourcemaps(): Plugin {
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
+    pageRoutes(),
     react(),
     tailwindcss(),
     sentryPlugin({ dsn: "/api/log" }),
@@ -73,7 +75,7 @@ export default defineConfig({
     exclude: ["@swifty.js/sentry"],
   },
   build: {
-    // hidden: 生成 map 但不在产物中追加 sourceMappingURL 注释
+    // hidden: 生成 sourcemap, 但是不在打包产物中追加 sourceMappingURL 注释
     sourcemap: "hidden",
   },
   server: {

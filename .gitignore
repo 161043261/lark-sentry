@@ -190,3 +190,6 @@ dist-webpack
 
 .playwright-cli
 **/.playwright-cli
+
+# 自动生成的路由文件
+**/src/generated/

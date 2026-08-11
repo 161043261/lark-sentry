@@ -20,36 +20,39 @@
  * SOFTWARE.
  */
 
+import { NavLink, Link } from "react-router-dom";
 import { Search, Heart } from "lucide-react";
-import type { TPage } from "../types";
 
-interface ToolbarProps {
-  onPageChange: (page: TPage) => void;
-}
+const navItems = [
+  { to: "/search-list", label: "Search", icon: Search },
+  { to: "/favorite-list", label: "Favorites", icon: Heart },
+];
 
-export function Toolbar({ onPageChange }: ToolbarProps) {
+export function Toolbar() {
   return (
     <div className="flex items-center justify-between border-b border-gray-300 bg-gray-100 p-4">
-      <span
-        className="cursor-pointer text-lg font-bold select-none"
-        onClick={() => onPageChange("home")}
+      <Link
+        to="/"
+        className="text-lg font-bold transition-colors select-none hover:text-blue-600"
       >
         Movie List
-      </span>
-      <div className="flex gap-2">
-        <button
-          className="cursor-pointer rounded p-2 transition-colors hover:bg-gray-200"
-          onClick={() => onPageChange("search")}
-        >
-          <Search className="h-6 w-6" />
-        </button>
-        <button
-          className="cursor-pointer rounded p-2 transition-colors hover:bg-gray-200"
-          onClick={() => onPageChange("favorite")}
-        >
-          <Heart className="h-6 w-6" />
-        </button>
-      </div>
+      </Link>
+      <nav className="flex gap-2">
+        {navItems.map(({ to, label, icon: Icon }) => (
+          <NavLink
+            key={to}
+            to={to}
+            title={label}
+            className={({ isActive }) =>
+              `rounded p-2 transition-colors hover:bg-gray-200 ${
+                isActive ? "bg-gray-200 text-blue-600" : ""
+              }`
+            }
+          >
+            <Icon className="h-6 w-6" />
+          </NavLink>
+        ))}
+      </nav>
     </div>
   );
 }

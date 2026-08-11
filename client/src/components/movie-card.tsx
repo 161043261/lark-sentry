@@ -21,6 +21,7 @@
  */
 
 import { useFavorite } from "../context/favorite";
+import { Heart } from "lucide-react";
 import type { IMovie } from "../types";
 
 interface MovieCardProps {
@@ -32,34 +33,43 @@ export function MovieCard({ movie }: MovieCardProps) {
   const isFavored = has(movie);
 
   const handleLike = () => {
-    if (isFavored) {
-      remove(movie);
-    } else {
-      add(movie);
-    }
+    if (isFavored) remove(movie);
+    else add(movie);
   };
 
   return (
-    <div className="mt-4 w-full rounded-lg border border-gray-200 bg-white shadow-sm">
-      <div className="border-b border-gray-200 p-4">
-        <h3 className="text-xl font-semibold">{movie.name}</h3>
+    <article className="group overflow-hidden rounded-2xl border border-white/10 bg-gray-900 shadow-lg shadow-black/20 transition-all duration-300 hover:border-white/20 hover:shadow-xl hover:shadow-black/30">
+      <div className="relative aspect-video overflow-hidden">
+        <img
+          src={movie.image}
+          alt={movie.name}
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-gray-900/80 via-transparent to-transparent" />
+        <h3 className="absolute bottom-0 left-0 p-4 text-lg font-semibold text-white drop-shadow-md">
+          {movie.name}
+        </h3>
       </div>
-      <img
-        src={movie.image}
-        alt={movie.name}
-        className="h-50 w-full object-fill"
-      />
       <div className="p-4">
-        <p className="text-gray-600">{movie.description}</p>
+        <p className="line-clamp-3 text-sm leading-relaxed text-gray-400">
+          {movie.description}
+        </p>
+        <div className="mt-4 flex justify-end">
+          <button
+            onClick={handleLike}
+            className={`flex cursor-pointer items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all ${
+              isFavored
+                ? "bg-rose-500/15 text-rose-400 hover:bg-rose-500/25"
+                : "bg-white/5 text-gray-400 hover:bg-accent-500/15 hover:text-accent-300"
+            }`}
+          >
+            <Heart
+              className={`h-4 w-4 ${isFavored ? "fill-rose-400" : ""}`}
+            />
+            {isFavored ? "Favorited" : "Favorite"}
+          </button>
+        </div>
       </div>
-      <div className="flex justify-end border-t border-gray-200 p-4">
-        <button
-          onClick={handleLike}
-          className="cursor-pointer rounded bg-blue-500 px-4 py-2 text-white transition-colors hover:bg-blue-600"
-        >
-          {isFavored ? "Dislike" : "Like"}
-        </button>
-      </div>
-    </div>
+    </article>
   );
 }

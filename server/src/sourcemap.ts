@@ -23,6 +23,7 @@
 import { readFile } from "node:fs/promises";
 import { basename, join } from "node:path";
 import { SourceMapConsumer } from "source-map";
+import { z } from "zod";
 import type { SourcemapConfig } from "./config.js";
 
 export interface RawFrame {
@@ -201,30 +202,48 @@ function isStackLike(value: string): boolean {
   return /(^|\n)\s*at .+:\d+:\d+/.test(value) || /@.+:\d+:\d+/.test(value);
 }
 
-export async function enrichReportRecord(record: unknown): Promise<void> {
-  if (typeof record !== "object" || record === null) return;
-  const rec = record as Record<string, unknown>;
-  const payload =
-    typeof rec.payload === "object" && rec.payload !== null
-      ? (rec.payload as Record<string, unknown>)
-      : undefined;
-  if (!payload) return;
+const errorRecordSchema = z.object({
+  type: z.literal("Error"),
+  name: z.string(),
+  payload: z.object({
+    line: z.number(),
+    column: z.number(),
+  }),
+});
 
+const extraStackRecordSchema = z.object({
+  payload: z.object({
+    extra: z.string().refine(isStackLike),
+  }),
+});
+
+const frameworkStackRecordSchema = z.object({
+  type: z.union([z.literal("React"), z.literal("Vue")]),
+  payload: z.object({
+    stack: z.string(),
+  }),
+});
+
+export async function enrichReportRecord(record: unknown): Promise<void> {
   const frames: ResolvedFrame[] = [];
-  if (
-    rec.type === "Error" &&
-    typeof rec.name === "string" &&
-    typeof payload.line === "number" &&
-    typeof payload.column === "number"
-  ) {
-    frames.push(await resolveFrame({ url: rec.name, line: payload.line, column: payload.column }));
-  } else if (typeof payload.extra === "string" && isStackLike(payload.extra)) {
-    frames.push(...(await resolveStack(payload.extra)));
-  } else if ((rec.type === "React" || rec.type === "Vue") && typeof payload.stack === "string") {
-    frames.push(...(await resolveStack(payload.stack)));
+
+  const errorResult = errorRecordSchema.safeParse(record);
+  if (errorResult.success) {
+    const { name, payload } = errorResult.data;
+    frames.push(await resolveFrame({ url: name, line: payload.line, column: payload.column }));
+  } else {
+    const extraResult = extraStackRecordSchema.safeParse(record);
+    if (extraResult.success) {
+      frames.push(...(await resolveStack(extraResult.data.payload.extra)));
+    } else {
+      const fwResult = frameworkStackRecordSchema.safeParse(record);
+      if (fwResult.success) {
+        frames.push(...(await resolveStack(fwResult.data.payload.stack)));
+      }
+    }
   }
 
-  if (frames.length > 0) {
-    rec.sourcemap = { frames };
+  if (frames.length > 0 && record !== null && typeof record === "object") {
+    Object.assign(record, { sourcemap: { frames } });
   }
 }

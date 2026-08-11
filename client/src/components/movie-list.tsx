@@ -21,6 +21,7 @@
  */
 
 import { MovieCard } from "./movie-card";
+import { Film } from "lucide-react";
 import type { IMovie } from "../types";
 
 interface MovieListProps {
@@ -29,11 +30,19 @@ interface MovieListProps {
 
 export function MovieList({ movieList }: MovieListProps) {
   if (movieList.length === 0) {
-    return <h1 className="mt-4 text-center text-2xl">Empty Movie List</h1>;
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-gray-500">
+        <Film className="mb-4 h-12 w-12 opacity-40" />
+        <p className="text-lg font-medium">No movies found</p>
+        <p className="mt-1 text-sm text-gray-600">
+          Try a different search or check back later
+        </p>
+      </div>
+    );
   }
 
   return (
-    <div className="mx-auto grid max-w-2xl grid-cols-1 gap-4 p-4">
+    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {movieList.map((movie) => (
         <MovieCard key={movie.id} movie={movie} />
       ))}

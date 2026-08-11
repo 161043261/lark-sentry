@@ -20,54 +20,51 @@
  * SOFTWARE.
  */
 
-import { useState } from "react";
+import { Suspense } from "react";
+import { useRoutes, Outlet, Link } from "react-router-dom";
 import { FavoriteProvider } from "./context/favorite";
-import SearchList from "./pages/search-list/page";
-import FavoriteList from "./pages/favorite-list/page";
-import type { TPage } from "./types";
-import Home from "./pages/page";
+import { routes } from "./generated/routes";
 import { Toolbar } from "./components/toolbar";
+import { Spinner } from "./components/spinner";
 import { RandomCrash } from "./dev/random-crash";
 
-function App() {
-  const [currentPage, setCurrentPage] = useState<TPage>("home");
+function NotFound() {
+  return (
+    <div className="flex h-64 flex-col items-center justify-center">
+      <p className="mb-4 text-xl text-gray-700">Page Not Found</p>
+      <Link
+        to="/"
+        className="rounded bg-blue-500 px-4 py-2 text-white transition-colors hover:bg-blue-600"
+      >
+        Back to Home
+      </Link>
+    </div>
+  );
+}
 
-  const renderPage = () => {
-    switch (currentPage) {
-      case "home":
-        return <Home />;
-      case "search":
-        return <SearchList />;
-      case "favorite":
-        return <FavoriteList />;
-      default:
-        return (
-          <div className="flex h-64 flex-col items-center justify-center">
-            <p className="mb-4 text-xl text-gray-700">Page Not Found</p>
-            <button
-              className="cursor-pointer rounded bg-blue-500 px-4 py-2 text-white transition-colors hover:bg-blue-600"
-              onClick={() => setCurrentPage("home")}
-            >
-              Back to Home
-            </button>
-          </div>
-        );
-    }
-  };
-
+function Layout() {
   return (
     <FavoriteProvider>
       <div className="flex min-h-screen flex-col bg-gray-50">
-        <Toolbar onPageChange={setCurrentPage} />
+        <Toolbar />
         <main className="container mx-auto flex-1 px-4 py-4">
-          {renderPage()}
+          <Suspense fallback={<Spinner />}>
+            <Outlet />
+          </Suspense>
         </main>
-        {/* Invisible probe that randomly throws during render to seed
-            EventType.React reports via the SDK's ReactErrorBoundary. */}
         <RandomCrash />
       </div>
     </FavoriteProvider>
   );
+}
+
+function App() {
+  return useRoutes([
+    {
+      element: <Layout />,
+      children: [...routes, { path: "*", element: <NotFound /> }],
+    },
+  ]);
 }
 
 export default App;

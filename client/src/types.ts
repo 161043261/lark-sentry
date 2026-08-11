@@ -46,5 +46,3 @@ export interface ICategory {
 export interface IResponse {
   categories: ICategory[];
 }
-
-export type TPage = "home" | "search" | "favorite";

@@ -11,7 +11,7 @@
   "scripts": {
     "prepare": "husky && pnpm --filter @swifty.js/sentry build",
     "lint": "eslint ./sentry --fix",
-    "format": "pnpm --filter @swifty.js/sentry format",
+    "format": "concurrently \"pnpm --filter @swifty.js/sentry format\" \"pnpm --filter client format\" \"pnpm --filter server format\"",
     "client": "pnpm --filter client dev",
     "server": "pnpm --filter server dev",
     "dev": "concurrently \"pnpm client\" \"pnpm server\"",
