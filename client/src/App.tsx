@@ -21,11 +21,11 @@
  */
 
 import { useState } from "react";
-import { FavoriteProvider } from "./context/favorite-context";
-import { SearchList } from "./pages/search-list";
-import { FavoriteList } from "./pages/favorite-list";
+import { FavoriteProvider } from "./context/favorite";
+import SearchList from "./pages/search-list/page";
+import FavoriteList from "./pages/favorite-list/page";
 import type { TPage } from "./types";
-import { Home } from "./pages/home";
+import Home from "./pages/page";
 import { Toolbar } from "./components/toolbar";
 import { RandomCrash } from "./dev/random-crash";
 

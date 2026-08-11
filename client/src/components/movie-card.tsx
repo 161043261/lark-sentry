@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { useFavorite } from "../context/favorite-context";
+import { useFavorite } from "../context/favorite";
 import type { IMovie } from "../types";
 
 interface MovieCardProps {

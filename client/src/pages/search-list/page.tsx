@@ -21,11 +21,11 @@
  */
 
 import { useState } from "react";
-import { MovieList } from "../components/movie-list";
-import { Spinner } from "../components/spinner";
-import type { IMovie } from "../types";
+import { MovieList } from "../../components/movie-list";
+import { Spinner } from "../../components/spinner";
+import type { IMovie } from "../../types";
 
-export function SearchList() {
+function SearchList() {
   const [searchTitle, setSearchTitle] = useState("");
   const [movieList, setMovieList] = useState<IMovie[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -82,3 +82,5 @@ export function SearchList() {
     </div>
   );
 }
+
+export default SearchList;
