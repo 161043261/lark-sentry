@@ -31,15 +31,6 @@ import type DevServer from "webpack-dev-server";
 import { sentry, sentryLogger } from "./utils";
 import { createAssetMapStore, enrichReportData, type MapLoader } from "./source-map/webpack.js";
 
-// `webpack-dev-server` already augments `webpack.Configuration` with the devServer` field
-
-/** Type predicate: safely narrow `compiler.options.devServer` to `DevServer.Configuration`. */
-function isDevServerConfig(value: unknown): value is DevServer.Configuration {
-  return value !== false && value !== undefined && value !== null && typeof value === "object";
-}
-
-type SetupMiddlewaresFn = NonNullable<DevServer.Configuration["setupMiddlewares"]>;
-
 export type SentryDevMiddleware = (
   req: IncomingMessage,
   res: ServerResponse,
@@ -169,14 +160,10 @@ export class SentryWebpackPlugin implements WebpackPluginInstance {
   }
 
   apply(compiler: Compiler): void {
-    const devServer = compiler.options.devServer;
-    if (!isDevServerConfig(devServer)) {
-      sentryLogger.info(
-        "devServer is not configured, skipping SentryWebpackPlugin (production builds remain untouched)",
-      );
-      return;
-    }
+    if (!compiler.options.devServer) return;
 
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+    const devServer = compiler.options.devServer as DevServer.Configuration;
     const { fileStream, logFile } = ensureLogStream();
     const url = this.dsn || sentry.options.dsn || "/sentry";
     const mapStore = createAssetMapStore();
@@ -192,7 +179,7 @@ export class SentryWebpackPlugin implements WebpackPluginInstance {
 
     sentryLogger.info(`Sentry mock plugin initialized, logs will be written to ${logFile}`);
 
-    const userSetup: SetupMiddlewaresFn | undefined = devServer.setupMiddlewares;
+    const userSetup = devServer.setupMiddlewares;
     devServer.setupMiddlewares = (middlewares, dev) => {
       const list = userSetup ? userSetup(middlewares, dev) : middlewares;
       // NOTE: do NOT pass `path` here. webpack-dev-server's
