@@ -38,20 +38,20 @@ export function MovieCard({ movie }: MovieCardProps) {
   };
 
   return (
-    <article className="group overflow-hidden rounded-2xl border border-white/10 bg-gray-900 shadow-lg shadow-black/20 transition-all duration-300 hover:border-white/20 hover:shadow-xl hover:shadow-black/30">
+    <article className="group overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all duration-300 hover:border-gray-300 hover:shadow-md">
       <div className="relative aspect-video overflow-hidden">
         <img
           src={movie.image}
           alt={movie.name}
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-gray-900/80 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
         <h3 className="absolute bottom-0 left-0 p-4 text-lg font-semibold text-white drop-shadow-md">
           {movie.name}
         </h3>
       </div>
       <div className="p-4">
-        <p className="line-clamp-3 text-sm leading-relaxed text-gray-400">
+        <p className="line-clamp-3 text-sm leading-relaxed text-gray-500">
           {movie.description}
         </p>
         <div className="mt-4 flex justify-end">
@@ -59,14 +59,12 @@ export function MovieCard({ movie }: MovieCardProps) {
             onClick={handleLike}
             className={`flex cursor-pointer items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all ${
               isFavored
-                ? "bg-rose-500/15 text-rose-400 hover:bg-rose-500/25"
-                : "bg-white/5 text-gray-400 hover:bg-accent-500/15 hover:text-accent-300"
+                ? "bg-rose-50 text-rose-500 hover:bg-rose-100"
+                : "hover:bg-accent-50 hover:text-accent-600 bg-gray-100 text-gray-500"
             }`}
           >
-            <Heart
-              className={`h-4 w-4 ${isFavored ? "fill-rose-400" : ""}`}
-            />
-            {isFavored ? "Favorited" : "Favorite"}
+            <Heart className={`h-4 w-4 ${isFavored ? "fill-rose-500" : ""}`} />
+            {isFavored ? "Favored" : "Favor"}
           </button>
         </div>
       </div>

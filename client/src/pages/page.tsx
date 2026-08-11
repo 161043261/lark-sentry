@@ -57,7 +57,12 @@ function Home() {
     return <Spinner />;
   }
 
-  return <MovieList movieList={movieList} />;
+  return (
+    <div>
+      <h1 className="mb-6 text-2xl font-bold text-gray-900">Discover</h1>
+      <MovieList movieList={movieList} />
+    </div>
+  );
 }
 
 export default Home;

@@ -268,6 +268,9 @@ importers:
       koa-static:
         specifier: ^5.0.0
         version: 5.0.0(supports-color@10.2.2)
+      lucide-static:
+        specifier: ^1.31.0
+        version: 1.31.0
       pino:
         specifier: ^10.3.1
         version: 10.3.1
@@ -3600,6 +3603,9 @@ packages:
     resolution: {integrity: sha512-38BpJcD0JhFosxHApP/BYsBetLpQFRoTRzEzstM/XCc3jsAG7wqaY1lgVwxiUe3xqYE+lNxo2PkCmYwXWrwwIw==}
     peerDependencies:
       react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
+  lucide-static@1.31.0:
+    resolution: {integrity: sha512-XFX9NO+gcLsOkXISmeQZYGJa2siGWZc/lgT/BK1b83h9RdOiz3cj1eQP5nWhELiB1KhW5ryk0nmMopOgm/CuSA==}
 
   magic-string@0.30.21:
     resolution: {integrity: sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==}
@@ -8321,6 +8327,8 @@ snapshots:
   lucide-react@1.23.0(react@19.2.7):
     dependencies:
       react: 19.2.7
+
+  lucide-static@1.31.0: {}
 
   magic-string@0.30.21:
     dependencies:

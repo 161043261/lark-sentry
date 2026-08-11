@@ -25,7 +25,13 @@ import { MovieList } from "../../components/movie-list";
 
 function FavoriteList() {
   const { movieList } = useFavorite();
-  return <MovieList movieList={movieList} />;
+
+  return (
+    <div>
+      <h1 className="mb-6 text-2xl font-bold text-gray-900">Favorites</h1>
+      <MovieList movieList={movieList} />
+    </div>
+  );
 }
 
 export default FavoriteList;

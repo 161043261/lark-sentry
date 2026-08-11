@@ -21,7 +21,7 @@
  */
 
 import { NavLink, Link } from "react-router-dom";
-import { Search, Heart } from "lucide-react";
+import { Search, Heart, Clapperboard } from "lucide-react";
 
 const navItems = [
   { to: "/search-list", label: "Search", icon: Search },
@@ -30,29 +30,35 @@ const navItems = [
 
 export function Toolbar() {
   return (
-    <div className="flex items-center justify-between border-b border-gray-300 bg-gray-100 p-4">
-      <Link
-        to="/"
-        className="text-lg font-bold transition-colors select-none hover:text-blue-600"
-      >
-        Movie List
-      </Link>
-      <nav className="flex gap-2">
-        {navItems.map(({ to, label, icon: Icon }) => (
-          <NavLink
-            key={to}
-            to={to}
-            title={label}
-            className={({ isActive }) =>
-              `rounded p-2 transition-colors hover:bg-gray-200 ${
-                isActive ? "bg-gray-200 text-blue-600" : ""
-              }`
-            }
-          >
-            <Icon className="h-6 w-6" />
-          </NavLink>
-        ))}
-      </nav>
-    </div>
+    <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/80 backdrop-blur-xl">
+      <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-3">
+        <Link
+          to="/"
+          className="flex items-center gap-2.5 text-lg font-semibold tracking-tight text-gray-900 transition-opacity hover:opacity-70"
+        >
+          <Clapperboard className="text-accent-500 h-6 w-6" />
+          <span>Movie</span>
+        </Link>
+        <nav className="flex items-center gap-1">
+          {navItems.map(({ to, label, icon: Icon }) => (
+            <NavLink
+              key={to}
+              to={to}
+              title={label}
+              className={({ isActive }) =>
+                `flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-all ${
+                  isActive
+                    ? "bg-accent-50 text-accent-600"
+                    : "text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+                }`
+              }
+            >
+              <Icon className="h-4.5 w-4.5" />
+              <span className="hidden sm:inline">{label}</span>
+            </NavLink>
+          ))}
+        </nav>
+      </div>
+    </header>
   );
 }

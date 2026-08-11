@@ -31,7 +31,7 @@ import { init } from "@swifty.js/sentry";
 //   ScreenRecordPlugin,
 //   ExposurePlugin,
 // } from "@swifty.js/sentry/plugins";
-import { startErrorSeeder } from "./dev/error-seeder";
+import { startErrorSeeder } from "./crash/seeder";
 
 init({ dsn: "/api/log", debug: true });
 // enablePlugin(new PerformancePlugin());

@@ -26,15 +26,16 @@ import { FavoriteProvider } from "./context/favorite";
 import { routes } from "./generated/routes";
 import { Toolbar } from "./components/toolbar";
 import { Spinner } from "./components/spinner";
-import { RandomCrash } from "./dev/random-crash";
+import { RandomCrash } from "./crash";
 
 function NotFound() {
   return (
-    <div className="flex h-64 flex-col items-center justify-center">
-      <p className="mb-4 text-xl text-gray-700">Page Not Found</p>
+    <div className="flex flex-col items-center justify-center py-32">
+      <p className="text-6xl font-bold text-gray-800">404</p>
+      <p className="mt-4 text-lg text-gray-400">Page not found</p>
       <Link
         to="/"
-        className="rounded bg-blue-500 px-4 py-2 text-white transition-colors hover:bg-blue-600"
+        className="bg-accent-600 hover:bg-accent-500 mt-8 rounded-full px-6 py-2.5 text-sm font-medium text-white transition-colors"
       >
         Back to Home
       </Link>
@@ -45,9 +46,9 @@ function NotFound() {
 function Layout() {
   return (
     <FavoriteProvider>
-      <div className="flex min-h-screen flex-col bg-gray-50">
+      <div className="flex min-h-screen flex-col">
         <Toolbar />
-        <main className="container mx-auto flex-1 px-4 py-4">
+        <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-8">
           <Suspense fallback={<Spinner />}>
             <Outlet />
           </Suspense>

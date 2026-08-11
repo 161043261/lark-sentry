@@ -20,9 +20,9 @@
  * SOFTWARE.
  */
 
-import { readdirSync } from "node:fs";
+import { readdirSync, realpathSync } from "node:fs";
+import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { faker } from "@faker-js/faker";
 import { newGroup, destroyGroup, type Group } from "@swifty.js/cache";
 
@@ -36,10 +36,13 @@ export interface Movie {
   description: string;
 }
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const staticDir = join(__dirname, "../static");
-const staticImages = readdirSync(staticDir).map((f) => `/static/${f}`);
+const require = createRequire(import.meta.url);
+const lucideEntry = require.resolve("lucide-static");
+// realpathSync resolves pnpm's symlinked node_modules to the real store path
+export const lucideIconsDir = realpathSync(join(dirname(lucideEntry), "../../icons"));
+const staticImages = readdirSync(lucideIconsDir)
+  .filter((f) => f.endsWith(".svg"))
+  .map((f) => `/static/${f}`);
 
 let movieGroup: Group | null = null;
 let moviesData: Movie[] = [];

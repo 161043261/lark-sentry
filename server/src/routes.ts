@@ -28,7 +28,7 @@ import type Koa from "koa";
 import { cfg } from "./config.js";
 import { logger } from "./logger.js";
 import { getAllMovies } from "./movie.js";
-import { enrichReportRecord, isSourcemapEnabled } from "./sourcemap.js";
+import { enrichReportRecord, isSourcemapEnabled } from "./source-map.js";
 
 async function enrichSdkLogBody(body: Buffer): Promise<Buffer | string> {
   if (!isSourcemapEnabled()) return body;

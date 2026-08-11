@@ -29,8 +29,8 @@ import serve from "koa-static";
 import { cfg } from "./config.js";
 import { logger } from "./logger.js";
 import { registerRoutes } from "./routes.js";
-import { initMovieCache, destroyMovieCache } from "./movie.js";
-import { initSourcemap, destroySourcemap } from "./sourcemap.js";
+import { initMovieCache, destroyMovieCache, lucideIconsDir } from "./movie.js";
+import { initSourcemap, destroySourcemap } from "./source-map.js";
 
 const app = new Koa();
 
@@ -99,9 +99,8 @@ async function startup() {
     }),
   );
 
-  // Serve static files
-  const staticDir = join(dirname__, "../static");
-  app.use(mount("/static", serve(staticDir)));
+  // Serve lucide icon SVGs
+  app.use(mount("/static", serve(lucideIconsDir)));
 
   // Register Routes
   registerRoutes(app);
