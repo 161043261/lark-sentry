@@ -4,6 +4,12 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+catalogs:
+  default:
+    '@swifty.js/cache':
+      specifier: ^0.0.1
+      version: 0.0.1
+
 importers:
 
   .:
@@ -248,8 +254,8 @@ importers:
         specifier: ^15.6.0
         version: 15.6.0(koa@3.2.1)(supports-color@10.2.2)
       '@swifty.js/cache':
-        specifier: file:../../swifty.js/packages/cache
-        version: file:../swifty.js/packages/cache
+        specifier: 'catalog:'
+        version: 0.0.1
       koa:
         specifier: ^3.2.1
         version: 3.2.1
@@ -1627,8 +1633,8 @@ packages:
   '@sinclair/typebox@0.27.10':
     resolution: {integrity: sha512-MTBk/3jGLNB2tVxv6uLlFh1iu64iYOQ2PbdOSK3NW8JZsmlaOh2q6sdtKowBhfw8QFLmYNzTW4/oK4uATIi6ZA==}
 
-  '@swifty.js/cache@file:../swifty.js/packages/cache':
-    resolution: {directory: ../swifty.js/packages/cache, type: directory}
+  '@swifty.js/cache@0.0.1':
+    resolution: {integrity: sha512-Vsg5qr8CqLC6vkTG6+4R03hsBZ/ZaN71wdlJaF9Qa9K9l+p/hLz9BJ/XCEVX5MNishcjS6xvJ23Pmgk71yh7sQ==}
     engines: {node: '>=20'}
 
   '@tailwindcss/node@4.3.2':
@@ -5109,8 +5115,8 @@ packages:
     resolution: {integrity: sha512-rwu/ClNdSMpkSrUb+d6BRsSkLUq1fmfsY6TOpYzTwvwkg1/NRG85KBy3kq++A8LKQwX6lsu+aWad+2khvuXrqw==}
     engines: {node: ^20.19.0 || ^22.12.0 || >=23}
 
-  yargs@17.7.3:
-    resolution: {integrity: sha512-GZtjxm/J/4TSxuL3FNYjCmLktBTnIw/rVmKSIyKeYAZpmJB2ig9VauCC5xsa82GNKVKDAqpOn3KVzNt0zmrU0g==}
+  yargs@17.7.2:
+    resolution: {integrity: sha512-7dSzzRQ++CKnNI/krKnYRV7JKKPUXMEh61soaHKg9mrWEhzFWhFnxPxGl+69cD1Ou63C13NUPCnmIcrvqCuM6w==}
     engines: {node: '>=12'}
 
   yargs@18.0.0:
@@ -5576,14 +5582,14 @@ snapshots:
       lodash.camelcase: 4.3.0
       long: 5.3.2
       protobufjs: 7.6.5
-      yargs: 17.7.3
+      yargs: 17.7.2
 
   '@grpc/proto-loader@0.8.1':
     dependencies:
       lodash.camelcase: 4.3.0
       long: 5.3.2
       protobufjs: 7.6.5
-      yargs: 17.7.3
+      yargs: 17.7.2
 
   '@humanfs/core@0.19.2':
     dependencies:
@@ -6151,7 +6157,7 @@ snapshots:
 
   '@sinclair/typebox@0.27.10': {}
 
-  '@swifty.js/cache@file:../swifty.js/packages/cache':
+  '@swifty.js/cache@0.0.1':
     dependencies:
       '@grpc/grpc-js': 1.14.4
       '@grpc/proto-loader': 0.7.15
@@ -8749,7 +8755,7 @@ snapshots:
       '@protobufjs/path': 1.1.2
       '@protobufjs/pool': 1.1.0
       '@protobufjs/utf8': 1.1.1
-      '@types/node': 20.19.43
+      '@types/node': 25.9.4
       long: 5.3.2
 
   proxy-addr@2.0.7:
@@ -9827,7 +9833,7 @@ snapshots:
 
   yargs-parser@22.0.0: {}
 
-  yargs@17.7.3:
+  yargs@17.7.2:
     dependencies:
       cliui: 8.0.1
       escalade: 3.2.0

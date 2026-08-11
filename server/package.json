@@ -11,7 +11,7 @@
     "@faker-js/faker": "^10.5.0",
     "@koa/cors": "^5.0.0",
     "@koa/router": "^15.6.0",
-    "@swifty.js/cache": "file:../../swifty.js/packages/cache",
+    "@swifty.js/cache": "catalog:",
     "koa": "^3.2.1",
     "koa-mount": "^4.2.0",
     "koa-static": "^5.0.0",

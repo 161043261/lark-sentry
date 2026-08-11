@@ -28,10 +28,11 @@ packages:
 allowBuilds:
   "@parcel/watcher": true
   esbuild: true
-  lmdb: true
-  msgpackr-extract: true
   protobufjs: true
 
 onlyBuiltDependencies:
   - "@parcel/watcher"
   - esbuild
+
+catalog:
+  "@swifty.js/cache": "^0.0.1"
