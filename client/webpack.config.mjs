@@ -27,7 +27,7 @@ import CopyWebpackPlugin from "copy-webpack-plugin";
 import HtmlWebpackPlugin from "html-webpack-plugin";
 import MiniCssExtractPlugin from "mini-css-extract-plugin";
 import { sentryPlugin } from "@swifty.js/sentry/webpack";
-import PageRoutesPlugin from "./plugins/webpack-plugin-page-routes.mjs";
+import PageRoutesPlugin from "./plugins/webpack-plugin-page-routes.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 

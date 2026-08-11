@@ -22,7 +22,7 @@
 
 import { join } from "node:path";
 import type { Plugin } from "vite";
-import { generateRoutes } from "./page-routes-core.mjs";
+import { generateRoutes } from "./page-routes.js";
 
 export default function pageRoutes(): Plugin {
   let root = process.cwd();

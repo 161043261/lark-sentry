@@ -23,7 +23,7 @@
 // @ts-check
 
 import { join } from "node:path";
-import { generateRoutes } from "./page-routes-core.mjs";
+import { generateRoutes } from "./page-routes.js";
 
 const PLUGIN_NAME = "PageRoutesPlugin";
 
