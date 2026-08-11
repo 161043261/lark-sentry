@@ -98,7 +98,27 @@ export function registerRoutes(app: Koa) {
 
   router.get("/api/movie", async (ctx) => {
     try {
+      const keyword = ctx.query.keyword;
+
+      if (keyword !== undefined && !String(keyword).trim()) {
+        ctx.body = { movies: [] };
+        return;
+      }
+
       const movies = await getAllMovies();
+
+      if (keyword !== undefined) {
+        const kw = String(keyword).trim().toLowerCase();
+        ctx.body = {
+          movies: movies.filter(
+            (m) =>
+              m.name.toLowerCase().includes(kw) ||
+              (m.description && m.description.toLowerCase().includes(kw)),
+          ),
+        };
+        return;
+      }
+
       ctx.body = { movies };
     } catch (err) {
       ctx.status = 500;

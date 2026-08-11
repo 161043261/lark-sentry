@@ -24,7 +24,7 @@ import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import sentryPlugin from "@swifty.js/sentry/vite";
-import pageRoutes from "./vite-plugin-page-routes";
+import pageRoutes from "./plugins/vite-plugin-page-routes";
 import { mkdirSync, readdirSync, renameSync } from "node:fs";
 import { join, resolve } from "node:path";
 

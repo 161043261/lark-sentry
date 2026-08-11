@@ -13,8 +13,10 @@
     "lint": "eslint ./sentry --fix",
     "format": "concurrently \"pnpm --filter @swifty.js/sentry format\" \"pnpm --filter client format\" \"pnpm --filter server format\"",
     "client": "pnpm --filter client dev",
+    "client:webpack": "pnpm --filter client dev:webpack",
     "server": "pnpm --filter server dev",
     "dev": "concurrently \"pnpm client\" \"pnpm server\"",
+    "dev:webpack": "concurrently \"pnpm client:webpack\" \"pnpm server\"",
     "git:commit": "git add -A && git commit -m \"feat: Introduce new features\"",
     "git:push": "pnpm git:commit && git push origin main"
   },

@@ -38,23 +38,23 @@ export function MovieCard({ movie }: MovieCardProps) {
   };
 
   return (
-    <article className="group overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all duration-300 hover:border-gray-300 hover:shadow-md">
+    <article className="group flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all duration-300 hover:border-gray-300 hover:shadow-md">
       <div className="relative aspect-video overflow-hidden">
         <img
           src={movie.image}
           alt={movie.name}
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent" />
         <h3 className="absolute bottom-0 left-0 p-4 text-lg font-semibold text-white drop-shadow-md">
           {movie.name}
         </h3>
       </div>
-      <div className="p-4">
-        <p className="line-clamp-3 text-sm leading-relaxed text-gray-500">
+      <div className="flex flex-1 flex-col p-4">
+        <p className="line-clamp-3 flex-1 text-sm leading-relaxed text-gray-500">
           {movie.description}
         </p>
-        <div className="mt-4 flex justify-end">
+        <div className="flex justify-end pt-4">
           <button
             onClick={handleLike}
             className={`flex cursor-pointer items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all ${

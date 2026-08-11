@@ -33,23 +33,21 @@ function SearchList() {
   const [hasSearched, setHasSearched] = useState(false);
 
   const handleSearchMovie = async () => {
+    const keyword = searchTitle.trim();
+    if (!keyword) {
+      setMovieList([]);
+      setHasSearched(true);
+      return;
+    }
+
     setIsLoading(true);
     setHasSearched(true);
     try {
-      const response = await fetch("/api/movie");
+      const response = await fetch(
+        `/api/movie?keyword=${encodeURIComponent(keyword)}`,
+      );
       const data = await response.json();
-
-      const movies: IMovie[] = data.movies;
-
-      const filteredMovies = movies.filter((movie) => {
-        const title = searchTitle.toLowerCase();
-        return (
-          movie.name.toLowerCase().includes(title) ||
-          (movie.description && movie.description.toLowerCase().includes(title))
-        );
-      });
-
-      setMovieList(filteredMovies);
+      setMovieList(data.movies ?? []);
     } catch (err) {
       console.error(err);
       setMovieList([]);
