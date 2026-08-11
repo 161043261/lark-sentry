@@ -29,7 +29,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import type { Compiler, WebpackPluginInstance } from "webpack";
 import type DevServer from "webpack-dev-server";
 import { sentry, sentryLogger } from "./utils";
-import { createAssetMapStore, enrichReportData, type MapLoader } from "./sourcemap/webpack.js";
+import { createAssetMapStore, enrichReportData, type MapLoader } from "./source-map/webpack.js";
 
 // `webpack-dev-server` already augments `webpack.Configuration` with the devServer` field
 

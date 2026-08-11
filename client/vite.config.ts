@@ -23,7 +23,7 @@
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
-import sentryPlugin from "@swifty.js/sentry/vite";
+// import sentryPlugin from "@swifty.js/sentry/vite";
 import pageRoutes from "./plugins/vite-plugin-page-routes";
 import { mkdirSync, readdirSync, renameSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -67,7 +67,7 @@ export default defineConfig({
     pageRoutes(),
     react(),
     tailwindcss(),
-    sentryPlugin({ dsn: "/api/log" }),
+    // sentryPlugin({ dsn: "/api/log" }),
     moveSourcemaps(),
   ],
   optimizeDeps: {

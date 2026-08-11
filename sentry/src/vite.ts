@@ -30,7 +30,7 @@ import { Buffer } from "node:buffer";
 import { join } from "node:path";
 import { createWriteStream, existsSync, mkdirSync, WriteStream } from "node:fs";
 import { sentryLogger, sentry } from "./utils";
-import { enrichReportData } from "./sourcemap/vite.js";
+import { enrichReportData } from "./source-map/vite.js";
 
 function appendChunk(body: string, chunk: unknown): string {
   if (typeof chunk === "string") {
