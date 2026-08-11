@@ -25,18 +25,18 @@ import { BrowserRouter } from "react-router-dom";
 import "./index.css";
 import App from "./App.tsx";
 
-import { init } from "@swifty.js/sentry";
-// import {
-//   PerformancePlugin,
-//   ScreenRecordPlugin,
-//   ExposurePlugin,
-// } from "@swifty.js/sentry/plugins";
+import { enablePlugin, init } from "@swifty.js/sentry";
+import {
+  PerformancePlugin,
+  ScreenRecordPlugin,
+  ExposurePlugin,
+} from "@swifty.js/sentry/plugins";
 import { startErrorSeeder } from "./crash/seeder";
 
 init({ dsn: "/api/log", debug: true });
-// enablePlugin(new PerformancePlugin());
-// enablePlugin(new ScreenRecordPlugin());
-// enablePlugin(new ExposurePlugin());
+enablePlugin(new PerformancePlugin());
+enablePlugin(new ScreenRecordPlugin());
+enablePlugin(new ExposurePlugin());
 
 // Plant probabilistic errors of every SDK-collectible type (must run after
 // init so the capture listeners are already installed). See ./dev/error-seeder.

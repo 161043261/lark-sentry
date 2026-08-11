@@ -22,7 +22,13 @@
 
 // @ts-check
 
-import { readdirSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
+import {
+  readdirSync,
+  existsSync,
+  mkdirSync,
+  writeFileSync,
+  readFileSync,
+} from "node:fs";
 import { join, relative, dirname, sep } from "node:path";
 
 /**
@@ -112,5 +118,9 @@ export function generateRoutes(pagesDir, outputFile) {
   ].join("\n");
 
   mkdirSync(outputDir, { recursive: true });
+
+  if (existsSync(outputFile) && readFileSync(outputFile, "utf-8") === content) {
+    return;
+  }
   writeFileSync(outputFile, content, "utf-8");
 }

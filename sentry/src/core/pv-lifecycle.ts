@@ -93,7 +93,7 @@ export function initPageView(): void {
 }
 
 export function recordRoutePageView(to: string, from: string, name: string): void {
-  const baseUrl = globalThis.location?.href ?? "http://localhost";
+  const baseUrl = globalThis.location.href;
   const normalizedTo = new URL(to, baseUrl).href;
   const normalizedFrom = new URL(from, baseUrl).href;
   if (currentPage?.url === normalizedTo) {

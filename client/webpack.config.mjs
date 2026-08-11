@@ -114,6 +114,7 @@ export default (env, argv) => {
     config.devServer = {
       port: 5174,
       historyApiFallback: true,
+      client: { overlay: false },
       proxy: [
         {
           context: ["/api", "/static"],

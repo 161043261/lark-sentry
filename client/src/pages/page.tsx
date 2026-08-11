@@ -35,13 +35,7 @@ function Home() {
       try {
         const response = await fetch("/api/movie");
         const data = await response.json();
-
-        if (data.movies && data.movies.length > 0) {
-          const randomIndex = Math.floor(Math.random() * data.movies.length);
-          const count = Math.min(20, data.movies.length);
-          const movies = data.movies.slice(randomIndex, randomIndex + count);
-          setMovieList(movies);
-        }
+        setMovieList(data.movies ?? []);
       } catch (err) {
         console.error(err);
         setMovieList([]);
