@@ -31,9 +31,9 @@ import {
   resolveFrame as resolveFrameWithLoader,
   resolveStack as resolveStackWithLoader,
   splitScriptUrl,
-} from "./sourcemap.js";
+} from "./source-map.js";
 
-export { parseStack, type RawFrame, type ResolvedFrame, type SnippetLine } from "./sourcemap.js";
+export { parseStack, type RawFrame, type ResolvedFrame, type SnippetLine } from "./source-map.js";
 
 interface MinimalModuleNode {
   transformResult?: { map?: unknown } | null;
