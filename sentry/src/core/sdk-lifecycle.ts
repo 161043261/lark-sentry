@@ -46,6 +46,10 @@ export function destroy(): void {
 }
 
 export function init(options: InitOptions): void {
+  if (isInitialized()) {
+    sentryLogger.info("SDK already initialized");
+    return;
+  }
   const parsedOptions = optionsSchema.parse({ ...DEFAULT_OPTIONS, ...options });
   sentry.setOptions(parsedOptions);
   const { dsn } = sentry.options;
@@ -55,10 +59,6 @@ export function init(options: InitOptions): void {
   }
   if (dsn === "") {
     sentryLogger.error("Initialization failed: DSN is empty");
-    return;
-  }
-  if (isInitialized()) {
-    sentryLogger.info("SDK already initialized");
     return;
   }
   sentryLogger.info("SDK initialized", {

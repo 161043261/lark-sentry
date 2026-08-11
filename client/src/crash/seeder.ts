@@ -36,12 +36,15 @@
  *   - EventType.Resource (an <img> element whose src returns 404)
  *   - EventType.Fetch (HTTP 4xx response captured by the fetch decoration)
  *   - EventType.Fetch with statusCode 0 (network-level fetch failure)
+ *   - EventType.Xhr (HTTP 4xx response captured by the XMLHttpRequest
+ *     decoration; the app itself only uses fetch, so this seed keeps the
+ *     XHR capture path exercised)
  *   - EventType.Error via the manual traceError() API
  *   - Batch error aggregation (>= 5 errors sharing the same
  *     type-name-message within a 2s window collapse into one batch report)
  *
  * The React render error (EventType.React) is seeded separately by the
- * <RandomCrash /> component, see ./random-crash.tsx.
+ * <RandomCrash /> component, see ./index.tsx.
  */
 
 import { traceError } from "@swifty.js/sentry";
@@ -211,6 +214,19 @@ function seedBatchErrorBurst(): void {
   }, 250);
 }
 
+/**
+ * Seed 10 — HTTP 4xx XHR error (probability 6% per tick).
+ *
+ * The movie app itself only uses fetch, so without this seed the SDK's
+ * XMLHttpRequest open/send decoration would never fire. A 404 response
+ * classifies as Status.Error and is reported as EventType.Xhr.
+ */
+function seedXhrNotFound(): void {
+  const xhr = new XMLHttpRequest();
+  xhr.open("GET", "/api/__seeded_missing_xhr_endpoint__");
+  xhr.send();
+}
+
 /** A seed pairs a per-tick trigger probability with its error generator. */
 interface ErrorSeed {
   /** Probability (0-1) that this seed fires on a single tick. */
@@ -261,6 +277,11 @@ const SEEDS: readonly ErrorSeed[] = [
     probability: 0.03,
     label: "batch error burst",
     trigger: seedBatchErrorBurst,
+  },
+  {
+    probability: 0.06,
+    label: "XHR HTTP 404",
+    trigger: seedXhrNotFound,
   },
 ];
 

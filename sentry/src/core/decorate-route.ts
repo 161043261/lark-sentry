@@ -59,12 +59,14 @@ export function pubHistory(): Cleanup {
 
   const historyDecorator = (oldPropsVal: History["pushState"]) => {
     return function (this: History, data: unknown, unused: string, url?: string | URL | null) {
-      if (url) {
-        const from = latestHref;
-        const to = normalizeRouteUrl(url);
-        if (from === to) {
-          return oldPropsVal.call(this, data, unused, url);
-        }
+      if (!url) {
+        return oldPropsVal.call(this, data, unused, url);
+      }
+      const from = latestHref;
+      const to = normalizeRouteUrl(url);
+      // Apply the navigation first so handlers observe the destination href
+      const result = oldPropsVal.call(this, data, unused, url);
+      if (from !== to) {
         latestHref = to;
         pub(EventType.History, {
           ...getBaseData(),
@@ -73,7 +75,7 @@ export function pubHistory(): Cleanup {
           to,
         });
       }
-      return oldPropsVal.call(this, data, unused, url);
+      return result;
     };
   };
   const cleanupPushState = decorateProp(globalThis.history, "pushState", historyDecorator);

@@ -3,6 +3,7 @@
     "adduser",
     "beforeunload",
     "Cascadia",
+    "dedup",
     "esbuild",
     "fingerprintjs",
     "GOPATH",
