@@ -23,6 +23,7 @@ packages:
   - client
   - client-react16
   - client-react17
+  - client-react18
   - server
 
 allowBuilds:
