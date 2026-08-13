@@ -65,3 +65,6 @@ export function Toolbar() {
     </header>
   );
 }
+
+// React16 component stack
+Toolbar.displayName = "Toolbar";

@@ -103,3 +103,5 @@ export function RandomCrash() {
     </ReactErrorBoundary>
   );
 }
+
+RandomCrash.displayName = "RandomCrash";

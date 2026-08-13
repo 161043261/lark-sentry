@@ -39,6 +39,8 @@ export default defineConfig([
     files: ["client/**/*.{ts,tsx}",
       "client-react16/**/*.{ts,tsx}",
       "client-react17/**/*.{ts,tsx}",
+      "client-react18/**/*.{ts,tsx}",
+      "sentry/**/*.{ts,tsx}",
     ],
     extends: [js.configs.recommended, tseslint.configs.recommended,      reactHooks.configs.flat.recommended,
       reactRefresh.configs.vite,],

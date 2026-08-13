@@ -71,3 +71,6 @@ export function MovieCard({ movie }: MovieCardProps) {
     </article>
   );
 }
+
+// React16 component stack
+MovieCard.displayName = "MovieCard";

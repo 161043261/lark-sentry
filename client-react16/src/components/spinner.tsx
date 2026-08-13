@@ -29,3 +29,6 @@ export function Spinner() {
     </div>
   );
 }
+
+// React16 component stack
+Spinner.displayName = "Spinner";

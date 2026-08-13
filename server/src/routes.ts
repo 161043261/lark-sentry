@@ -48,12 +48,20 @@ export function registerRoutes(app: Koa) {
   const router = new Router();
 
   router.post("/api/log", async (ctx) => {
+    // Swallow premature-close errors: the SDK may abort the request (page
+    // navigation, HMR reload) before we finish writing the response. The log
+    // data is already consumed at that point, so the error is harmless.
+    ctx.res.on("error", () => {
+      /** noop */
+    });
+
     let body: Buffer;
     try {
       body = await getRawBody(ctx.req, {
         limit: cfg.getConfig().server.body_limit,
       });
     } catch (err) {
+      if (ctx.res.destroyed) return;
       ctx.status = 413;
       ctx.body = {
         code: 413,
@@ -77,12 +85,15 @@ export function registerRoutes(app: Koa) {
       if (errorLogger) {
         errorLogger.error(`Failed to write log: ${error}`);
       }
+      if (ctx.res.destroyed) return;
       ctx.status = 500;
       ctx.body = { code: 500, message: "Failed to process log" };
       return;
     }
 
-    ctx.body = { code: 0, message: "Success" };
+    // 204 No Content: nothing to write back, so a client disconnect can never
+    // trigger ERR_STREAM_PREMATURE_CLOSE on the response stream.
+    ctx.status = 204;
   });
 
   router.get("/api/health", async (ctx) => {

@@ -49,3 +49,6 @@ export function MovieList({ movieList }: MovieListProps) {
     </div>
   );
 }
+
+// React16 component stack
+MovieList.displayName = "MovieList";

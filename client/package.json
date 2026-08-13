@@ -6,11 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "preview": "vite preview",
     "dev:webpack": "webpack serve --config webpack.config.mjs --mode development",
     "build:webpack": "tsc -b && webpack --config webpack.config.mjs --mode production",
     "preview:webpack": "vite preview --outDir dist-webpack",
-    "lint": "eslint .",
-    "preview": "vite preview",
     "format": "prettier -w ./"
   },
   "dependencies": {
