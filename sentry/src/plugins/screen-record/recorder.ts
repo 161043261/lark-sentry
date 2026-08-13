@@ -29,10 +29,9 @@ let pakoInstance: typeof import("pako") | null = null;
 
 type Cleanup = () => void;
 
-const recordEventSchema = z
-  .looseObject({
-    timestamp: z.number(),
-  });
+const recordEventSchema = z.looseObject({
+  timestamp: z.number(),
+});
 
 type RecordEvent = z.infer<typeof recordEventSchema>;
 

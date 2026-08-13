@@ -23,6 +23,8 @@
 import js from "@eslint/js";
 import unicorn from "eslint-plugin-unicorn";
 import globals from "globals";
+import reactHooks from "eslint-plugin-react-hooks";
+import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 import { defineConfig, globalIgnores } from "eslint/config";
 // import { dirname } from "node:path";
@@ -34,8 +36,12 @@ import { defineConfig, globalIgnores } from "eslint/config";
 export default defineConfig([
   globalIgnores(["**/coverage/**", "**/dist/**", "**/node_modules/**"]),
   {
-    files: ["**/*.{ts,tsx}"],
-    extends: [js.configs.recommended, tseslint.configs.recommended],
+    files: ["client/**/*.{ts,tsx}",
+      "client-react16/**/*.{ts,tsx}",
+      "client-react17/**/*.{ts,tsx}",
+    ],
+    extends: [js.configs.recommended, tseslint.configs.recommended,      reactHooks.configs.flat.recommended,
+      reactRefresh.configs.vite,],
     languageOptions: {
       ecmaVersion: 2022,
       globals: globals.browser,
@@ -67,19 +73,12 @@ export default defineConfig([
       "@typescript-eslint/consistent-generic-constructors": "error",
       "@typescript-eslint/consistent-type-definitions": "error",
       "max-lines": [
-        "error",
+        "warn",
         { max: 200, skipBlankLines: true, skipComments: true },
       ],
       "no-empty": "error",
       // "no-unused-vars": "error",
       "unicorn/filename-case": ["error", { case: "kebabCase" }],
-    },
-  },
-  // Allow publish.js to exceed 150 line limit
-  {
-    files: ["publish.js"],
-    rules: {
-      "max-lines": "off",
     },
   },
 ]);

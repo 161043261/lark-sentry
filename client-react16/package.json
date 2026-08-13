@@ -1,0 +1,32 @@
+{
+  "name": "client-react16",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "format": "prettier -w --experimental-cli ./"
+  },
+  "dependencies": {
+    "@swifty.js/sentry": "workspace:^",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.23.0",
+    "react": "^16.14.0",
+    "react-dom": "^16.14.0",
+    "react-router-dom": "^5.3.4",
+    "tailwindcss": "^4.3.2"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.2",
+    "@types/node": "^24.13.2",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@types/react-router-dom": "^5.3.3",
+    "@vitejs/plugin-react": "^6.0.3",
+    "prettier": "^3.9.4",
+    "typescript": "~5.9.3",
+    "vite": "^8.1.3"
+  }
+}

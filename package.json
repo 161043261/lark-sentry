@@ -11,18 +11,24 @@
   "scripts": {
     "prepare": "husky && pnpm --filter @swifty.js/sentry build",
     "lint": "eslint ./sentry --fix",
-    "format": "concurrently \"pnpm --filter @swifty.js/sentry format\" \"pnpm --filter client format\" \"pnpm --filter server format\"",
+    "format": "concurrently \"pnpm --filter @swifty.js/sentry format\" \"pnpm --filter client format\" \"pnpm --filter client-react16 format\" \"pnpm --filter client-react17 format\" \"pnpm --filter server format\"",
     "client": "pnpm --filter client dev",
     "client:webpack": "pnpm --filter client dev:webpack",
+    "client:react16": "pnpm --filter client-react16 dev",
+    "client:react17": "pnpm --filter client-react17 dev",
     "server": "pnpm --filter server dev",
     "dev": "concurrently \"pnpm client\" \"pnpm server\"",
     "dev:webpack": "concurrently \"pnpm client:webpack\" \"pnpm server\"",
+    "dev:react16": "concurrently \"pnpm client:react16\" \"pnpm server\"",
+    "dev:react17": "concurrently \"pnpm client:react17\" \"pnpm server\"",
     "git:commit": "git add -A && git commit -m \"feat: Introduce new features\"",
     "git:push": "pnpm git:commit && git push origin main"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
     "@types/node": "^25.9.4",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.3",
     "concurrently": "^10.0.3",
     "eslint": "^9.39.4",
     "eslint-plugin-unicorn": "^64.0.0",
@@ -33,8 +39,8 @@
     "typescript-eslint": "^8.62.1"
   },
   "lint-staged": {
-    "./sentry/*.{js,cjs,mjs,jsx,ts,tsx,html,css,scss,json}": [
-      "pnpm format"
+    "./*.{js,cjs,mjs,jsx,ts,tsx,html,css,scss,json}": [
+      "sh -c 'pnpm format'"
     ]
   }
 }

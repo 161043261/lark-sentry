@@ -21,6 +21,8 @@
 packages:
   - sentry
   - client
+  - client-react16
+  - client-react17
   - swifty.js
   - angular
   - server
