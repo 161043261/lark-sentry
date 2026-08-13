@@ -1,7 +1,7 @@
 import ReactDOM from "react-dom";
 import { BrowserRouter } from "react-router-dom";
 import "./index.css";
-import App from "./App.tsx";
+import App from "./app.tsx";
 
 import { enablePlugin, init } from "@swifty.js/sentry";
 import {
