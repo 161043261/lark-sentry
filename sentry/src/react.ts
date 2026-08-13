@@ -84,6 +84,9 @@ export class ReactErrorBoundary extends Component<
   ReactErrorBoundaryProps,
   ReactErrorBoundaryState
 > {
+  // React16 component stack
+  static displayName = "ReactErrorBoundary";
+
   override state: ReactErrorBoundaryState = {};
 
   /**

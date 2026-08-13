@@ -46,6 +46,9 @@ function NotFound() {
   );
 }
 
+// React16 component stack
+NotFound.displayName = "NotFound";
+
 function App() {
   return (
     <FavoriteProvider>
@@ -66,5 +69,8 @@ function App() {
     </FavoriteProvider>
   );
 }
+
+// React16 component stack
+App.displayName = "App";
 
 export default App;

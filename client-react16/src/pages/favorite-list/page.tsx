@@ -34,4 +34,7 @@ function FavoriteList() {
   );
 }
 
+// React16 component stack
+FavoriteList.displayName = "FavoriteList";
+
 export default FavoriteList;

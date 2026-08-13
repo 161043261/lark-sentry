@@ -67,6 +67,9 @@ function CrashingProbe({ shouldCrash }: CrashingProbeProps) {
   return null;
 }
 
+// React16 component stack
+CrashingProbe.displayName = "CrashingProbe";
+
 /**
  * Drop-in, visually inert component. Mount once anywhere in the tree to seed
  * probabilistic EventType.React reports.
@@ -104,4 +107,5 @@ export function RandomCrash() {
   );
 }
 
+// React16 component stack
 RandomCrash.displayName = "RandomCrash";

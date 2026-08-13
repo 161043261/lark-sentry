@@ -93,4 +93,7 @@ function SearchList() {
   );
 }
 
+// React16 component stack
+SearchList.displayName = "SearchList";
+
 export default SearchList;

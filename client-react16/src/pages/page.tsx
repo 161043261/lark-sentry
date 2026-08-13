@@ -59,4 +59,7 @@ function Home() {
   );
 }
 
+// React16 component stack
+Home.displayName = "Home";
+
 export default Home;

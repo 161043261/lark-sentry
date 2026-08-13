@@ -34,6 +34,8 @@ interface FavoriteContextType {
 const FavoriteContext = createContext<FavoriteContextType | undefined>(
   undefined,
 );
+
+// React16 component stack
 FavoriteContext.displayName = "FavoriteContext";
 
 const STORAGE_KEY = "favorite-list";
@@ -72,6 +74,8 @@ export function FavoriteProvider({ children }: { children: ReactNode }) {
     </FavoriteContext.Provider>
   );
 }
+
+// React16 component stack
 FavoriteProvider.displayName = "FavoriteProvider";
 
 // eslint-disable-next-line react-refresh/only-export-components
