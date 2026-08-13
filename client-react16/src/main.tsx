@@ -25,20 +25,23 @@ import { BrowserRouter } from "react-router-dom";
 import "./index.css";
 import App from "./app.tsx";
 
-import { enablePlugin, init } from "@swifty.js/sentry";
-import {
-  PerformancePlugin,
-  ScreenRecordPlugin,
-  ExposurePlugin,
-} from "@swifty.js/sentry/plugins";
-import { startErrorSeeder } from "./crash/seeder";
+import { init } from "@swifty.js/sentry";
 
-init({ dsn: "/api/log", debug: true });
-enablePlugin(new PerformancePlugin());
-enablePlugin(new ScreenRecordPlugin());
-enablePlugin(new ExposurePlugin());
-
-startErrorSeeder();
+init({
+  dsn: "/api/log",
+  debug: true,
+  enableXhr: false,
+  enableFetch: false,
+  enableClick: false,
+  enableError: false,
+  enableUnhandledRejection: false,
+  enableHashChange: false,
+  enableHistory: false,
+  enablePerformance: false,
+  enableScreenRecord: false,
+  enableWhiteScreen: false,
+  enableFingerprint: false,
+});
 
 ReactDOM.render(
   <BrowserRouter>
