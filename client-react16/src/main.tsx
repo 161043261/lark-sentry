@@ -18,9 +18,7 @@ enablePlugin(new ExposurePlugin());
 
 startErrorSeeder();
 
-// react-dom@16 runtime has render; @types/react-dom@19 doesn't type it
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-(ReactDOM as any).render(
+ReactDOM.render(
   <BrowserRouter>
     <App />
   </BrowserRouter>,

@@ -1,9 +1,10 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import pageRoutes from "./plugins/vite-plugin-page-routes";
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [pageRoutes(), react(), tailwindcss()],
   optimizeDeps: {
     exclude: ["@swifty.js/sentry"],
   },
