@@ -46,6 +46,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { StatCard } from "@/components/stat-card";
+import { PageSkeleton } from "@/components/page-skeleton";
 import { ScreenRecordCard } from "@/components/screen-record-card";
 import { Bug, CircleAlert, Layers, MonitorSmartphone } from "lucide-react";
 import { useLogs } from "@/lib/use-logs";
@@ -270,7 +271,9 @@ export default function ErrorsPage() {
     filtered.find((event, index) => eventKey(event, index) === selectedKey) ??
     filtered[0];
 
-  if (!loading && errors.length === 0) {
+  if (loading) return <PageSkeleton />;
+
+  if (errors.length === 0) {
     return (
       <Empty>
         <EmptyHeader>

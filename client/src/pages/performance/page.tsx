@@ -50,6 +50,7 @@ import {
   EmptyHeader,
   EmptyTitle,
 } from "@/components/ui/empty";
+import { PageSkeleton } from "@/components/page-skeleton";
 import { useLogs } from "@/lib/use-logs";
 import { formatBytes, formatMs, formatVital, latestVitals } from "@/lib/stats";
 import {
@@ -218,7 +219,9 @@ export default function PerformancePage() {
     [longTasks],
   );
 
-  if (!loading && perfEvents.length === 0) {
+  if (loading) return <PageSkeleton />;
+
+  if (perfEvents.length === 0) {
     return (
       <Empty>
         <EmptyHeader>

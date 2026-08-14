@@ -54,6 +54,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { StatCard } from "@/components/stat-card";
+import { PageSkeleton } from "@/components/page-skeleton";
 import { useLogs } from "@/lib/use-logs";
 import { useExposure } from "@/lib/exposure";
 import {
@@ -134,7 +135,9 @@ export default function OverviewPage() {
   const pieCardRef = useExposure({ card: "event-distribution", page: "/" });
   const recentErrorsCardRef = useExposure({ card: "recent-errors", page: "/" });
 
-  if (!loading && events.length === 0) {
+  if (loading) return <PageSkeleton />;
+
+  if (events.length === 0) {
     return (
       <Empty>
         <EmptyHeader>

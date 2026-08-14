@@ -52,6 +52,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { StatCard } from "@/components/stat-card";
+import { PageSkeleton } from "@/components/page-skeleton";
 import { useLogs } from "@/lib/use-logs";
 import {
   formatDateTime,
@@ -186,7 +187,9 @@ export default function NetworkPage() {
 
   const recent = useMemo(() => requests.slice(-100).reverse(), [requests]);
 
-  if (!loading && requests.length === 0) {
+  if (loading) return <PageSkeleton />;
+
+  if (requests.length === 0) {
     return (
       <Empty>
         <EmptyHeader>

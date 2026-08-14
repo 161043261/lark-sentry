@@ -58,6 +58,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { StatCard } from "@/components/stat-card";
+import { PageSkeleton } from "@/components/page-skeleton";
 import { useLogs } from "@/lib/use-logs";
 import { useExposure } from "@/lib/exposure";
 import {
@@ -177,7 +178,9 @@ export default function BehaviorPage() {
   const hasData =
     pvEvents.length + clickEvents.length + exposureEvents.length > 0;
 
-  if (!loading && !hasData) {
+  if (loading) return <PageSkeleton />;
+
+  if (!hasData) {
     return (
       <Empty>
         <EmptyHeader>

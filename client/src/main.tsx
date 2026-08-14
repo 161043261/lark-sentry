@@ -44,6 +44,9 @@ init({
   // Report successful fetch/XHR as Performance "HTTP <method>" events so the
   // network page can compute a real failure rate (errors are always reported).
   enableHttpPerformance: true,
+  // Don't monitor the dashboard's own log polling: self-reported polls would
+  // grow the log on every refresh and defeat the events endpoint's ETag/304.
+  excludeApis: [/\/api\/logs\//],
 });
 enablePlugin(new PerformancePlugin(), new ScreenRecordPlugin(), exposurePlugin);
 
