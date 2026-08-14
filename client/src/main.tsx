@@ -29,8 +29,8 @@ import { enablePlugin, init } from "@swifty.js/sentry";
 import {
   PerformancePlugin,
   ScreenRecordPlugin,
-  ExposurePlugin,
 } from "@swifty.js/sentry/plugins";
+import { exposurePlugin } from "./lib/exposure";
 import { startErrorSeeder } from "./crash/seeder";
 
 document.documentElement.classList.toggle(
@@ -38,12 +38,14 @@ document.documentElement.classList.toggle(
   localStorage.getItem("dashboard-theme") !== "light",
 );
 
-init({ dsn: "/api/log", debug: true });
-enablePlugin(
-  new PerformancePlugin(),
-  new ScreenRecordPlugin(),
-  new ExposurePlugin(),
-);
+init({
+  dsn: "/api/log",
+  debug: true,
+  // Report successful fetch/XHR as Performance "HTTP <method>" events so the
+  // network page can compute a real failure rate (errors are always reported).
+  enableHttpPerformance: true,
+});
+enablePlugin(new PerformancePlugin(), new ScreenRecordPlugin(), exposurePlugin);
 
 // Plant probabilistic errors of every SDK-collectible type (must run after
 // init so the capture listeners are already installed). See ./dev/error-seeder.

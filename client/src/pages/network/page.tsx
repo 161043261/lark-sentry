@@ -54,13 +54,14 @@ import {
 import { StatCard } from "@/components/stat-card";
 import { useLogs } from "@/lib/use-logs";
 import {
-  countBy,
   formatDateTime,
   formatMs,
-  isFailedHttp,
   isHttpEvent,
+  isHttpPerfEvent,
   shortUrl,
 } from "@/lib/stats";
+import type { ReportEvent } from "@/lib/log-types";
+import { z } from "zod";
 
 const statusConfig = {
   count: { label: "Count", color: "var(--chart-2)" },
@@ -78,38 +79,98 @@ function statusBadgeVariant(
   return "secondary";
 }
 
+const httpPerfExtraSchema = z.object({
+  method: z.string().optional().catch(undefined),
+  statusCode: z.number().optional().catch(undefined),
+});
+
+/** One HTTP request, normalized from either a failure or a success report. */
+interface RequestRow {
+  key: string;
+  timestamp: number;
+  method: string;
+  transport: string;
+  api: string;
+  statusCode: number | undefined;
+  elapsedTime: number | undefined;
+  failed: boolean;
+}
+
+function toRequestRow(event: ReportEvent, index: number): RequestRow | null {
+  const payload = event.payload;
+  const key = payload?.id ?? `${event.timestamp}-${index}`;
+  if (isHttpEvent(event)) {
+    return {
+      key,
+      timestamp: event.timestamp,
+      method: payload?.method ?? "GET",
+      transport: event.type === "fetch" ? "fetch" : "XHR",
+      api: payload?.api ?? event.message,
+      statusCode: payload?.statusCode,
+      elapsedTime: payload?.elapsedTime,
+      failed: event.status === "Error",
+    };
+  }
+  if (isHttpPerfEvent(event)) {
+    const extra = httpPerfExtraSchema.safeParse(payload?.extra);
+    return {
+      key,
+      timestamp: event.timestamp,
+      method:
+        (extra.success ? extra.data.method : undefined) ??
+        event.name.replace(/^HTTP /, ""),
+      transport: "http",
+      api: event.message,
+      statusCode: extra.success ? extra.data.statusCode : undefined,
+      elapsedTime: payload?.value,
+      failed: false,
+    };
+  }
+  return null;
+}
+
 export default function NetworkPage() {
   const { events, loading } = useLogs();
 
-  const requests = useMemo(() => events.filter(isHttpEvent), [events]);
-  const failed = useMemo(() => requests.filter(isFailedHttp), [requests]);
+  const requests = useMemo(
+    () =>
+      events.map(toRequestRow).filter((row): row is RequestRow => row !== null),
+    [events],
+  );
+  const failed = useMemo(
+    () => requests.filter((row) => row.failed),
+    [requests],
+  );
 
   const avgElapsed = useMemo(() => {
     const spans = requests
-      .map((event) => event.payload?.elapsedTime)
+      .map((row) => row.elapsedTime)
       .filter((value): value is number => typeof value === "number");
     if (spans.length === 0) return 0;
     return spans.reduce((sum, value) => sum + value, 0) / spans.length;
   }, [requests]);
 
-  const statusData = useMemo(
-    () =>
-      countBy(requests, (event) => {
-        const code = event.payload?.statusCode;
-        if (code === 0) return "Network Failure";
-        return String(code ?? "Unknown");
-      }).map((item) => ({ status: item.label, count: item.count })),
-    [requests],
-  );
+  const statusData = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const row of requests) {
+      const label =
+        row.statusCode === 0
+          ? "Network Failure"
+          : String(row.statusCode ?? "Unknown");
+      counts.set(label, (counts.get(label) ?? 0) + 1);
+    }
+    return [...counts.entries()]
+      .map(([status, count]) => ({ status, count }))
+      .sort((a, b) => b.count - a.count);
+  }, [requests]);
 
   const apiLatency = useMemo(() => {
     const groups = new Map<string, { total: number; count: number }>();
-    for (const event of requests) {
-      const api = shortUrl(event.payload?.api, 40);
-      const elapsed = event.payload?.elapsedTime;
-      if (typeof elapsed !== "number") continue;
+    for (const row of requests) {
+      if (typeof row.elapsedTime !== "number") continue;
+      const api = shortUrl(row.api, 40);
       const group = groups.get(api) ?? { total: 0, count: 0 };
-      group.total += elapsed;
+      group.total += row.elapsedTime;
       group.count += 1;
       groups.set(api, group);
     }
@@ -217,7 +278,9 @@ export default function NetworkPage() {
       <Card>
         <CardHeader>
           <CardTitle>Request Details</CardTitle>
-          <CardDescription>Latest 100 fetch / XHR reports</CardDescription>
+          <CardDescription>
+            Latest 100 requests (fetch / XHR failures and successes)
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -232,39 +295,33 @@ export default function NetworkPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {recent.map((event, index) => (
-                <TableRow
-                  key={event.payload?.id ?? `${event.timestamp}-${index}`}
-                >
+              {recent.map((row) => (
+                <TableRow key={row.key}>
                   <TableCell className="text-muted-foreground text-xs tabular-nums">
-                    {formatDateTime(event.timestamp)}
+                    {formatDateTime(row.timestamp)}
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline">
-                      {event.payload?.method ?? "GET"}
-                    </Badge>
+                    <Badge variant="outline">{row.method}</Badge>
                   </TableCell>
                   <TableCell className="text-muted-foreground text-xs">
-                    {event.type === "fetch" ? "fetch" : "XHR"}
+                    {row.transport}
                   </TableCell>
                   <TableCell className="max-w-0">
                     <span
                       className="block truncate font-mono text-xs"
-                      title={event.payload?.api}
+                      title={row.api}
                     >
-                      {shortUrl(event.payload?.api, 80)}
+                      {shortUrl(row.api, 80)}
                     </span>
                   </TableCell>
                   <TableCell>
-                    <Badge
-                      variant={statusBadgeVariant(event.payload?.statusCode)}
-                    >
-                      {event.payload?.statusCode ?? "-"}
+                    <Badge variant={statusBadgeVariant(row.statusCode)}>
+                      {row.statusCode ?? "-"}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right text-xs tabular-nums">
-                    {typeof event.payload?.elapsedTime === "number"
-                      ? formatMs(event.payload.elapsedTime)
+                    {typeof row.elapsedTime === "number"
+                      ? formatMs(row.elapsedTime)
                       : "-"}
                   </TableCell>
                 </TableRow>

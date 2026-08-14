@@ -218,9 +218,11 @@ const extraStackRecordSchema = z.object({
 });
 
 const frameworkStackRecordSchema = z.object({
-  type: z.union([z.literal("React"), z.literal("Vue")]),
+  type: z.union([z.literal("React"), z.literal("Vue"), z.literal("OtherFrameworks")]),
   payload: z.object({
-    stack: z.string(),
+    // Legacy SDK shape kept as fallback; current SDKs nest the stack in extra.
+    stack: z.string().optional(),
+    extra: z.looseObject({ stack: z.string().optional() }).optional(),
   }),
 });
 
@@ -238,7 +240,9 @@ export async function enrichReportRecord(record: unknown): Promise<void> {
     } else {
       const fwResult = frameworkStackRecordSchema.safeParse(record);
       if (fwResult.success) {
-        frames.push(...(await resolveStack(fwResult.data.payload.stack)));
+        const { payload } = fwResult.data;
+        const stack = payload.extra?.stack ?? payload.stack;
+        if (stack) frames.push(...(await resolveStack(stack)));
       }
     }
   }

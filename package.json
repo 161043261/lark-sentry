@@ -10,7 +10,8 @@
   ],
   "scripts": {
     "prepare": "husky",
-    "lint": "eslint --fix",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "format": "concurrently \"pnpm --filter @swifty.js/sentry format\" \"pnpm --filter client format\" \"pnpm --filter server format\"",
     "typecheck": "concurrently \"pnpm --filter @swifty.js/sentry typecheck\" \"pnpm --filter client typecheck\" \"pnpm --filter server typecheck\"",
     "client:dev:webpack": "pnpm --filter client dev:webpack",

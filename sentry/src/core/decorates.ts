@@ -76,6 +76,16 @@ function pubClick(): Cleanup {
   };
 }
 
+function stringifyConsoleArg(arg: unknown): string {
+  if (typeof arg === "string") return arg;
+  if (arg instanceof Error) return arg.message;
+  try {
+    return JSON.stringify(arg) ?? String(arg);
+  } catch {
+    return String(arg);
+  }
+}
+
 function pubError(): Cleanup {
   const listener = function (ctx: ErrorEvent) {
     pub(EventType.Error, {
@@ -94,7 +104,8 @@ function pubError(): Cleanup {
           pub(EventType.Error, {
             ...getBaseData(),
             type: EventType.Error,
-            extra: args.find((arg) => arg instanceof Error) ?? args.join(" "),
+            extra:
+              args.find((arg) => arg instanceof Error) ?? args.map(stringifyConsoleArg).join(" "),
           });
         } finally {
           isPublishingConsoleError = false;

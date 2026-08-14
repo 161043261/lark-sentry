@@ -56,9 +56,9 @@ importers:
       '@base-ui/react':
         specifier: ^1.7.0
         version: 1.7.0(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
-      '@fontsource-variable/geist':
-        specifier: ^5.3.0
-        version: 5.3.0
+      '@rrweb/replay':
+        specifier: 2.1.0
+        version: 2.1.0
       '@swifty.js/sentry':
         specifier: workspace:^
         version: link:../sentry
@@ -1044,9 +1044,6 @@ packages:
   '@floating-ui/utils@0.2.12':
     resolution: {integrity: sha512-HpCo8tmWzLVad5s2d19EhAz5zqrrQ6s69qd6moPMQvkOuSwDT1YgRfWSVuc4ennqrgv3OHppiOGMQ7oC13yIww==}
 
-  '@fontsource-variable/geist@5.3.0':
-    resolution: {integrity: sha512-j0m+vLQuG5XAYoHtGCVu0spvlGreR3EzpECUVzkFmI1mTVnAO38l/NEPDCFgZ177JxzYJCLSmTQibIiYPilGrA==}
-
   '@grpc/grpc-js@1.14.4':
     resolution: {integrity: sha512-k9Dj3DV/itK9D06Y8f190Qgop7/Ui+D0njFV3LHMPwPT75DpXLQohE9Wmz0QElrJnzsjB7KPWiKJbOl7IPDArQ==}
     engines: {node: '>=12.10.0'}
@@ -1777,6 +1774,9 @@ packages:
 
   '@rrweb/record@2.1.0':
     resolution: {integrity: sha512-jnbpYQED6QdKn1MuEoqJyILkYhuWDhb3kzA/l1i+Di5sfP7apf3HvrlVIMoyZgATMlk2if65BUUrc5R+vabCjQ==}
+
+  '@rrweb/replay@2.1.0':
+    resolution: {integrity: sha512-a6s3Lzf4iIEL22o6+DHZrbjH/q6OIM9CFh/KzU6pDZ2mOYFP3u3Yd3IL57Oc9usnqFt/kNCvOjUf5JbBrQ9o7A==}
 
   '@rrweb/types@2.1.1':
     resolution: {integrity: sha512-g0I3nCNL1S7slDXwhunxOuOoswkY8WVZJQrPFiwixOc6xoD514d1JLTuyAzCKIox8g/PaLKtV5g31Uk42inQSQ==}
@@ -6398,8 +6398,6 @@ snapshots:
 
   '@floating-ui/utils@0.2.12': {}
 
-  '@fontsource-variable/geist@5.3.0': {}
-
   '@grpc/grpc-js@1.14.4':
     dependencies:
       '@grpc/proto-loader': 0.8.1
@@ -7017,6 +7015,11 @@ snapshots:
     dependencies:
       '@rrweb/types': 2.1.1
       '@rrweb/utils': 2.1.1
+      rrweb: 2.1.1
+
+  '@rrweb/replay@2.1.0':
+    dependencies:
+      '@rrweb/types': 2.1.1
       rrweb: 2.1.1
 
   '@rrweb/types@2.1.1': {}

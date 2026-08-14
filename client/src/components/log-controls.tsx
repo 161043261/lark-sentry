@@ -80,7 +80,7 @@ export function LogControls() {
           if (typeof value === "string") setSelectedFile(value);
         }}
       >
-        <SelectTrigger size="sm" className="w-56">
+        <SelectTrigger size="sm" className="w-100">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -101,7 +101,7 @@ export function LogControls() {
           if (typeof value === "string") setRefreshMs(Number(value));
         }}
       >
-        <SelectTrigger size="sm" className="w-36">
+        <SelectTrigger size="sm" className="w-40">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>

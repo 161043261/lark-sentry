@@ -46,11 +46,18 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { StatCard } from "@/components/stat-card";
+import { ScreenRecordCard } from "@/components/screen-record-card";
 import { Bug, CircleAlert, Layers, MonitorSmartphone } from "lucide-react";
 import { useLogs } from "@/lib/use-logs";
 import { cn } from "@/lib/utils";
-import { formatDateTime, isErrorEvent, shortUrl } from "@/lib/stats";
+import {
+  formatClock,
+  formatDateTime,
+  isErrorEvent,
+  shortUrl,
+} from "@/lib/stats";
 import type { ReportEvent, ResolvedFrame } from "@/lib/log-types";
+import { z } from "zod";
 
 const TYPE_TABS = [
   { value: "all", label: "All" },
@@ -58,17 +65,23 @@ const TYPE_TABS = [
   { value: "Event unhandledrejection", label: "Promise Rejections" },
   { value: "React", label: "React Crashes" },
   { value: "Resource", label: "Resource Loading" },
+  { value: "WhiteScreen", label: "White Screen" },
 ] as const;
 
 function eventKey(event: ReportEvent, index: number): string {
   return event.payload?.id ?? `${event.timestamp}-${index}`;
 }
 
+const stackExtraSchema = z.object({ stack: z.string() });
+
 function stackOf(event: ReportEvent): string | null {
   const payload = event.payload;
   if (!payload) return null;
   if (typeof payload.stack === "string") return payload.stack;
   if (typeof payload.extra === "string") return payload.extra;
+  // reportFrameworkError (React/Vue/OtherFrameworks) nests it in extra.stack
+  const extra = stackExtraSchema.safeParse(payload.extra);
+  if (extra.success) return extra.data.stack;
   return null;
 }
 
@@ -113,6 +126,7 @@ function FrameSnippet({ frame }: { frame: ResolvedFrame }) {
 function ErrorDetail({ event }: { event: ReportEvent }) {
   const stack = stackOf(event);
   const frames = event.sourcemap?.frames ?? [];
+  const breadcrumbs = (event.breadcrumbs ?? []).slice(-20);
   const device = event.deviceInfo;
   const payload = event.payload;
 
@@ -170,6 +184,36 @@ function ErrorDetail({ event }: { event: ReportEvent }) {
           <pre className="bg-muted/30 max-h-72 overflow-auto rounded-md border p-2 font-mono text-xs leading-5 whitespace-pre-wrap">
             {stack}
           </pre>
+        </>
+      ) : null}
+
+      {breadcrumbs.length > 0 ? (
+        <>
+          <Separator />
+          <p className="text-muted-foreground text-xs font-medium">
+            Breadcrumb Trail (last {breadcrumbs.length} actions before the
+            error)
+          </p>
+          <div className="flex max-h-56 flex-col gap-1 overflow-auto">
+            {breadcrumbs.map((item, index) => (
+              <div
+                key={`${item.timestamp}-${index}`}
+                className="flex items-center gap-2 text-xs"
+              >
+                <span className="text-muted-foreground w-14 shrink-0 tabular-nums">
+                  {formatClock(item.timestamp)}
+                </span>
+                <Badge
+                  variant={item.status === "Error" ? "destructive" : "outline"}
+                >
+                  {item.userAction || item.type}
+                </Badge>
+                <span className="text-muted-foreground min-w-0 flex-1 truncate">
+                  {item.message || item.name}
+                </span>
+              </div>
+            ))}
+          </div>
         </>
       ) : null}
 
@@ -341,6 +385,8 @@ export default function ErrorsPage() {
           </CardContent>
         </Card>
       </div>
+
+      <ScreenRecordCard events={events} />
     </div>
   );
 }

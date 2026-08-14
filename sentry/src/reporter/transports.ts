@@ -41,11 +41,16 @@ export async function reportByFetch(
   handleServerError: () => void,
 ): Promise<boolean> {
   try {
+    // Chromium rejects keepalive fetches over the ~64KB in-flight budget, so
+    // large batches (e.g. screen recordings) must fall back to a plain fetch
+    // or they would fail forever and stall the queue head.
+    const body = JSON.stringify(data);
+    const keepalive = new TextEncoder().encode(body).byteLength <= 60 * 1024;
     const res = await fetch(sentry.options.dsn, {
       method: "POST",
-      body: JSON.stringify(data),
+      body,
       headers: { "Content-Type": "application/json" },
-      keepalive: true,
+      keepalive,
     });
     if (!res.ok) handleServerError();
     return res.ok;

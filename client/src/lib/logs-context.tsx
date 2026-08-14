@@ -53,6 +53,24 @@ async function fetchJson<T>(
   return schema.parse(await res.json());
 }
 
+/**
+ * Transport retries make delivery at-least-once, so the same event (same
+ * payload.id) can be written to the logs twice. Keep the first occurrence.
+ */
+function dedupeEvents(list: ReportEvent[]): ReportEvent[] {
+  const seen = new Set<string>();
+  const result: ReportEvent[] = [];
+  for (const event of list) {
+    const id = event.payload?.id;
+    if (id) {
+      if (seen.has(id)) continue;
+      seen.add(id);
+    }
+    result.push(event);
+  }
+  return result;
+}
+
 export function LogsProvider({ children }: { children: ReactNode }) {
   const [files, setFiles] = useState<LogFileInfo[]>([]);
   const [selectedFile, setSelectedFile] = useState("all");
@@ -85,7 +103,7 @@ export function LogsProvider({ children }: { children: ReactNode }) {
         ]);
         if (cancelled) return;
         setFiles(fileList);
-        setEvents(response.events);
+        setEvents(dedupeEvents(response.events));
         setError(null);
         setLastUpdated(Date.now());
       } catch (cause) {

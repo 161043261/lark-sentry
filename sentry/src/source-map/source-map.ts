@@ -169,6 +169,17 @@ function isStackLike(value: string): boolean {
   return /(^|\n)\s*at .+:\d+:\d+/.test(value) || /@.+:\d+:\d+/.test(value);
 }
 
+const frameworkExtraSchema = z.looseObject({ stack: z.string().optional() });
+
+// reportFrameworkError nests the stack inside payload.extra; payload.stack is
+// kept as a legacy fallback for older SDK payload shapes.
+function frameworkStackOf(payload: { extra?: unknown; stack?: unknown }): string | null {
+  if (typeof payload.stack === "string") return payload.stack;
+  const extra = frameworkExtraSchema.safeParse(payload.extra);
+  if (extra.success && typeof extra.data.stack === "string") return extra.data.stack;
+  return null;
+}
+
 async function enrichRecord(loadMap: MapLoader, record: unknown): Promise<unknown> {
   const parsed = reportRecordSchema.safeParse(record);
   if (!parsed.success) return record;
@@ -188,8 +199,9 @@ async function enrichRecord(loadMap: MapLoader, record: unknown): Promise<unknow
     );
   } else if (typeof payload.extra === "string" && isStackLike(payload.extra)) {
     frames.push(...(await resolveStack(loadMap, payload.extra)));
-  } else if ((rec.type === "React" || rec.type === "Vue") && typeof payload.stack === "string") {
-    frames.push(...(await resolveStack(loadMap, payload.stack)));
+  } else if (rec.type === "React" || rec.type === "Vue" || rec.type === "OtherFrameworks") {
+    const stack = frameworkStackOf(payload);
+    if (stack) frames.push(...(await resolveStack(loadMap, stack)));
   }
 
   if (frames.length === 0) return record;

@@ -78,6 +78,13 @@ const navigationExtraSchema = z.object({
   contentTransfer: z.number().catch(0),
   domProcessing: z.number().catch(0),
   resourceLoad: z.number().catch(0),
+  paintTime: z.number().catch(0),
+  domInteractive: z.number().catch(0),
+  domContentLoaded: z.number().catch(0),
+  loadEvent: z.number().catch(0),
+  firstByte: z.number().catch(0),
+  redirect: z.number().catch(0),
+  unloadTime: z.number().catch(0),
 });
 
 type NavigationExtra = z.infer<typeof navigationExtraSchema>;
@@ -92,6 +99,33 @@ const NAVIGATION_FIELDS: Array<{ key: keyof NavigationExtra; label: string }> =
     { key: "domProcessing", label: "DOM Processing" },
     { key: "resourceLoad", label: "Resource Load" },
   ];
+
+/** Cumulative page-load milestones (measured from fetchStart). */
+const NAVIGATION_MILESTONES: Array<{
+  key: keyof NavigationExtra;
+  label: string;
+}> = [
+  { key: "firstByte", label: "First Byte" },
+  { key: "paintTime", label: "Paint" },
+  { key: "domInteractive", label: "DOM Interactive" },
+  { key: "domContentLoaded", label: "DOMContentLoaded" },
+  { key: "loadEvent", label: "Load Event" },
+  { key: "redirect", label: "Redirect" },
+  { key: "unloadTime", label: "Unload" },
+];
+
+const memorySchema = z.object({ bytes: z.number() });
+
+/** Latest performance.measureUserAgentSpecificMemory result, if any. */
+function latestMemoryBytes(events: ReportEvent[]): number | null {
+  for (let index = events.length - 1; index >= 0; index -= 1) {
+    const event = events[index];
+    if (event.type !== "Performance" || event.name !== "Memory") continue;
+    const parsed = memorySchema.safeParse(event.payload?.memory);
+    if (parsed.success) return parsed.data.bytes;
+  }
+  return null;
+}
 
 const navConfig = {
   value: { label: "Duration (ms)", color: "var(--chart-2)" },
@@ -177,6 +211,7 @@ export default function PerformancePage() {
   const navTiming = useMemo(() => latestNavigationTiming(events), [events]);
   const longTasks = useMemo(() => collectLongTasks(events), [events]);
   const resources = useMemo(() => collectResources(events), [events]);
+  const memoryBytes = useMemo(() => latestMemoryBytes(events), [events]);
 
   const totalBlocked = useMemo(
     () => longTasks.reduce((sum, task) => sum + task.duration, 0),
@@ -220,6 +255,16 @@ export default function PerformancePage() {
             </CardHeader>
           </Card>
         ))}
+        {memoryBytes !== null ? (
+          <Card className="gap-2 py-4">
+            <CardHeader className="px-4">
+              <CardDescription>Memory · JS Heap (UA-specific)</CardDescription>
+              <CardTitle className="text-2xl tabular-nums">
+                {formatBytes(memoryBytes)}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+        ) : null}
       </div>
 
       <div className="grid gap-6 xl:grid-cols-2">
@@ -230,22 +275,39 @@ export default function PerformancePage() {
           </CardHeader>
           <CardContent>
             {navData.length > 0 ? (
-              <ChartContainer config={navConfig} className="h-64 w-full">
-                <BarChart data={navData} layout="vertical">
-                  <CartesianGrid horizontal={false} />
-                  <XAxis type="number" tickLine={false} axisLine={false} />
-                  <YAxis
-                    dataKey="label"
-                    type="category"
-                    width={80}
-                    tickLine={false}
-                    axisLine={false}
-                    tick={{ fontSize: 11 }}
-                  />
-                  <ChartTooltip content={<ChartTooltipContent hideLabel />} />
-                  <Bar dataKey="value" fill="var(--color-value)" radius={4} />
-                </BarChart>
-              </ChartContainer>
+              <div className="flex flex-col gap-4">
+                <ChartContainer config={navConfig} className="h-64 w-full">
+                  <BarChart data={navData} layout="vertical">
+                    <CartesianGrid horizontal={false} />
+                    <XAxis type="number" tickLine={false} axisLine={false} />
+                    <YAxis
+                      dataKey="label"
+                      type="category"
+                      width={80}
+                      tickLine={false}
+                      axisLine={false}
+                      tick={{ fontSize: 11 }}
+                    />
+                    <ChartTooltip content={<ChartTooltipContent hideLabel />} />
+                    <Bar dataKey="value" fill="var(--color-value)" radius={4} />
+                  </BarChart>
+                </ChartContainer>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 md:grid-cols-3">
+                  {NAVIGATION_MILESTONES.map((milestone) => (
+                    <div
+                      key={milestone.key}
+                      className="flex items-baseline justify-between gap-2 text-xs"
+                    >
+                      <span className="text-muted-foreground truncate">
+                        {milestone.label}
+                      </span>
+                      <span className="tabular-nums">
+                        {formatMs(navTiming?.[milestone.key] ?? 0)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             ) : (
               <p className="text-muted-foreground text-sm">
                 No navigation timing data available

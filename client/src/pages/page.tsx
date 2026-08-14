@@ -55,13 +55,15 @@ import {
 } from "@/components/ui/empty";
 import { StatCard } from "@/components/stat-card";
 import { useLogs } from "@/lib/use-logs";
+import { useExposure } from "@/lib/exposure";
 import {
   buildTimeline,
   countByCategory,
   formatDateTime,
   isErrorEvent,
   isFailedHttp,
-  isHttpEvent,
+  isHttpRequestEvent,
+  isPageViewEvent,
   shortUrl,
   uniqueCount,
   type EventCategory,
@@ -107,13 +109,16 @@ export default function OverviewPage() {
     () => events.filter(isErrorEvent).length,
     [events],
   );
-  const httpCount = useMemo(() => events.filter(isHttpEvent).length, [events]);
+  const httpCount = useMemo(
+    () => events.filter(isHttpRequestEvent).length,
+    [events],
+  );
   const failedHttpCount = useMemo(
     () => events.filter(isFailedHttp).length,
     [events],
   );
   const pvCount = useMemo(
-    () => events.filter((event) => event.type === "PV").length,
+    () => events.filter(isPageViewEvent).length,
     [events],
   );
   const sessionCount = useMemo(
@@ -124,6 +129,10 @@ export default function OverviewPage() {
     () => uniqueCount(events, (event) => event.payload?.deviceId),
     [events],
   );
+
+  const trendCardRef = useExposure({ card: "event-trend", page: "/" });
+  const pieCardRef = useExposure({ card: "event-distribution", page: "/" });
+  const recentErrorsCardRef = useExposure({ card: "recent-errors", page: "/" });
 
   if (!loading && events.length === 0) {
     return (
@@ -165,7 +174,7 @@ export default function OverviewPage() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-3">
-        <Card className="xl:col-span-2">
+        <Card ref={trendCardRef} className="xl:col-span-2">
           <CardHeader>
             <CardTitle>Event Trend</CardTitle>
             <CardDescription>
@@ -201,7 +210,7 @@ export default function OverviewPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card ref={pieCardRef}>
           <CardHeader>
             <CardTitle>Event Type Distribution</CardTitle>
             <CardDescription>Proportion of each event category</CardDescription>
@@ -229,7 +238,7 @@ export default function OverviewPage() {
         </Card>
       </div>
 
-      <Card>
+      <Card ref={recentErrorsCardRef}>
         <CardHeader>
           <CardTitle>
             <Link to="/errors" className="hover:underline">

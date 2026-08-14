@@ -32,6 +32,7 @@ const ERROR_TYPES = new Set([
   "Event unhandledrejection",
   "React",
   "Vue",
+  "OtherFrameworks",
   "Resource",
   "WhiteScreen",
 ]);
@@ -45,10 +46,16 @@ const BEHAVIOR_TYPES = new Set([
   "Event hashchange",
 ]);
 
+/** Successful HTTP requests reported as Performance events ("HTTP GET" ...). */
+export function isHttpPerfEvent(event: ReportEvent): boolean {
+  return event.type === "Performance" && event.name.startsWith("HTTP ");
+}
+
 export function categoryOf(event: ReportEvent): EventCategory {
   if (ERROR_TYPES.has(event.type)) return "error";
   if (HTTP_TYPES.has(event.type)) return "http";
-  if (event.type === "Performance") return "performance";
+  if (event.type === "Performance")
+    return isHttpPerfEvent(event) ? "http" : "performance";
   if (event.type === "PV") return "pv";
   if (BEHAVIOR_TYPES.has(event.type)) return "behavior";
   if (event.type === "ScreenRecord") return "record";
@@ -72,11 +79,24 @@ export function isErrorEvent(event: ReportEvent): boolean {
 
 /** HTTP request events (Fetch/XHR). */
 export function isHttpEvent(event: ReportEvent): boolean {
-  return categoryOf(event) === "http";
+  return categoryOf(event) === "http" && HTTP_TYPES.has(event.type);
 }
 
 export function isFailedHttp(event: ReportEvent): boolean {
   return isHttpEvent(event) && event.status === "Error";
+}
+
+/**
+ * Any HTTP request report: failures arrive as fetch/XHR events, successes as
+ * Performance events named "HTTP <method>" (requires enableHttpPerformance).
+ */
+export function isHttpRequestEvent(event: ReportEvent): boolean {
+  return isHttpEvent(event) || isHttpPerfEvent(event);
+}
+
+/** True page-view records; excludes PageDwell dwell-time reports. */
+export function isPageViewEvent(event: ReportEvent): boolean {
+  return event.type === "PV" && event.name !== "PageDwell";
 }
 
 export interface TimelinePoint {

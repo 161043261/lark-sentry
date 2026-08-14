@@ -59,7 +59,14 @@ import {
 } from "@/components/ui/empty";
 import { StatCard } from "@/components/stat-card";
 import { useLogs } from "@/lib/use-logs";
-import { formatDateTime, formatMs, shortUrl, uniqueCount } from "@/lib/stats";
+import { useExposure } from "@/lib/exposure";
+import {
+  formatDateTime,
+  formatMs,
+  isPageViewEvent,
+  shortUrl,
+  uniqueCount,
+} from "@/lib/stats";
 import type { ReportEvent } from "@/lib/log-types";
 import { z } from "zod";
 
@@ -83,6 +90,15 @@ function clickExtraOf(event: ReportEvent): ClickExtra {
   return parsed.success ? parsed.data : {};
 }
 
+const pvExtraSchema = z.object({
+  duration: z.number().optional().catch(undefined),
+});
+
+function dwellDurationOf(event: ReportEvent): number | undefined {
+  const parsed = pvExtraSchema.safeParse(event.payload?.extra);
+  return parsed.success ? parsed.data.duration : undefined;
+}
+
 const exposureExtraSchema = z.object({
   duration: z.number().optional().catch(undefined),
   threshold: z.number().optional().catch(undefined),
@@ -100,7 +116,7 @@ function buildPvTimeline(events: ReportEvent[]) {
   const buckets = new Map<number, number>();
   const minute = 60_000;
   for (const event of events) {
-    if (event.type !== "PV") continue;
+    if (!isPageViewEvent(event)) continue;
     const key = Math.floor(event.timestamp / minute) * minute;
     buckets.set(key, (buckets.get(key) ?? 0) + 1);
   }
@@ -121,6 +137,7 @@ export default function BehaviorPage() {
     () => events.filter((event) => event.type === "PV"),
     [events],
   );
+  const pageViews = useMemo(() => events.filter(isPageViewEvent), [events]);
   const clickEvents = useMemo(
     () => events.filter((event) => event.type === "Click"),
     [events],
@@ -151,6 +168,12 @@ export default function BehaviorPage() {
     [events],
   );
 
+  const pvTrendCardRef = useExposure({ card: "pv-trend", page: "/behavior" });
+  const pvTableCardRef = useExposure({
+    card: "page-view-details",
+    page: "/behavior",
+  });
+
   const hasData =
     pvEvents.length + clickEvents.length + exposureEvents.length > 0;
 
@@ -171,7 +194,7 @@ export default function BehaviorPage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-5">
-        <StatCard label="Page Views (PV)" value={pvEvents.length} icon={Eye} />
+        <StatCard label="Page Views (PV)" value={pageViews.length} icon={Eye} />
         <StatCard
           label="Route Changes"
           value={routeEvents.length}
@@ -190,10 +213,12 @@ export default function BehaviorPage() {
         />
       </div>
 
-      <Card>
+      <Card ref={pvTrendCardRef}>
         <CardHeader>
           <CardTitle>PV Trend</CardTitle>
-          <CardDescription>Page views aggregated per minute</CardDescription>
+          <CardDescription>
+            Page views aggregated per minute (dwell reports excluded)
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <ChartContainer config={pvConfig} className="h-56 w-full">
@@ -220,7 +245,7 @@ export default function BehaviorPage() {
       </Card>
 
       <div className="grid gap-6 xl:grid-cols-2">
-        <Card>
+        <Card ref={pvTableCardRef}>
           <CardHeader>
             <CardTitle>Page View Details</CardTitle>
             <CardDescription>PageLoad / Route PV / Page Stay</CardDescription>
@@ -232,32 +257,39 @@ export default function BehaviorPage() {
                   <TableHead className="w-28">Time</TableHead>
                   <TableHead className="w-28">Name</TableHead>
                   <TableHead>Page</TableHead>
+                  <TableHead className="w-20 text-right">Dwell</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {pvEvents
                   .slice(-30)
                   .reverse()
-                  .map((event, index) => (
-                    <TableRow
-                      key={event.payload?.id ?? `${event.timestamp}-${index}`}
-                    >
-                      <TableCell className="text-muted-foreground text-xs tabular-nums">
-                        {formatDateTime(event.timestamp)}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{event.name}</Badge>
-                      </TableCell>
-                      <TableCell className="max-w-0">
-                        <span
-                          className="block truncate font-mono text-xs"
-                          title={event.message}
-                        >
-                          {shortUrl(event.message || event.url, 60)}
-                        </span>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  .map((event, index) => {
+                    const dwell = dwellDurationOf(event);
+                    return (
+                      <TableRow
+                        key={event.payload?.id ?? `${event.timestamp}-${index}`}
+                      >
+                        <TableCell className="text-muted-foreground text-xs tabular-nums">
+                          {formatDateTime(event.timestamp)}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{event.name}</Badge>
+                        </TableCell>
+                        <TableCell className="max-w-0">
+                          <span
+                            className="block truncate font-mono text-xs"
+                            title={event.message}
+                          >
+                            {shortUrl(event.message || event.url, 60)}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right text-xs tabular-nums">
+                          {typeof dwell === "number" ? formatMs(dwell) : "-"}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
               </TableBody>
             </Table>
           </CardContent>

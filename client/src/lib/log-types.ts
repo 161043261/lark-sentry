@@ -130,6 +130,17 @@ export const eventPayloadSchema = z.looseObject({
 
 export type EventPayload = z.infer<typeof eventPayloadSchema>;
 
+export const breadcrumbItemSchema = z.looseObject({
+  type: z.string().catch(""),
+  name: z.string().catch(""),
+  message: z.string().catch(""),
+  timestamp: z.number().catch(0),
+  status: z.string().catch("OK"),
+  userAction: z.string().catch(""),
+});
+
+export type BreadcrumbItem = z.infer<typeof breadcrumbItemSchema>;
+
 export const reportEventSchema = z.looseObject({
   id: z.string().catch(""),
   type: z.string().catch("Unknown"),
@@ -143,7 +154,7 @@ export const reportEventSchema = z.looseObject({
   projectId: z.string().catch("unknown"),
   sdkVersion: z.string().catch(""),
   deviceInfo: deviceInfoSchema.optional().catch(undefined),
-  breadcrumbs: z.array(z.unknown()).optional().catch(undefined),
+  breadcrumbs: z.array(breadcrumbItemSchema).optional().catch(undefined),
   payload: eventPayloadSchema.optional().catch(undefined),
   sourcemap: z
     .object({ frames: z.array(resolvedFrameSchema).catch([]) })
