@@ -113,15 +113,15 @@ export function registerRoutes(app: Koa) {
     ctx.status = 204;
   });
 
-  router.get("/api/logs/files", (ctx) => {
+  router.get("/api/logs/files", async (ctx) => {
     ctx.set("Cache-Control", "no-store");
-    ctx.body = listLogFiles();
+    ctx.body = await listLogFiles();
   });
 
-  router.get("/api/logs/events", (ctx) => {
+  router.get("/api/logs/events", async (ctx) => {
     const raw = ctx.query.file;
     const file = typeof raw === "string" && raw !== "" ? raw : "all";
-    const result = readEvents(file);
+    const result = await readEvents(file);
     if (result === null) {
       ctx.status = 400;
       ctx.body = { code: 400, message: "invalid file name" };

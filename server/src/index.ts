@@ -27,6 +27,7 @@ import Koa from "koa";
 import { cfg } from "./config.js";
 import { logger } from "./logger.js";
 import { registerRoutes } from "./routes.js";
+import { initLogCache, destroyLogCache } from "./log-reader.js";
 import { initSourcemap, destroySourcemap } from "./source-map.js";
 
 const app = new Koa();
@@ -58,6 +59,9 @@ async function startup() {
   if (infoLogger) {
     infoLogger.info("Server starting...");
   }
+
+  // Initialize log read cache (LRU + single-flight)
+  initLogCache();
 
   // Initialize sourcemap resolution
   initSourcemap(cfg.getConfig().sourcemap);
@@ -128,6 +132,7 @@ async function startup() {
     }
 
     // Close resources
+    destroyLogCache();
     destroySourcemap();
     logger.close();
 
