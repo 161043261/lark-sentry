@@ -3,6 +3,7 @@
 排查范围: `sentry/src/` 目录下全部 TypeScript 源文件（共 76 个文件）
 
 排查方法:
+
 - 跨模块导出/导入交叉引用分析（5 个并行分析代理覆盖全部模块）
 - TypeScript 编译器 `--noUnusedLocals --noUnusedParameters` 检查（结果: 无未使用局部变量）
 - 枚举成员逐一引用检查
@@ -26,7 +27,7 @@ export function throttleV2<This, Args extends unknown[], Return>(
 ): (this: This, ...args: Args) => void { ... }
 ```
 
-决策: 保留, 但是使用 jsdoc 标记为 deadcode
+决策: 保留, 但是使用 jsdoc 标记为 deprecated
 
 ### 2. `refreshSessionId` — src/utils/session.ts:52
 
@@ -48,7 +49,7 @@ function base64(raw: string) {
 }
 ```
 
-决策: 保留, 但是使用 jsdoc 标记为 deadcode
+决策: 保留, 但是使用 jsdoc 标记为 deprecated
 
 ---
 
@@ -58,13 +59,13 @@ function base64(raw: string) {
 
 默认导出的防抖函数，通过 `export { default as debounce } from "./debounce.js"` 从 utils/index.ts 再导出，但从未被任何模块导入使用。
 
-决策: 保留, 但是使用 jsdoc 标记为 deadcode
+决策: 保留, 但是使用 jsdoc 标记为 deprecated
 
 ### 5. `dom2str` — src/utils/dom2str.ts（整个文件）
 
 将 DOM 元素转换为 CSS 选择器路径字符串的函数，通过 `export { default as dom2str } from "./dom2str.js"` 从 utils/index.ts 再导出，但从未被任何模块导入使用。注意: `getCssSelectors`（src/utils/get-css-selectors.ts）实现了类似功能且被 `white-screen.ts` 使用。
 
-决策: 保留, 但是使用 jsdoc 标记为 deadcode
+决策: 保留, 但是使用 jsdoc 标记为 deprecated
 
 ---
 
@@ -117,7 +118,7 @@ export enum HttpType {
 - ServiceUnavailable (503)
 - GatewayTimeout (504)
 
-决策: 保留, 但是使用 jsdoc 标记为 deadcode
+决策: 保留, 但是使用 jsdoc 标记为 deprecated
 
 ### 9. `HttpMethod` 中 7 个未使用成员 — src/types/enums.ts:99-109
 
@@ -132,7 +133,7 @@ export enum HttpType {
 - Patch
 
 注意: 同上，作为公共 API 枚举，外部消费者可能使用。
-决策: 保留, 但是使用 jsdoc 标记为 deadcode
+决策: 保留, 但是使用 jsdoc 标记为 deprecated
 
 ---
 
@@ -249,19 +250,19 @@ export type ValidReportData = z.infer<typeof reportDataSchema>;
 
 MinHeap 的唯一消费者是 `Breadcrumb` 类（继承 MinHeap），而 Breadcrumb 仅使用了 `push` 方法。
 
-决策: 保留, 但是使用 jsdoc 标记为 deadcode
+决策: 保留, 但是使用 jsdoc 标记为 deprecated
 
 ### 26. BoundedSet.clear() — src/utils/data-structures.ts:149
 
 从未被调用。BoundedSet 的唯一消费者是 `sentry.codeErrors`，仅使用 `has` 和 `add` 方法。
 
-决策: 保留, 但是使用 jsdoc 标记为 deadcode
+决策: 保留, 但是使用 jsdoc 标记为 deprecated
 
 ### 27. CallbackQueue.clear() — src/utils/data-structures.ts:182
 
 从未被调用。CallbackQueue 的消费者（reporter/index.ts、reporter/transports.ts）仅使用 `push` 方法。
 
-决策: 保留, 但是使用 jsdoc 标记为 deadcode
+决策: 保留, 但是使用 jsdoc 标记为 deprecated
 
 ---
 
@@ -277,17 +278,17 @@ Breadcrumb 系统存在一个值得关注的问题: 面包屑在 7 个位置被�
 
 ## 十、汇总统计
 
-| 类别 | 数量 | 涉及文件 |
-|------|------|----------|
-| 死函数 | 3 | throttle.ts, session.ts, base64.ts |
-| 死文件 | 2 | debounce.ts, dom2str.ts |
-| 死枚举 | 2 | enums.ts (HttpStatus, HttpType) |
-| 死枚举成员 | 17 | enums.ts (HttpStatusCode x10, HttpMethod x7) |
-| 死类型 | 1 | report-data-schema.ts (ValidReportData) |
-| 多余导出 | 12 | 10 个文件 |
-| 死再导出 | 12 | source-map/vite.ts x6, source-map/webpack.ts x6 |
-| 未调用公共方法 | 6 | data-structures.ts (MinHeap x4, BoundedSet x1, CallbackQueue x1) |
-| 合计 | 55 | — |
+| 类别           | 数量 | 涉及文件                                                         |
+| -------------- | ---- | ---------------------------------------------------------------- |
+| 死函数         | 3    | throttle.ts, session.ts, base64.ts                               |
+| 死文件         | 2    | debounce.ts, dom2str.ts                                          |
+| 死枚举         | 2    | enums.ts (HttpStatus, HttpType)                                  |
+| 死枚举成员     | 17   | enums.ts (HttpStatusCode x10, HttpMethod x7)                     |
+| 死类型         | 1    | report-data-schema.ts (ValidReportData)                          |
+| 多余导出       | 12   | 10 个文件                                                        |
+| 死再导出       | 12   | source-map/vite.ts x6, source-map/webpack.ts x6                  |
+| 未调用公共方法 | 6    | data-structures.ts (MinHeap x4, BoundedSet x1, CallbackQueue x1) |
+| 合计           | 55   | —                                                                |
 
 ---
 

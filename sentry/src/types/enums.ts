@@ -62,6 +62,7 @@ export enum EventType {
 
 export enum HttpStatusCode {
   OK = 200,
+  InternalServerError = 500,
   /** @deprecated Unreferenced in the SDK; kept as public API. */
   BadRequest = 400,
   /** @deprecated Unreferenced in the SDK; kept as public API. */
@@ -76,7 +77,6 @@ export enum HttpStatusCode {
   PayloadTooLarge = 413,
   /** @deprecated Unreferenced in the SDK; kept as public API. */
   TooManyRequests = 429,
-  InternalServerError = 500,
   /** @deprecated Unreferenced in the SDK; kept as public API. */
   NotImplemented = 501,
   /** @deprecated Unreferenced in the SDK; kept as public API. */
@@ -87,9 +87,9 @@ export enum HttpStatusCode {
 
 export enum HttpMethod {
   Get = "GET",
+  Post = "POST",
   /** @deprecated Unreferenced in the SDK; kept as public API. */
   Head = "HEAD",
-  Post = "POST",
   /** @deprecated Unreferenced in the SDK; kept as public API. */
   Put = "PUT",
   /** @deprecated Unreferenced in the SDK; kept as public API. */
