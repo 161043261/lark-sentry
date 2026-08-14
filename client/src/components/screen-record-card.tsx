@@ -66,6 +66,21 @@ const metaEventSchema = z.object({
   data: z.object({ width: z.number(), height: z.number() }),
 });
 
+/** Minimal structural shape of an rrweb eventWithTime entry. */
+const replayEventSchema = z.looseObject({
+  type: z.number(),
+  timestamp: z.number(),
+});
+
+/** Zod-validated guard so decoded payloads need no type assertion. */
+function isReplayEvents(value: unknown): value is ReplayEvents {
+  return (
+    Array.isArray(value) &&
+    value.length >= 2 &&
+    value.every((item) => replayEventSchema.safeParse(item).success)
+  );
+}
+
 function recordKey(event: ReportEvent, index: number): string {
   return event.payload?.id ?? `${event.timestamp}-${index}`;
 }
@@ -97,39 +112,43 @@ export function ScreenRecordCard({ events }: { events: ReportEvent[] }) {
   );
 
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
-  const [decodeError, setDecodeError] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const replayerRef = useRef<Replayer | null>(null);
-  const recordingsRef = useRef(recordings);
-  recordingsRef.current = recordings;
 
-  // Keyed on selectedKey (payload.id is stable across polls) so the replayer
-  // is not torn down every time the auto-refresh delivers a new events array.
-  useEffect(() => {
-    if (!selectedKey) return;
-    const container = containerRef.current;
-    if (!container) return;
-    const selected = recordingsRef.current.find(
+  const selected =
+    recordings.find(
       (event, index) => recordKey(event, index) === selectedKey,
-    );
-    if (!selected) return;
+    ) ?? null;
+  // The base64 payload string is identical across polls even though the
+  // surrounding event objects are re-fetched, so memos keyed on it are stable
+  // and the player is not torn down on every auto-refresh.
+  const selectedRaw = selected ? (rawRecordOf(selected) ?? null) : null;
 
-    const raw = rawRecordOf(selected);
+  const replayEvents = useMemo<ReplayEvents | null>(() => {
+    if (selectedRaw === null) return null;
     let decoded: unknown = null;
     try {
-      decoded = typeof raw === "string" ? unzipScreenRecord(raw) : null;
+      decoded = unzipScreenRecord(selectedRaw);
     } catch {
-      decoded = null;
+      return null;
     }
-    if (!Array.isArray(decoded) || decoded.length < 2) {
-      setDecodeError(
-        "Unable to decode this recording (needs at least 2 rrweb events)",
-      );
-      return;
-    }
+    return isReplayEvents(decoded) ? decoded : null;
+  }, [selectedRaw]);
+
+  const decodeError =
+    selectedKey !== null && replayEvents === null
+      ? "Unable to decode this recording (needs at least 2 rrweb events)"
+      : null;
+
+  // Synchronizes the rrweb Replayer (an external DOM system) with the
+  // selected recording.
+  useEffect(() => {
+    if (!replayEvents) return;
+    const container = containerRef.current;
+    if (!container) return;
 
     // Scale the recorded viewport down to the card width.
-    const meta = decoded
+    const meta = replayEvents
       .map((event) => metaEventSchema.safeParse(event))
       .find((parsed) => parsed.success)?.data;
     const recordedWidth = meta?.data.width ?? 1280;
@@ -141,44 +160,49 @@ export function ScreenRecordCard({ events }: { events: ReportEvent[] }) {
       1,
     );
 
-    let replayer: Replayer;
+    let replayer: Replayer | null = null;
     try {
-      replayer = new Replayer(decoded as ReplayEvents, {
+      replayer = new Replayer(replayEvents, {
         root: container,
         mouseTail: false,
       });
       replayer.play();
-    } catch {
-      container.replaceChildren();
-      setDecodeError("Unable to replay this recording");
-      return;
-    }
-    setDecodeError(null);
-    replayerRef.current = replayer;
+      replayerRef.current = replayer;
 
-    container.style.height = `${Math.ceil(recordedHeight * scale)}px`;
-    const wrapper = container.querySelector<HTMLElement>(".replayer-wrapper");
-    if (wrapper) {
-      wrapper.style.transform = `scale(${scale})`;
-      wrapper.style.transformOrigin = "top left";
-      wrapper.style.position = "absolute";
-      wrapper.style.left = "0";
-      wrapper.style.top = "0";
+      container.style.height = `${Math.ceil(recordedHeight * scale)}px`;
+      const wrapper = container.querySelector<HTMLElement>(".replayer-wrapper");
+      if (wrapper) {
+        wrapper.style.transform = `scale(${scale})`;
+        wrapper.style.transformOrigin = "top left";
+        wrapper.style.position = "absolute";
+        wrapper.style.left = "0";
+        wrapper.style.top = "0";
+      }
+    } catch {
+      // rrweb throws when the window lacks a full snapshot. The container is
+      // the external system this effect manages, so report the failure there
+      // instead of setState (which would cascade a re-render).
+      container.replaceChildren();
+      container.textContent =
+        "Unable to replay this recording (no full snapshot in window)";
+      container.style.padding = "12px";
     }
 
     return () => {
       replayerRef.current = null;
-      try {
-        replayer.pause();
-        const maybeDestroy = replayer.destroy;
-        if (typeof maybeDestroy === "function") maybeDestroy.call(replayer);
-      } catch {
-        // best-effort teardown
+      if (replayer) {
+        try {
+          replayer.pause();
+          replayer.destroy();
+        } catch {
+          // best-effort teardown
+        }
       }
       container.replaceChildren();
       container.style.height = "";
+      container.style.padding = "";
     };
-  }, [selectedKey]);
+  }, [replayEvents]);
 
   return (
     <Card>

@@ -30,7 +30,7 @@
  * observed, and unmounted cards are released.
  */
 
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { ExposurePlugin } from "@swifty.js/sentry/plugins";
 
 export const exposurePlugin = new ExposurePlugin();
@@ -40,8 +40,15 @@ export function useExposure(
   threshold = 0.5,
 ): (node: Element | null) => void {
   const paramsRef = useRef(params);
-  paramsRef.current = params;
   const cleanupRef = useRef<(() => void) | null>(null);
+
+  // Keep the latest params available to the next observe() without putting
+  // them in the callback's deps (that would detach/re-attach the observer on
+  // every render). The useRef initial value covers the mount-time attach,
+  // which runs before this effect.
+  useEffect(() => {
+    paramsRef.current = params;
+  });
 
   return useCallback(
     (node: Element | null) => {
