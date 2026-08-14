@@ -20,6 +20,8 @@
  * SOFTWARE.
  */
 
+import dom2str from "./dom2str.js";
+
 const trackPrefix = "swifty-sentry-";
 const reservedKeys = new Set(["view", "msg", "ev"]);
 
@@ -120,16 +122,6 @@ function getParams(path: readonly HTMLElement[]): Readonly<Record<string, string
   }, {});
 }
 
-function getNodeXPath(element: HTMLElement): string {
-  const parts: string[] = [];
-  let current: HTMLElement | null = element;
-  while (current && current !== document.body) {
-    parts.unshift(current.tagName.toLowerCase());
-    current = current.parentElement;
-  }
-  return parts.join(">");
-}
-
 export function getDeclarativeClickData(event: MouseEvent): DeclarativeClickData | null {
   const path = getComposedElementPath(event);
   const fallbackPath = path.length > 0 ? path : getElementPath(event.target);
@@ -147,7 +139,7 @@ export function getDeclarativeClickData(event: MouseEvent): DeclarativeClickData
     x: left + scrollLeft,
     y: top + scrollTop,
     params: getParams(fallbackPath),
-    elementPath: getNodeXPath(trackingTarget).slice(-128),
+    elementPath: dom2str(trackingTarget),
     triggerTime: Date.now(),
   };
 }

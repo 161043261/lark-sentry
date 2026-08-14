@@ -59,7 +59,7 @@ export class MinHeap<T extends { timestamp: number }> {
     return false;
   }
 
-  /** @deprecated Never called — the breadcrumb read side is not implemented yet (dead-code audit §9). */
+  /** @deprecated Never called (dead-code audit). */
   peek(): T | undefined {
     return this.heap[0];
   }
@@ -70,10 +70,7 @@ export class MinHeap<T extends { timestamp: number }> {
       if (this.heap[parentIdx].timestamp <= this.heap[idx].timestamp) {
         break;
       }
-      [this.heap[idx], this.heap[parentIdx]] = [
-        this.heap[parentIdx],
-        this.heap[idx],
-      ];
+      [this.heap[idx], this.heap[parentIdx]] = [this.heap[parentIdx], this.heap[idx]];
       idx = parentIdx;
     }
   }
@@ -83,25 +80,16 @@ export class MinHeap<T extends { timestamp: number }> {
       let childIdx = idx;
       const left = idx * 2 + 1;
       const right = idx * 2 + 2;
-      if (
-        left < this.size &&
-        this.heap[left].timestamp < this.heap[childIdx].timestamp
-      ) {
+      if (left < this.size && this.heap[left].timestamp < this.heap[childIdx].timestamp) {
         childIdx = left;
       }
-      if (
-        right < this.size &&
-        this.heap[right].timestamp < this.heap[childIdx].timestamp
-      ) {
+      if (right < this.size && this.heap[right].timestamp < this.heap[childIdx].timestamp) {
         childIdx = right;
       }
       if (childIdx === idx) {
         break;
       }
-      [this.heap[idx], this.heap[childIdx]] = [
-        this.heap[childIdx],
-        this.heap[idx],
-      ];
+      [this.heap[idx], this.heap[childIdx]] = [this.heap[childIdx], this.heap[idx]];
       idx = childIdx;
     }
   }
@@ -114,17 +102,15 @@ export class MinHeap<T extends { timestamp: number }> {
     }
   }
 
-  /** @deprecated Never called — the breadcrumb read side is not implemented yet (dead-code audit §9). */
   dump(): T[] {
     return [...this.heap].sort((a, b) => a.timestamp - b.timestamp);
   }
 
-  /** @deprecated Never called (dead-code audit §25). */
   clear() {
     this.heap = [];
   }
 
-  /** @deprecated Never called — the breadcrumb read side is not implemented yet (dead-code audit §9). */
+  /** @deprecated Never called (dead-code audit). */
   pop(): T | undefined {
     if (this.size === 0) {
       return undefined;
@@ -162,7 +148,7 @@ export class BoundedSet<T> {
     }
   }
 
-  /** @deprecated Never called — consumers only use has/add (dead-code audit §26). */
+  /** @deprecated Never called — consumers only use has/add (dead-code audit). */
   clear(): void {
     this.map.clear();
   }
@@ -179,11 +165,7 @@ export class CallbackQueue {
     this.callByRequestIdleCallback(cb, ctx, ...args);
   }
 
-  private callByRequestIdleCallback(
-    cb: VoidFunction,
-    ctx?: unknown,
-    ...args: unknown[]
-  ) {
+  private callByRequestIdleCallback(cb: VoidFunction, ctx?: unknown, ...args: unknown[]) {
     this.cbList.push(cb.bind(ctx, ...args));
     if (this.isFlushing) return;
     this.isFlushing = true;
@@ -200,7 +182,7 @@ export class CallbackQueue {
     });
   }
 
-  /** @deprecated Never called — consumers only use push (dead-code audit §27). */
+  /** @deprecated Never called — consumers only use push (dead-code audit). */
   clear() {
     this.cbList = [];
     this.isFlushing = false;

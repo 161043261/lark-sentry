@@ -23,7 +23,7 @@ npm install vue
 ## Package Exports
 
 ```ts
-import { init, destroy, isInitialized, pluginEnable } from "@swifty.js/sentry";
+import { init, destroy, isInitialized, enablePlugin } from "@swifty.js/sentry";
 import { PerformancePlugin, ScreenRecordPlugin, ExposurePlugin } from "@swifty.js/sentry/plugins";
 import { ReactErrorBoundary } from "@swifty.js/sentry/react";
 import { vuePlugin } from "@swifty.js/sentry/vue";
@@ -34,7 +34,7 @@ Each public export provides ESM, CJS, and TypeScript declaration files.
 ## Quick Start
 
 ```ts
-import { init, pluginEnable } from "@swifty.js/sentry";
+import { init, enablePlugin } from "@swifty.js/sentry";
 import { PerformancePlugin, ScreenRecordPlugin, ExposurePlugin } from "@swifty.js/sentry/plugins";
 
 init({
@@ -43,9 +43,9 @@ init({
   userId: "anonymous",
 });
 
-pluginEnable(PerformancePlugin);
-pluginEnable(ScreenRecordPlugin);
-pluginEnable(ExposurePlugin);
+enablePlugin(PerformancePlugin);
+enablePlugin(ScreenRecordPlugin);
+enablePlugin(ExposurePlugin);
 ```
 
 `dsn` must be a non-empty string. If `dsn` is empty, initialization is rejected.
@@ -317,16 +317,16 @@ Custom `swifty-sentry-*` attributes become `params`.
 
 The reported click payload (`DeclarativeClickData`) includes:
 
-| Field            | Type                                       | Description                                                                    |
-| ---------------- | ------------------------------------------ | ------------------------------------------------------------------------------ |
-| `ev`             | `string`                                   | Event ID (from `swifty-sentry-ev`, `title`, `swifty-sentry-el`, or tag).       |
-| `msg`            | `string`                                   | Human-readable message (from `swifty-sentry-msg`, text, `aria-label`, or tag). |
-| `triggerPageUrl` | `string`                                   | Current page URL (`location.href`).                                            |
-| `x`              | `number`                                   | Click X coordinate (element offset + scroll offset).                           |
-| `y`              | `number`                                   | Click Y coordinate (element offset + scroll offset).                           |
-| `params`         | `Readonly<Record<string, string \| null>>` | Custom `swifty-sentry-*` attributes (excluding reserved keys).                 |
-| `elementPath`    | `string`                                   | XPath-like path from element to body (max 128 characters).                     |
-| `triggerTime`    | `number`                                   | `Date.now()` at click time.                                                    |
+| Field            | Type                                       | Description                                                                      |
+| ---------------- | ------------------------------------------ | -------------------------------------------------------------------------------- |
+| `ev`             | `string`                                   | Event ID (from `swifty-sentry-ev`, `title`, `swifty-sentry-el`, or tag).         |
+| `msg`            | `string`                                   | Human-readable message (from `swifty-sentry-msg`, text, `aria-label`, or tag).   |
+| `triggerPageUrl` | `string`                                   | Current page URL (`location.href`).                                              |
+| `x`              | `number`                                   | Click X coordinate (element offset + scroll offset).                             |
+| `y`              | `number`                                   | Click Y coordinate (element offset + scroll offset).                             |
+| `params`         | `Readonly<Record<string, string \| null>>` | Custom `swifty-sentry-*` attributes (excluding reserved keys).                   |
+| `elementPath`    | `string`                                   | CSS-selector-like ancestor path (nearest 5 levels with id/class, max 128 chars). |
+| `triggerTime`    | `number`                                   | `Date.now()` at click time.                                                      |
 
 ## White-Screen Detection
 
@@ -541,10 +541,10 @@ const ips = await getIPs();
 Plugins extend the SDK without coupling optional capabilities to the core entry. A plugin class extends `SentryPlugin`, implements `init`, and can implement `destroy` for cleanup.
 
 ```ts
-import { pluginEnable } from "@swifty.js/sentry";
+import { enablePlugin } from "@swifty.js/sentry";
 import { PerformancePlugin } from "@swifty.js/sentry/plugins";
 
-const plugin = pluginEnable(PerformancePlugin);
+const plugin = enablePlugin(PerformancePlugin);
 ```
 
 Enabled plugins are stored in the plugin registry. `destroy()` calls each plugin's `destroy()` method when available.
@@ -552,10 +552,10 @@ Enabled plugins are stored in the plugin registry. `destroy()` calls each plugin
 ## PerformancePlugin
 
 ```ts
-import { pluginEnable } from "@swifty.js/sentry";
+import { enablePlugin } from "@swifty.js/sentry";
 import { PerformancePlugin } from "@swifty.js/sentry/plugins";
 
-pluginEnable(PerformancePlugin);
+enablePlugin(PerformancePlugin);
 ```
 
 The plugin collects:
@@ -572,12 +572,12 @@ Unsupported browser capabilities are skipped safely.
 ## ScreenRecordPlugin
 
 ```ts
-import { pluginEnable } from "@swifty.js/sentry";
+import { enablePlugin } from "@swifty.js/sentry";
 import { ScreenRecordPlugin, unzipScreenRecord } from "@swifty.js/sentry/plugins";
 
-pluginEnable(ScreenRecordPlugin);
+enablePlugin(ScreenRecordPlugin);
 
-pluginEnable(ScreenRecordPlugin, {
+enablePlugin(ScreenRecordPlugin, {
   durationMs: 5000,
 });
 ```
@@ -593,10 +593,10 @@ const events = unzipScreenRecord(recordPayload);
 ## ExposurePlugin
 
 ```ts
-import { pluginEnable } from "@swifty.js/sentry";
+import { enablePlugin } from "@swifty.js/sentry";
 import { ExposurePlugin } from "@swifty.js/sentry/plugins";
 
-const exposure = pluginEnable(ExposurePlugin);
+const exposure = enablePlugin(ExposurePlugin);
 ```
 
 Observe one element:
@@ -750,21 +750,3 @@ pnpm build
 ```
 
 Coverage thresholds are 70 for lines, functions, branches, and statements.
-
-## Build and Publish
-
-```bash
-pnpm build
-pnpm build:tsup
-python3 publish.py --dry-run
-```
-
-Publish after npm login:
-
-```bash
-python3 publish.py --publish --registry https://registry.npmjs.org/
-```
-
-The publish script validates lint, typecheck, tests, coverage, build output, ESM imports, CJS requires, package exports, absence of sourcemaps, absence of `dist/node_modules`, and absence of package tarball residue.
-
-Published npm files are limited to `dist` and package metadata. Source files, tests, sourcemaps, and temporary tarballs are not published.

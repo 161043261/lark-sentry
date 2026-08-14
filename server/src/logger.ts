@@ -153,7 +153,7 @@ class Logger {
 
   public writeSdkLog(data: Buffer | string): void {
     while (this.sdkLock) {
-      // Busy wait - in production, pluginEnable a proper mutex
+      // Busy wait - in production, enablePlugin a proper mutex
     }
 
     this.sdkLock = true;

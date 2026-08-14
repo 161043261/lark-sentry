@@ -175,7 +175,7 @@ export interface IReportData<T extends TReportPayload = TReportPayload> extends 
   userId: string;
   projectId: string;
   sdkVersion: string;
-  breadcrumbs?: IBreadcrumbItem[];
+  breadcrumbs?: IBreadcrumbItem[] | undefined;
   deviceInfo: IDeviceInfo;
   payload: T;
 }

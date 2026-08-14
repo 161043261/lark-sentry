@@ -22,7 +22,7 @@
 
 import { z } from "zod";
 
-import { EventType, Status, type TReportPayload } from "../types";
+import { EventType, Status, type IBreadcrumbItem, type TReportPayload } from "../types";
 
 const deviceInfoSchema = z.object({
   browserName: z.string(),
@@ -49,6 +49,14 @@ const reportDataSchema = z.object({
   userId: z.string(),
   projectId: z.string(),
   sdkVersion: z.string(),
+  breadcrumbs: z
+    .array(
+      z.custom<IBreadcrumbItem>(
+        (value: unknown) => typeof value === "object" && value !== null,
+        "Expected a breadcrumb item object",
+      ),
+    )
+    .optional(),
   deviceInfo: deviceInfoSchema,
   payload: z.custom<TReportPayload>(
     (value: unknown) => typeof value === "object" && value !== null,

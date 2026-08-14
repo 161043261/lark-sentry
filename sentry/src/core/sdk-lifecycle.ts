@@ -25,6 +25,7 @@ import type { SentryPlugin } from "../types/index.js";
 import { sentry, sentryLogger } from "../utils/index.js";
 import type { Cleanup } from "../utils/decorate-prop.js";
 import { initIdentity } from "./identity.js";
+import breadcrumb from "./breadcrumb.js";
 import { optionsSchema, type InitOptions } from "./options-schema.js";
 import { destroyPlugins, registerPlugin } from "./plugin-registry.js";
 import setup from "./setup.js";
@@ -64,12 +65,14 @@ export function init(options: InitOptions): void {
   sentryLogger.info("SDK initialized", {
     options: sentry.options,
   });
+  breadcrumb.capacity = sentry.options.maxBreadcrumbs;
   cleanupSetup = setup();
   void initIdentity();
 }
 
-export function enablePlugin(plugin: SentryPlugin): SentryPlugin {
-  plugin.init();
-  registerPlugin(plugin);
-  return plugin;
+export function enablePlugin(...plugins: SentryPlugin[]): void {
+  for (const plugin of plugins) {
+    plugin.init();
+    registerPlugin(plugin);
+  }
 }

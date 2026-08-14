@@ -102,10 +102,8 @@ describe("enablePlugin", () => {
       }
     }
 
-    const plugin = enablePlugin(new TestPlugin());
-
+    enablePlugin(new TestPlugin());
     expect(initPlugin).toHaveBeenCalledTimes(1);
-    expect(plugin).toBeInstanceOf(TestPlugin);
   });
 });
 

@@ -52,7 +52,7 @@ npm install vue     # for @swifty.js/sentry/vue
 The minimum viable integration requires calling `init` with a non-empty `dsn` string. All other options fall back to SDK defaults.
 
 ```ts
-import { init, pluginEnable } from "@swifty.js/sentry";
+import { init, enablePlugin } from "@swifty.js/sentry";
 import {
   PerformancePlugin,
   ScreenRecordPlugin,
@@ -61,9 +61,9 @@ import {
 
 init({ dsn: "/api/log" });
 
-pluginEnable(PerformancePlugin);
-pluginEnable(ScreenRecordPlugin);
-pluginEnable(ExposurePlugin);
+enablePlugin(PerformancePlugin);
+enablePlugin(ScreenRecordPlugin);
+enablePlugin(ExposurePlugin);
 ```
 
 The `dsn` value must be a non-empty string. If `dsn` is empty or `disabled` is `true`, initialization is rejected silently (the SDK logs the reason but does not throw).
@@ -116,13 +116,13 @@ if (!isInitialized()) {
 
 Returns `true` after `init` has successfully completed. Resets to `false` after `destroy`.
 
-### pluginEnable
+### enablePlugin
 
 ```ts
-import { pluginEnable } from "@swifty.js/sentry";
+import { enablePlugin } from "@swifty.js/sentry";
 
-const plugin = pluginEnable(PerformancePlugin);
-const pluginWithOptions = pluginEnable(ScreenRecordPlugin, {
+const plugin = enablePlugin(PerformancePlugin);
+const pluginWithOptions = enablePlugin(ScreenRecordPlugin, {
   durationMs: 5000,
 });
 ```
@@ -374,7 +374,7 @@ interface DeclarativeClickData {
   readonly x: number; // click X coordinate (element offset + scroll offset)
   readonly y: number; // click Y coordinate (element offset + scroll offset)
   readonly params: Readonly<Record<string, string | null>>; // custom swifty-sentry-* attributes
-  readonly elementPath: string; // XPath-like path from element to body (max 128 characters)
+  readonly elementPath: string; // CSS-selector-like ancestor path (nearest 5 levels with id/class, max 128 chars)
   readonly triggerTime: number; // Date.now() at click time
 }
 ```
@@ -660,10 +660,10 @@ Enabled plugins are stored in an internal `Set<SentryPlugin>`. `destroy()` calls
 ## PerformancePlugin
 
 ```ts
-import { pluginEnable } from "@swifty.js/sentry";
+import { enablePlugin } from "@swifty.js/sentry";
 import { PerformancePlugin } from "@swifty.js/sentry/plugins";
 
-pluginEnable(PerformancePlugin);
+enablePlugin(PerformancePlugin);
 ```
 
 The plugin collects:
@@ -681,16 +681,16 @@ All browser capability checks use `supportsPerformanceEntryType()` which checks 
 ## ScreenRecordPlugin
 
 ```ts
-import { pluginEnable } from "@swifty.js/sentry";
+import { enablePlugin } from "@swifty.js/sentry";
 import {
   ScreenRecordPlugin,
   unzipScreenRecord,
 } from "@swifty.js/sentry/plugins";
 
-pluginEnable(ScreenRecordPlugin);
+enablePlugin(ScreenRecordPlugin);
 
 // With custom options
-pluginEnable(ScreenRecordPlugin, {
+enablePlugin(ScreenRecordPlugin, {
   durationMs: 5000,
 });
 ```
@@ -723,10 +723,10 @@ const events = unzipScreenRecord(recordPayload);
 ## ExposurePlugin
 
 ```ts
-import { pluginEnable } from "@swifty.js/sentry";
+import { enablePlugin } from "@swifty.js/sentry";
 import { ExposurePlugin } from "@swifty.js/sentry/plugins";
 
-const exposure = pluginEnable(ExposurePlugin);
+const exposure = enablePlugin(ExposurePlugin);
 ```
 
 Exposure tracking uses `IntersectionObserver` to measure how long elements are visible in the viewport.
@@ -955,7 +955,7 @@ The SDK automatically generates and persists:
 ## Production Configuration Example
 
 ```ts
-import { init, pluginEnable, beforeSendData } from "@swifty.js/sentry";
+import { init, enablePlugin, beforeSendData } from "@swifty.js/sentry";
 import {
   PerformancePlugin,
   ScreenRecordPlugin,
@@ -974,9 +974,9 @@ init({
   ignoreErrors: [/ResizeObserver loop limit exceeded/],
 });
 
-pluginEnable(PerformancePlugin);
-pluginEnable(ScreenRecordPlugin);
-pluginEnable(ExposurePlugin);
+enablePlugin(PerformancePlugin);
+enablePlugin(ScreenRecordPlugin);
+enablePlugin(ExposurePlugin);
 
 beforeSendData((data) => {
   // Add custom field to every report
@@ -989,7 +989,7 @@ beforeSendData((data) => {
 ### SPA with React Router
 
 ```tsx
-import { init, pluginEnable } from "@swifty.js/sentry";
+import { init, enablePlugin } from "@swifty.js/sentry";
 import { ReactErrorBoundary } from "@swifty.js/sentry/react";
 import { PerformancePlugin } from "@swifty.js/sentry/plugins";
 
@@ -1000,7 +1000,7 @@ init({
   enableHashChange: true, // track hash navigation
 });
 
-pluginEnable(PerformancePlugin);
+enablePlugin(PerformancePlugin);
 
 export function App() {
   return (
@@ -1016,7 +1016,7 @@ export function App() {
 ```ts
 import { createApp } from "vue";
 import { vuePlugin } from "@swifty.js/sentry/vue";
-import { PerformancePlugin, pluginEnable } from "@swifty.js/sentry";
+import { PerformancePlugin, enablePlugin } from "@swifty.js/sentry";
 import App from "./app.vue";
 
 const app = createApp(App);
@@ -1029,7 +1029,7 @@ app.use(vuePlugin, {
 
 app.mount("#app");
 
-pluginEnable(PerformancePlugin);
+enablePlugin(PerformancePlugin);
 ```
 
 ### Micro-Frontend Setup
@@ -1049,12 +1049,12 @@ destroy();
 ### E-Commerce with Exposure Tracking
 
 ```ts
-import { init, pluginEnable } from "@swifty.js/sentry";
+import { init, enablePlugin } from "@swifty.js/sentry";
 import { ExposurePlugin } from "@swifty.js/sentry/plugins";
 
 init({ dsn: "/api/log" });
 
-const exposure = pluginEnable(ExposurePlugin);
+const exposure = enablePlugin(ExposurePlugin);
 
 // Track product card visibility
 document.querySelectorAll(".product-card").forEach((card) => {

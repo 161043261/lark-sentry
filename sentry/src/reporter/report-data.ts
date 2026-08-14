@@ -21,16 +21,26 @@
  */
 
 import { SDK_VERSION } from "../constants";
-import type { IReportData, TReportPayload } from "../types";
+import breadcrumb from "../core/breadcrumb.js";
+import { EventType, type IReportData, type TReportPayload } from "../types";
 import { sentry } from "../utils";
 import { isPromise } from "./promise.js";
 
-function payloadToReportData<T extends TReportPayload>(
-  id: string,
-  payload: T,
-): IReportData<T> {
+// Breadcrumbs are the trail leading up to a failure, so only error-class
+// events carry them; attaching to every batched event would multiply payload
+// size for no diagnostic value.
+const BREADCRUMB_EVENT_TYPES = new Set<EventType>([
+  EventType.Error,
+  EventType.UnhandledRejection,
+  EventType.Resource,
+  EventType.Vue,
+  EventType.React,
+  EventType.OtherFrameworks,
+]);
+
+function payloadToReportData<T extends TReportPayload>(id: string, payload: T): IReportData<T> {
   const { type, name, time, timestamp, message, status } = payload;
-  return {
+  const data: IReportData<T> = {
     type,
     name,
     time,
@@ -45,6 +55,10 @@ function payloadToReportData<T extends TReportPayload>(
     deviceInfo: sentry.deviceInfo,
     payload,
   };
+  if (BREADCRUMB_EVENT_TYPES.has(type)) {
+    data.breadcrumbs = breadcrumb.dump();
+  }
+  return data;
 }
 
 export function runBeforeReportHook(

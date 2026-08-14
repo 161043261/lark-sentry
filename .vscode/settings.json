@@ -10,6 +10,7 @@
     "fingerprintjs",
     "GOPATH",
     "hangtiancheng",
+    "hashchange",
     "heapify",
     "Iosevka",
     "linecap",
@@ -19,6 +20,7 @@
     "protobufjs",
     "rrweb",
     "swifty",
+    "unhandledrejection",
     "Vite"
   ]
 }
