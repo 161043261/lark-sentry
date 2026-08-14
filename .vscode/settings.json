@@ -14,17 +14,23 @@
     "hashchange",
     "heapify",
     "Iosevka",
+    "keepalive",
     "linecap",
     "longtask",
     "Menlo",
     "nums",
     "oxfmt",
+    "pako",
     "protobufjs",
     "rrweb",
     "shadcn",
     "swifty",
+    "thenables",
     "TTFB",
+    "ungzip",
     "unhandledrejection",
-    "Vite"
+    "unobserve",
+    "Vite",
+    "xmlhttprequest"
   ]
 }

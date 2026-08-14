@@ -7,9 +7,11 @@ description: >-
   exposure tracking, white-screen detection, screen recording, Web Vitals, PV/dwell-time,
   offline report caching, or any task involving integrating browser observability into
   a React, Vue, or vanilla TypeScript/JavaScript project. Also trigger when the user
-  asks about swifty-sentry-* attributes, ReactErrorBoundary from this SDK, vuePlugin, or the
-  Vite dev-server mock plugin (sentryPlugin / sentryPlugin7). Even if the user simply
-  says "add monitoring" or "add tracking" in a frontend context, consult this skill first.
+  asks about swifty-sentry-* attributes, ReactErrorBoundary from this SDK, vuePlugin, the
+  Vite dev-server mock plugin (sentryPlugin / sentryPlugin7), the webpack dev-server mock
+  plugin (SentryWebpackPlugin / sentryMiddleware), or dev-time source map resolution of
+  reported errors. Even if the user simply says "add monitoring" or "add tracking" in a
+  frontend context, consult this skill first.
 ---
 
 # @swifty.js/sentry -- Integration and Usage Guide
@@ -22,15 +24,16 @@ This skill teaches how to integrate, configure, and use `@swifty.js/sentry` (npm
 
 ## Package Exports
 
-The package exposes five entry points:
+The package exposes six entry points:
 
-| Subpath                     | Purpose                                                        |
-| --------------------------- | -------------------------------------------------------------- |
-| `@swifty.js/sentry`         | Core SDK (framework-agnostic)                                  |
-| `@swifty.js/sentry/plugins` | Plugins: PerformancePlugin, ScreenRecordPlugin, ExposurePlugin |
-| `@swifty.js/sentry/react`   | ReactErrorBoundary component                                   |
-| `@swifty.js/sentry/vue`     | Vue 3 plugin (vuePlugin)                                       |
-| `@swifty.js/sentry/vite`    | Vite dev-server mock plugin (sentryPlugin / sentryPlugin7)     |
+| Subpath                     | Purpose                                                                                 |
+| --------------------------- | --------------------------------------------------------------------------------------- |
+| `@swifty.js/sentry`         | Core SDK (framework-agnostic)                                                           |
+| `@swifty.js/sentry/plugins` | Plugins: PerformancePlugin, ScreenRecordPlugin, ExposurePlugin, unzipScreenRecord       |
+| `@swifty.js/sentry/react`   | ReactErrorBoundary component                                                            |
+| `@swifty.js/sentry/vue`     | Vue 3 plugin (vuePlugin)                                                                |
+| `@swifty.js/sentry/vite`    | Vite dev-server mock plugin with source map resolution (sentryPlugin / sentryPlugin7)   |
+| `@swifty.js/sentry/webpack` | Webpack dev-server mock plugin (sentryPlugin / SentryWebpackPlugin / sentryMiddleware)  |
 
 Each public export provides ESM, CJS, and TypeScript declaration files.
 
@@ -40,11 +43,13 @@ Each public export provides ESM, CJS, and TypeScript declaration files.
 npm install @swifty.js/sentry
 ```
 
-React and Vue are optional peer dependencies. Install them only when the matching integration is used.
+React (`^16 || ^17 || ^18 || ^19`), Vue (`^3`), Vite (`^7 || ^8`), and webpack (`^4 || ^5`) are optional peer dependencies. Install them only when the matching integration is used.
 
 ```bash
-npm install react   # for @swifty.js/sentry/react
-npm install vue     # for @swifty.js/sentry/vue
+npm install react                         # for @swifty.js/sentry/react
+npm install vue                           # for @swifty.js/sentry/vue
+npm install -D vite                       # for @swifty.js/sentry/vite
+npm install -D webpack webpack-dev-server # for @swifty.js/sentry/webpack
 ```
 
 ## Quick Start
@@ -131,7 +136,7 @@ Creates a new instance of the given plugin class with optional options, calls `p
 
 ## Configuration Options
 
-`init` accepts a partial options object (`InitOptions`). Values not provided use SDK defaults from `DEFAULT_OPTIONS`.
+`init` accepts an `InitOptions` object (`Partial<Options> & Pick<Options, "dsn">` -- every field optional except `dsn`, which is required at the type level). Values not provided use SDK defaults from `DEFAULT_OPTIONS`.
 
 ### Required Options
 
@@ -210,6 +215,7 @@ The SDK reports events with the following `EventType` enum values:
 | `EventType.Error`              | `"Error"`                    | JavaScript runtime error.       |
 | `EventType.Vue`                | `"Vue"`                      | Vue error.                      |
 | `EventType.React`              | `"React"`                    | React error.                    |
+| `EventType.OtherFrameworks`    | `"OtherFrameworks"`          | Other framework error (via `reportFrameworkError`). |
 | `EventType.Performance`        | `"Performance"`              | Performance metric.             |
 | `EventType.ScreenRecord`       | `"ScreenRecord"`             | Screen record payload.          |
 | `EventType.Exposure`           | `"Exposure"`                 | Exposure duration event.        |
@@ -498,6 +504,22 @@ The input object requires `name` (string) and `message` (string). `extra` is opt
 ### tracePageView
 
 Manually report a page view event. See "Page Views and Dwell Time" section.
+
+### reportFrameworkError
+
+Report a framework-level error with an explicit event type and context. The React and Vue integrations use it internally; call it directly to integrate any other framework.
+
+```ts
+import { reportFrameworkError, EventType } from "@swifty.js/sentry";
+
+reportFrameworkError({
+  type: EventType.OtherFrameworks, // or EventType.React / EventType.Vue
+  error: someError,
+  context: { component: "svelte-root" },
+});
+```
+
+`type` must be `EventType.React`, `EventType.Vue`, or `EventType.OtherFrameworks`. The reported `name` is derived from the error (`error.name`, constructor name, `"null"`/`"undefined"`, or `typeof`), `message` from `error.message` / the string itself / JSON serialization, and the payload `extra` contains `{ error, stack, context }`.
 
 ### getBaseInfo and getUserId
 
@@ -902,20 +924,108 @@ export default defineConfig({
 | `sentryPlugin`  | Vite 8       | Default export. For current Vite.       |
 | `sentryPlugin7` | Vite 7       | For projects using Vite 7 specifically. |
 
+`sentryPlugin` (Vite 8) requires an options argument (pass at least `{}`); `sentryPlugin7` defaults its options to `{}`.
+
 ### Options
 
-| Option | Type     | Default     | Description                              |
-| ------ | -------- | ----------- | ---------------------------------------- |
-| `dsn`  | `string` | `"/sentry"` | The URL path to intercept POST requests. |
+| Option | Type     | Default     | Description                                                                          |
+| ------ | -------- | ----------- | ------------------------------------------------------------------------------------ |
+| `dsn`  | `string` | `undefined` | URL path to intercept. Falls back to `sentry.options.dsn`, then `"/sentry"`.         |
 
 ### Behavior
 
-- Creates a `logs/` directory in `process.cwd()`.
-- Writes a timestamped log file (`sentry_YYYYMMDDHHMMSS.log`).
-- Intercepts POST requests to the configured URL.
-- Parses the request body as JSON via `z.json().parse(body)` (single-pass parse and validation).
-- Writes each report as a JSON line to the log file.
-- Returns `{ code: 0, message: "success" }` as the response.
+- Creates a `logs/` directory in `process.cwd()` and writes a timestamped `sentry_YYYYMMDDHHMMSS.jsonl` file.
+- Intercepts POST requests whose `req.url` equals the resolved dsn.
+- Parses the request body with `JSON.parse` and enriches error records with original source positions resolved from the dev server's in-memory module graph source maps (see "Dev-Time Source Map Resolution").
+- Writes each (enriched) report batch as one JSON line to the log file. If parsing or enrichment throws, the raw body is written unmodified.
+- Always responds `{ code: 0, message: "success" }`.
+- Closes the log stream in the `closeBundle` hook.
+
+## Webpack Dev-Server Plugin
+
+The `@swifty.js/sentry/webpack` subpath provides the same mock report endpoint for webpack-dev-server, plus source map resolution based on emitted `.map` assets. Requires `webpack` and `webpack-dev-server` as dev dependencies.
+
+### Available Exports
+
+| Export                | Description                                                                  |
+| --------------------- | ----------------------------------------------------------------------------- |
+| `sentryPlugin`        | Factory returning a `SentryWebpackPlugin` instance. Default export.           |
+| `SentryWebpackPlugin` | Webpack plugin class (`WebpackPluginInstance`).                                |
+| `sentryMiddleware`    | Connect/express-style middleware for manual mounting (no source map support). |
+
+All accept `{ dsn?: string }` (`ISentryWebpackPluginOptions`). The dsn resolves like the Vite plugin: option value, else `sentry.options.dsn`, else `"/sentry"`.
+
+### Plugin Usage (recommended)
+
+```ts
+// webpack.config.mjs
+import { sentryPlugin } from "@swifty.js/sentry/webpack";
+
+export default {
+  plugins: [sentryPlugin({ dsn: "/api/log" })],
+  devServer: {
+    // ...
+  },
+};
+```
+
+Behavior:
+
+- No-op unless `compiler.options.devServer` exists, so production builds remain untouched.
+- Wraps `devServer.setupMiddlewares` (calling any user-provided setup first) and unshifts the mock middleware named `"sentry-mock"`. The middleware entry deliberately omits `path` because webpack-dev-server's `{ name, path, middleware }` form strips the prefix from `req.url`, which would break the `req.url === dsn` match.
+- Taps `compiler.hooks.assetEmitted` to collect emitted `.map` assets (works with the in-memory dev-server file system) into an asset map store. Reported script URLs are resolved to `<path>.map`; unmatched URLs fall back to basename matching to tolerate unknown `publicPath` prefixes.
+- Writes `logs/sentry_YYYYMMDDHHMMSS.jsonl` and responds `{ code: 0, message: "success" }`, same as the Vite plugin.
+- Closes the log stream on `compiler.hooks.shutdown`.
+
+### Middleware Usage (manual)
+
+```ts
+import { sentryMiddleware } from "@swifty.js/sentry/webpack";
+
+export default {
+  devServer: {
+    setupMiddlewares(middlewares) {
+      middlewares.unshift({
+        name: "sentry-mock",
+        middleware: sentryMiddleware({ dsn: "/api/log" }),
+      });
+      return middlewares;
+    },
+  },
+};
+```
+
+`sentryMiddleware` writes raw reports without source map enrichment (it has no access to compiler assets).
+
+## Dev-Time Source Map Resolution
+
+Both dev-server plugins enrich reported error records with original source positions before writing them to the log file. The shared resolver lives in `src/source-map/` (Node-only, never bundled into the browser SDK) and uses the `source-map` library.
+
+### Which Records Are Enriched
+
+For each record in a reported batch, the first matching rule applies:
+
+1. `type === "Error"` with numeric `payload.line` / `payload.column` -- resolves a single frame using the record `name` (which holds the script URL for code errors).
+2. `payload.extra` is a stack-like string (matches `at url:line:col` or `fn@url:line:col`) -- parses and resolves up to 30 frames.
+3. `type === "React"` or `"Vue"` with a string `payload.stack` -- parses and resolves up to 30 frames.
+
+Records that produce at least one frame gain a `sourcemap: { frames: ResolvedFrame[] }` field; all other records pass through unchanged.
+
+### ResolvedFrame Fields
+
+| Field                                              | Description                                                             |
+| -------------------------------------------------- | ------------------------------------------------------------------------ |
+| `resolved`                                         | `false` when no source map matched (raw frame passthrough).              |
+| `url`, `line`, `column`, `func`                    | Raw frame parsed from the stack (Chrome and Firefox stack formats).      |
+| `source`, `originalLine`, `originalColumn`, `name` | Original position resolved from the source map.                          |
+| `snippet`                                          | Original source lines (error line plus 3 lines of context on each side, `highlight: true` on the error line) when `sourcesContent` is available. |
+
+### Map Loading
+
+- **Vite**: source maps come from `server.moduleGraph.getModuleByUrl(...).transformResult.map`, trying `pathname + search` first, then `pathname` alone.
+- **Webpack**: source maps come from `.map` assets collected via the `assetEmitted` compiler hook.
+- Browser stack line/column values are 1-based; the resolver converts columns to 0-based before querying the source map.
+- All resolution failures are silent: the frame is kept with `resolved: false`, and a record-level failure writes the raw body.
 
 ## Debug Logging
 
