@@ -38,6 +38,7 @@ import type { z } from "zod";
 import {
   eventsResponseSchema,
   logFilesSchema,
+  type EventsResponse,
   type LogFileInfo,
   type ReportEvent,
 } from "./log-types";
@@ -51,6 +52,28 @@ async function fetchJson<T>(
   const res = await fetch(url, { signal });
   if (!res.ok) throw new Error(`${url} -> HTTP ${res.status}`);
   return schema.parse(await res.json());
+}
+
+/**
+ * Conditional GET for the events endpoint. Sends If-None-Match with the ETag
+ * of the previous poll; a 304 means nothing changed, so the caller keeps the
+ * current events and skips downloading and re-validating a multi-MB body.
+ */
+async function fetchEvents(
+  url: string,
+  etag: string | null,
+  signal: AbortSignal,
+): Promise<{ etag: string | null; response: EventsResponse | null }> {
+  const res = await fetch(url, {
+    signal,
+    headers: etag ? { "If-None-Match": etag } : undefined,
+  });
+  if (res.status === 304) return { etag, response: null };
+  if (!res.ok) throw new Error(`${url} -> HTTP ${res.status}`);
+  return {
+    etag: res.headers.get("etag"),
+    response: eventsResponseSchema.parse(await res.json()),
+  };
 }
 
 /**
@@ -82,6 +105,8 @@ export function LogsProvider({ children }: { children: ReactNode }) {
   const [tick, setTick] = useState(0);
 
   const abortRef = useRef<AbortController | null>(null);
+  /** Last seen events ETag per file selection, for conditional polling. */
+  const etagsRef = useRef(new Map<string, string>());
 
   const refresh = useCallback(() => setTick((current) => current + 1), []);
 
@@ -93,17 +118,24 @@ export function LogsProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     const load = async () => {
       try {
-        const [fileList, response] = await Promise.all([
+        const [fileList, eventsResult] = await Promise.all([
           fetchJson("/api/logs/files", logFilesSchema, controller.signal),
-          fetchJson(
+          fetchEvents(
             `/api/logs/events?file=${encodeURIComponent(selectedFile)}`,
-            eventsResponseSchema,
+            etagsRef.current.get(selectedFile) ?? null,
             controller.signal,
           ),
         ]);
         if (cancelled) return;
         setFiles(fileList);
-        setEvents(dedupeEvents(response.events));
+        if (eventsResult.response !== null) {
+          if (eventsResult.etag) {
+            etagsRef.current.set(selectedFile, eventsResult.etag);
+          } else {
+            etagsRef.current.delete(selectedFile);
+          }
+          setEvents(dedupeEvents(eventsResult.response.events));
+        }
         setError(null);
         setLastUpdated(Date.now());
       } catch (cause) {

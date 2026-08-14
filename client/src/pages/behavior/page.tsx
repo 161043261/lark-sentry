@@ -62,9 +62,11 @@ import { PageSkeleton } from "@/components/page-skeleton";
 import { useLogs } from "@/lib/use-logs";
 import { useExposure } from "@/lib/exposure";
 import {
+  formatBucketLabel,
   formatDateTime,
   formatMs,
   isPageViewEvent,
+  isSaneTimestamp,
   shortUrl,
   uniqueCount,
 } from "@/lib/stats";
@@ -114,21 +116,23 @@ function exposureExtraOf(event: ReportEvent): ExposureExtra {
 }
 
 function buildPvTimeline(events: ReportEvent[]) {
+  const now = Date.now();
   const buckets = new Map<number, number>();
   const minute = 60_000;
   for (const event of events) {
     if (!isPageViewEvent(event)) continue;
+    if (!isSaneTimestamp(event.timestamp, now)) continue;
     const key = Math.floor(event.timestamp / minute) * minute;
     buckets.set(key, (buckets.get(key) ?? 0) + 1);
   }
-  return [...buckets.entries()]
-    .sort((a, b) => a[0] - b[0])
-    .map(([timestamp, pv]) => {
-      const date = new Date(timestamp);
-      const hh = String(date.getHours()).padStart(2, "0");
-      const mm = String(date.getMinutes()).padStart(2, "0");
-      return { time: `${hh}:${mm}`, pv };
-    });
+  const entries = [...buckets.entries()].sort((a, b) => a[0] - b[0]);
+  const first = entries[0]?.[0] ?? 0;
+  const last = entries[entries.length - 1]?.[0] ?? 0;
+  const withDate = last - first > 24 * 60 * 60_000;
+  return entries.map(([timestamp, pv]) => ({
+    time: formatBucketLabel(timestamp, withDate),
+    pv,
+  }));
 }
 
 export default function BehaviorPage() {

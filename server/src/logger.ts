@@ -46,10 +46,11 @@ class Logger {
   private infoLogger: pino.Logger | null = null;
   private errorLogger: pino.Logger | null = null;
   private logFile: WriteStream | null = null;
-  private logLock = false;
   private currentMonth = "";
   private currentDay = "";
   private currentSize = 0;
+  /** Reader-visible name ("YYYY-MM/<file>.jsonl") of the active SDK log. */
+  private currentSdkLogName: string | null = null;
 
   public init(): void {
     const logConfig = cfg.getConfig().log;
@@ -108,6 +109,7 @@ class Logger {
     }
 
     this.logFile = createWriteStream(filepath, { flags: "a" });
+    this.currentSdkLogName = `${this.currentMonth}/${filename}`;
     try {
       this.currentSize = statSync(filepath).size;
     } catch {
@@ -152,22 +154,12 @@ class Logger {
   }
 
   public writeSdkLog(data: Buffer | string): void {
-    while (this.logLock) {
-      // Busy wait - in production, enablePlugin a proper mutex
-    }
+    this.rotateIfNeeded();
 
-    this.logLock = true;
-
-    try {
-      this.rotateIfNeeded();
-
-      if (this.logFile) {
-        const content = Buffer.isBuffer(data) ? data.toString("utf-8") : data;
-        this.logFile.write(content + "\n");
-        this.currentSize += content.length + 1;
-      }
-    } finally {
-      this.logLock = false;
+    if (this.logFile) {
+      const content = Buffer.isBuffer(data) ? data.toString("utf-8") : data;
+      this.logFile.write(content + "\n");
+      this.currentSize += content.length + 1;
     }
   }
 
@@ -179,11 +171,17 @@ class Logger {
     return this.errorLogger;
   }
 
+  /** Name of the SDK log file currently being appended to, or null. */
+  public getCurrentSdkLogName(): string | null {
+    return this.currentSdkLogName;
+  }
+
   public close(): void {
     if (this.logFile) {
       this.logFile.close();
       this.logFile = null;
     }
+    this.currentSdkLogName = null;
 
     // Pino doesn't need explicit closing for streams
   }

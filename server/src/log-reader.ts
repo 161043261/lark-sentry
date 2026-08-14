@@ -32,17 +32,26 @@
  * one reported batch (an array of IReportData); lines are parsed, flattened
  * into single events and sorted by timestamp ascending.
  *
- * Parsed files are cached in a @swifty.js/cache group (LRU + single-flight).
- * Cache keys embed the file's size and mtime, so appending to the active log
- * or rotating to a new one naturally produces a fresh key, while rotated
- * (immutable) files stay cached forever until evicted.
+ * Parse-cost strategy:
+ * - The ACTIVE file (the one logger currently appends to) is served by an
+ *   incremental tailer (log-tailer.ts): each poll parses only the appended
+ *   bytes instead of re-reading the whole file.
+ * - ROTATED files are immutable; they are parsed once and cached in a
+ *   @swifty.js/cache group (LRU + single-flight). Cache keys embed size and
+ *   mtime, which never change for rotated files, so entries stay hot until
+ *   evicted by the byte budget.
+ * - computeEventsEtag() lets the events route answer 304 from stat calls
+ *   alone when nothing changed since the client's last poll.
  */
 
-import { existsSync, readdirSync, readFileSync, statSync, type Stats } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { join, resolve } from "node:path";
 import { destroyGroup, newGroup, type Group } from "@swifty.js/cache";
 import { z } from "zod";
 import { cfg } from "./config.js";
+import { logger } from "./logger.js";
+import { ActiveLogTailer, parseJsonlLine } from "./log-tailer.js";
 
 const MONTH_DIR_PATTERN = /^\d{4}-\d{2}$/;
 
@@ -72,6 +81,8 @@ type ParsedLogFile = z.infer<typeof parsedLogFileSchema>;
 
 let logGroup: Group | null = null;
 
+const activeTailer = new ActiveLogTailer();
+
 export function initLogCache(): void {
   logGroup = newGroup(GROUP_NAME, CACHE_MAX_BYTES, async (_ctx, key) => {
     const name = key.slice(0, key.indexOf("|"));
@@ -84,6 +95,7 @@ export function initLogCache(): void {
 export function destroyLogCache(): void {
   destroyGroup(GROUP_NAME);
   logGroup = null;
+  activeTailer.clear();
 }
 
 /**
@@ -120,47 +132,24 @@ function parseLogFile(fullPath: string): ParsedLogFile {
     return { lines, events };
   }
   for (const line of content.split("\n")) {
-    const trimmed = line.trim();
-    if (trimmed === "") continue;
-    lines += 1;
-    try {
-      const parsed: unknown = JSON.parse(trimmed);
-      if (Array.isArray(parsed)) events.push(...parsed);
-      else if (parsed !== null && typeof parsed === "object") events.push(parsed);
-    } catch {
-      // Skip lines that failed to parse (e.g. truncated writes).
-    }
+    lines += parseJsonlLine(line, events);
   }
   return { lines, events };
 }
 
-/**
- * Loads one file's parsed content through the cache group. The size/mtime in
- * the key act as a version: any append or rotation misses into a re-parse,
- * while unchanged files are served from memory (single-flight de-duplicates
- * concurrent dashboard polls).
- */
-async function loadParsedFile(name: string, stats: Stats): Promise<ParsedLogFile> {
-  const fallback = () => {
-    const fullPath = safeLogPath(name);
-    return fullPath === null ? { lines: 0, events: [] } : parseLogFile(fullPath);
-  };
-  if (!logGroup) return fallback();
-
-  const key = `${name}|${stats.size}|${stats.mtimeMs}`;
-  try {
-    const view = await logGroup.get(new AbortController().signal, key);
-    return parsedLogFileSchema.parse(JSON.parse(view.toString()));
-  } catch {
-    return fallback();
-  }
+interface LogFileStat {
+  name: string;
+  fullPath: string;
+  size: number;
+  mtime: number;
 }
 
-export async function listLogFiles(): Promise<LogFileInfo[]> {
+/** Stat-only walk of the log tree; performs no reads and no parsing. */
+function listLogFileStats(): LogFileStat[] {
   const logsDir = cfg.getConfig().log.dir;
   if (!existsSync(logsDir)) return [];
 
-  const files: LogFileInfo[] = [];
+  const files: LogFileStat[] = [];
   for (const month of readdirSync(logsDir)) {
     if (!MONTH_DIR_PATTERN.test(month)) continue;
     const monthDir = join(logsDir, month);
@@ -169,15 +158,52 @@ export async function listLogFiles(): Promise<LogFileInfo[]> {
     for (const base of readdirSync(monthDir)) {
       const name = `${month}/${base}`;
       if (!isSdkLogName(name)) continue;
-      const stats = statSync(join(monthDir, base));
+      const fullPath = join(monthDir, base);
+      const stats = statSync(fullPath);
       if (!stats.isFile()) continue;
-      files.push({
-        name,
-        size: stats.size,
-        mtime: stats.mtimeMs,
-        lines: (await loadParsedFile(name, stats)).lines,
-      });
+      files.push({ name, fullPath, size: stats.size, mtime: stats.mtimeMs });
     }
+  }
+  return files;
+}
+
+/**
+ * Loads one file's parsed content. The active file goes through the
+ * incremental tailer; rotated (immutable) files go through the cache group,
+ * whose size/mtime-versioned key stays constant, so they parse at most once
+ * (single-flight de-duplicates concurrent dashboard polls).
+ */
+async function loadParsedFile(entry: LogFileStat): Promise<ParsedLogFile> {
+  if (entry.name === logger.getCurrentSdkLogName()) {
+    try {
+      const snapshot = activeTailer.read(entry.name, entry.fullPath, entry.size);
+      return { lines: snapshot.lines, events: snapshot.events };
+    } catch {
+      // Fall through to the full-parse paths below.
+    }
+  }
+
+  if (!logGroup) return parseLogFile(entry.fullPath);
+
+  const key = `${entry.name}|${entry.size}|${entry.mtime}`;
+  try {
+    const view = await logGroup.get(new AbortController().signal, key);
+    return parsedLogFileSchema.parse(JSON.parse(view.toString()));
+  } catch {
+    return parseLogFile(entry.fullPath);
+  }
+}
+
+export async function listLogFiles(): Promise<LogFileInfo[]> {
+  const entries = listLogFileStats();
+  const files: LogFileInfo[] = [];
+  for (const entry of entries) {
+    files.push({
+      name: entry.name,
+      size: entry.size,
+      mtime: entry.mtime,
+      lines: (await loadParsedFile(entry)).lines,
+    });
   }
   return files.sort((a, b) => b.mtime - a.mtime);
 }
@@ -189,19 +215,51 @@ function timestampOf(value: unknown): number {
   return parsed.success ? parsed.data.timestamp : 0;
 }
 
+/** Stats the file set served for `file`, or null for an invalid name. */
+function statRequestedFiles(file: string): { names: string[]; entries: LogFileStat[] } | null {
+  if (file === "all") {
+    const entries = listLogFileStats().sort((a, b) => (a.name < b.name ? -1 : 1));
+    return { names: entries.map((entry) => entry.name), entries };
+  }
+  const fullPath = safeLogPath(file);
+  if (fullPath === null) return null;
+  try {
+    const stats = statSync(fullPath);
+    return {
+      names: [file],
+      entries: [{ name: file, fullPath, size: stats.size, mtime: stats.mtimeMs }],
+    };
+  } catch {
+    // Valid name that does not exist (yet): served as an empty result.
+    return { names: [file], entries: [] };
+  }
+}
+
+/**
+ * Cheap change detector for the events endpoint: an opaque hash over the
+ * name/size/mtime of every file the request would read. Any append or
+ * rotation changes the tag; computing it costs only stat calls. Returns null
+ * when the requested file name is invalid.
+ */
+export function computeEventsEtag(file: string): string | null {
+  const requested = statRequestedFiles(file);
+  if (requested === null) return null;
+  const parts = requested.entries.map((entry) => `${entry.name}:${entry.size}:${entry.mtime}`);
+  const hash = createHash("sha1").update(parts.join("|")).digest("hex");
+  return `"${hash}"`;
+}
+
 /** Returns null when the requested file name is not a valid SDK log name. */
 export async function readEvents(file: string): Promise<LogEventsResult | null> {
-  const names = file === "all" ? (await listLogFiles()).map((info) => info.name).sort() : [file];
+  const requested = statRequestedFiles(file);
+  if (requested === null) return null;
 
   const events: unknown[] = [];
-  for (const name of names) {
-    const fullPath = safeLogPath(name);
-    if (fullPath === null) return null;
-    if (!existsSync(fullPath)) continue;
-    events.push(...(await loadParsedFile(name, statSync(fullPath))).events);
+  for (const entry of requested.entries) {
+    events.push(...(await loadParsedFile(entry)).events);
   }
 
   events.sort((a, b) => timestampOf(a) - timestampOf(b));
 
-  return { files: names, count: events.length, events };
+  return { files: requested.names, count: events.length, events };
 }

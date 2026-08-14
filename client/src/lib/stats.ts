@@ -113,23 +113,50 @@ export interface TimelinePoint {
 
 const MAX_TIMELINE_POINTS = 60;
 
-function formatBucketLabel(timestamp: number): string {
+const DAY_MS = 24 * 60 * 60_000;
+
+/**
+ * Sanity window for charted timestamps. SDK events are stamped with
+ * Date.now(), so anything before the SDK existed or (beyond clock skew) in
+ * the future is garbage input; a single such outlier would stretch the whole
+ * time axis into uselessness.
+ */
+const MIN_SANE_TIMESTAMP = Date.UTC(2020, 0, 1);
+const MAX_CLOCK_SKEW_MS = 2 * 60_000;
+
+export function isSaneTimestamp(value: number, now = Date.now()): boolean {
+  return (
+    Number.isFinite(value) &&
+    value >= MIN_SANE_TIMESTAMP &&
+    value <= now + MAX_CLOCK_SKEW_MS
+  );
+}
+
+export function formatBucketLabel(
+  timestamp: number,
+  withDate: boolean,
+): string {
   const date = new Date(timestamp);
   const hh = String(date.getHours()).padStart(2, "0");
   const mm = String(date.getMinutes()).padStart(2, "0");
-  return `${hh}:${mm}`;
+  if (!withDate) return `${hh}:${mm}`;
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${month}-${day} ${hh}:${mm}`;
 }
 
 /**
  * Buckets events into a fixed-step timeline (step grows with the time range
  * so the chart never exceeds MAX_TIMELINE_POINTS points), counting events
  * per category in each bucket. Gaps are zero-filled so area charts stay
- * continuous.
+ * continuous. Events with insane timestamps are excluded; labels carry the
+ * date once the range spans more than a day.
  */
 export function buildTimeline(events: ReportEvent[]): TimelinePoint[] {
+  const now = Date.now();
   const stamps = events
     .map((event) => event.timestamp)
-    .filter((value) => Number.isFinite(value) && value > 0);
+    .filter((value) => isSaneTimestamp(value, now));
   if (stamps.length === 0) return [];
 
   const min = Math.min(...stamps);
@@ -142,11 +169,12 @@ export function buildTimeline(events: ReportEvent[]): TimelinePoint[] {
   );
   const step = stepMinutes * minute;
   const start = Math.floor(min / step) * step;
+  const withDate = max - min > DAY_MS;
 
   const buckets = new Map<number, TimelinePoint>();
   for (let ts = start; ts <= max; ts += step) {
     buckets.set(ts, {
-      time: formatBucketLabel(ts),
+      time: formatBucketLabel(ts, withDate),
       timestamp: ts,
       error: 0,
       http: 0,
@@ -159,7 +187,7 @@ export function buildTimeline(events: ReportEvent[]): TimelinePoint[] {
   }
 
   for (const event of events) {
-    if (!Number.isFinite(event.timestamp) || event.timestamp <= 0) continue;
+    if (!isSaneTimestamp(event.timestamp, now)) continue;
     const key = Math.floor(event.timestamp / step) * step;
     const bucket = buckets.get(key);
     if (!bucket) continue;

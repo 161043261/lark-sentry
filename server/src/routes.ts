@@ -27,7 +27,7 @@ import getRawBody from "raw-body";
 import type Koa from "koa";
 import { cfg } from "./config.js";
 import { logger } from "./logger.js";
-import { listLogFiles, readEvents } from "./log-reader.js";
+import { listLogFiles, readEvents, computeEventsEtag } from "./log-reader.js";
 import { enrichReportRecord, isSourcemapEnabled } from "./source-map.js";
 
 async function enrichSdkLogBody(body: Buffer): Promise<Buffer | string> {
@@ -121,13 +121,37 @@ export function registerRoutes(app: Koa) {
   router.get("/api/logs/events", async (ctx) => {
     const raw = ctx.query.file;
     const file = typeof raw === "string" && raw !== "" ? raw : "all";
+
+    // Stat-based change detector: when nothing was appended or rotated since
+    // the client's last poll, answer 304 without parsing or serializing.
+    const etag = computeEventsEtag(file);
+    if (etag === null) {
+      ctx.status = 400;
+      ctx.body = { code: 400, message: "invalid file name" };
+      return;
+    }
+    // no-cache (not no-store): the browser may store the body but must
+    // revalidate with If-None-Match on every request.
+    ctx.set("Cache-Control", "no-cache");
+    ctx.set("ETag", etag);
+    const ifNoneMatch = ctx.request.header["if-none-match"];
+    if (
+      typeof ifNoneMatch === "string" &&
+      ifNoneMatch
+        .split(",")
+        .map((tag) => tag.trim())
+        .includes(etag)
+    ) {
+      ctx.status = 304;
+      return;
+    }
+
     const result = await readEvents(file);
     if (result === null) {
       ctx.status = 400;
       ctx.body = { code: 400, message: "invalid file name" };
       return;
     }
-    ctx.set("Cache-Control", "no-store");
     ctx.body = result;
   });
 
