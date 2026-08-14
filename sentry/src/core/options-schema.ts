@@ -95,8 +95,4 @@ export const optionsSchema = z.object({
   debug: z.boolean(),
 });
 
-const initOptionsSchema = optionsSchema.partial().extend({
-  dsn: z.string(),
-});
-
-export type InitOptions = z.input<typeof initOptionsSchema>;
+export type InitOptions = z.input<typeof optionsSchema> & { dsn: string };
