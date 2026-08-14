@@ -32,7 +32,7 @@ server:
 log:
   dir: ./logs
   max_size: 104857600
-  file_prefix: sdk
+  file_prefix: sentry
   rotate_daily: true
 
 sourcemap:

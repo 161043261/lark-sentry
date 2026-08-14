@@ -36,14 +36,17 @@ import { defineConfig, globalIgnores } from "eslint/config";
 export default defineConfig([
   globalIgnores(["**/coverage/**", "**/dist/**", "**/node_modules/**"]),
   {
-    files: ["client/**/*.{ts,tsx}",
-      "client-react16/**/*.{ts,tsx}",
-      "client-react17/**/*.{ts,tsx}",
-      "client-react18/**/*.{ts,tsx}",
+    files: [
+      "client/**/*.{ts,tsx}",
       "sentry/**/*.{ts,tsx}",
+      "server/**/*.{ts,tsx}",
     ],
-    extends: [js.configs.recommended, tseslint.configs.recommended,      reactHooks.configs.flat.recommended,
-      reactRefresh.configs.vite,],
+    extends: [
+      js.configs.recommended,
+      tseslint.configs.recommended,
+      reactHooks.configs.flat.recommended,
+      reactRefresh.configs.vite,
+    ],
     languageOptions: {
       ecmaVersion: 2022,
       globals: globals.browser,
@@ -74,13 +77,15 @@ export default defineConfig([
       // "@typescript-eslint/no-unsafe-return": "error",
       "@typescript-eslint/consistent-generic-constructors": "error",
       "@typescript-eslint/consistent-type-definitions": "error",
-      "max-lines": [
-        "warn",
-        { max: 200, skipBlankLines: true, skipComments: true },
-      ],
       "no-empty": "error",
       // "no-unused-vars": "error",
       "unicorn/filename-case": ["error", { case: "kebabCase" }],
+    },
+  },
+  {
+    files: ["client/**/*.{ts,tsx}", "server/**/*.{ts,tsx}"],
+    rules: {
+      "@typescript-eslint/no-non-null-assertion": "warn",
     },
   },
 ]);

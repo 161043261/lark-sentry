@@ -32,7 +32,7 @@ export interface ServerConfig {
 export interface LogConfig {
   dir: string; // Default: ./logs
   max_size: number; // Default: 104857600 (100MB)
-  file_prefix: string; // Default: sdk
+  file_prefix: string; // Default: sentry
   rotate_daily: boolean; // Default: true
 }
 
@@ -56,7 +56,7 @@ const defaultConfig: Config = {
   log: {
     dir: "./logs",
     max_size: 104857600, // 100MB
-    file_prefix: "sdk",
+    file_prefix: "sentry",
     rotate_daily: true,
   },
   sourcemap: {
