@@ -48,13 +48,3 @@ export function getSessionId(): string {
     return crypto.randomUUID();
   }
 }
-
-export function refreshSessionId(): string {
-  const newSessionId = crypto.randomUUID();
-  try {
-    sessionStorage.setItem(SESSION_ID_KEY, newSessionId);
-  } catch {
-    return newSessionId;
-  }
-  return newSessionId;
-}

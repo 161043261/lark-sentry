@@ -26,14 +26,8 @@
 import {
   enrichReportData as enrichWithLoader,
   type MapLoader,
-  type RawFrame,
-  type ResolvedFrame,
-  resolveFrame as resolveFrameWithLoader,
-  resolveStack as resolveStackWithLoader,
   splitScriptUrl,
 } from "./source-map.js";
-
-export { parseStack, type RawFrame, type ResolvedFrame, type SnippetLine } from "./source-map.js";
 
 interface MinimalModuleNode {
   transformResult?: { map?: unknown } | null;
@@ -44,7 +38,7 @@ interface MinimalModuleGraph {
 }
 
 /** Structural subset of ViteDevServer, compatible with both vite and vite7. */
-export interface MinimalDevServer {
+interface MinimalDevServer {
   moduleGraph: MinimalModuleGraph;
 }
 
@@ -56,20 +50,6 @@ function createModuleGraphLoader(server: MinimalDevServer): MapLoader {
       (await server.moduleGraph.getModuleByUrl(pathname));
     return mod?.transformResult?.map ?? null;
   };
-}
-
-export async function resolveFrame(
-  server: MinimalDevServer,
-  frame: RawFrame,
-): Promise<ResolvedFrame> {
-  return resolveFrameWithLoader(createModuleGraphLoader(server), frame);
-}
-
-export async function resolveStack(
-  server: MinimalDevServer,
-  stack: string,
-): Promise<ResolvedFrame[]> {
-  return resolveStackWithLoader(createModuleGraphLoader(server), stack);
 }
 
 export async function enrichReportData(

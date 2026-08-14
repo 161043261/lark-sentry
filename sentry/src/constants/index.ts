@@ -24,9 +24,9 @@ import { EventType, type IOptions } from "../types";
 
 import packageJson from "../../package.json" with { type: "json" };
 
-const { name: SDK_NAME, version: SDK_VERSION } = packageJson;
+const { version: SDK_VERSION } = packageJson;
 
-export { SDK_NAME, SDK_VERSION };
+export { SDK_VERSION };
 
 export const MAX_BREADCRUMBS = 30;
 

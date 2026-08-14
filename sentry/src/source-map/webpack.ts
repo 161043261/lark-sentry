@@ -26,18 +26,9 @@
 
 import { type MapLoader, splitScriptUrl } from "./source-map.js";
 
-export {
-  enrichReportData,
-  parseStack,
-  resolveFrame,
-  resolveStack,
-  type MapLoader,
-  type RawFrame,
-  type ResolvedFrame,
-  type SnippetLine,
-} from "./source-map.js";
+export { enrichReportData, type MapLoader } from "./source-map.js";
 
-export interface AssetMapStore {
+interface AssetMapStore {
   /** Record an emitted asset; non-`.map` files are ignored. */
   put(file: string, content: string): void;
   /** MapLoader resolving reported script URLs against collected `.map` assets. */

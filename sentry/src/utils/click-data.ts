@@ -23,7 +23,7 @@
 const trackPrefix = "swifty-sentry-";
 const reservedKeys = new Set(["view", "msg", "ev"]);
 
-export interface DeclarativeClickData {
+interface DeclarativeClickData {
   readonly ev: string; // swifty-sentry-ev
   readonly msg: string; // swifty-sentry-msg
   readonly triggerPageUrl: string; // swifty-sentry-el

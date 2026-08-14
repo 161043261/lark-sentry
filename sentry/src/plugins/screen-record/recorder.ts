@@ -101,7 +101,7 @@ export async function recorder(reporter: IDataReporter): Promise<Cleanup> {
   }
 }
 
-export function zip(data: unknown): string {
+function zip(data: unknown): string {
   if (!data || !pakoInstance) return "";
   const jsonStr = JSON.stringify(data);
   const gzippedArr = pakoInstance.gzip(jsonStr);

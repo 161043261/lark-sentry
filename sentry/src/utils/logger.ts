@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-export const themeColors = {
+const themeColors = {
   info: "#74d4ff",
   success: "#bbf450",
   warn: "#ffb869",

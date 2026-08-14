@@ -24,7 +24,7 @@ import type { IBreadcrumbItem } from "../types";
 
 import { MinHeap, sentry } from "../utils";
 
-export class Breadcrumb extends MinHeap<IBreadcrumbItem> {
+class Breadcrumb extends MinHeap<IBreadcrumbItem> {
   static #instance: Breadcrumb;
 
   public static get instance() {

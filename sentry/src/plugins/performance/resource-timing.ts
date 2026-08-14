@@ -78,7 +78,7 @@ export function createResourceTimingData(resource: IPerformanceResourceTiming): 
   };
 }
 
-export function isFromCache(entry: PerformanceResourceTiming): boolean {
+function isFromCache(entry: PerformanceResourceTiming): boolean {
   return entry.transferSize === 0 || (entry.transferSize !== 0 && entry.encodedBodySize === 0);
 }
 

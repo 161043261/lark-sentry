@@ -95,7 +95,7 @@ export const optionsSchema = z.object({
   debug: z.boolean(),
 });
 
-export const initOptionsSchema = optionsSchema.partial().extend({
+const initOptionsSchema = optionsSchema.partial().extend({
   dsn: z.string(),
 });
 

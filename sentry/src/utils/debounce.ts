@@ -20,6 +20,7 @@
  * SOFTWARE.
  */
 
+/** @deprecated Never imported anywhere in the SDK; kept intentionally (dead-code audit). */
 export default function debounce<This, Args extends unknown[], Return>(
   fn: (this: This, ...args: Args) => Return,
   delay = 300,

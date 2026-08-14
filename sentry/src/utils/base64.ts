@@ -20,6 +20,7 @@
  * SOFTWARE.
  */
 
+/** @deprecated Never imported anywhere in the SDK; base64v2 is the version in use (dead-code audit). */
 function base64(raw: string) {
   return btoa(encodeURIComponent(raw));
 }

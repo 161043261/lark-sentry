@@ -20,22 +20,6 @@
  * SOFTWARE.
  */
 
-export enum HttpStatus {
-  OK = "OK", // 200
-  BadRequest = "Bad Request", // 400
-  Unauthorized = "Unauthorized", // 401
-  Forbidden = "Forbidden", // 403
-  NotFound = "NotFound", // 404
-  Conflict = "Conflict", // 409
-  PayloadTooLarge = "Payload Too Large", // 413
-  TooManyRequests = "Too Many Requests", // 429
-  InternalServerError = "Internal Server Error", // 500
-  NotImplemented = "Not Implemented", // 501
-  ServiceUnavailable = "Service Unavailable", // 503
-  GatewayTimeout = "Gateway Timeout", // 504
-  UnknownError = "Unknown Error",
-}
-
 export enum BreadcrumbType {
   // Network request.
   Http = "Http",
@@ -76,34 +60,46 @@ export enum EventType {
   PV = "PV",
 }
 
-export enum HttpType {
-  Xhr = "XMLHttpRequest",
-  Fetch = "fetch",
-}
-
 export enum HttpStatusCode {
   OK = 200,
+  /** @deprecated Unreferenced in the SDK; kept as public API. */
   BadRequest = 400,
+  /** @deprecated Unreferenced in the SDK; kept as public API. */
   Unauthorized = 401,
+  /** @deprecated Unreferenced in the SDK; kept as public API. */
   Forbidden = 403,
+  /** @deprecated Unreferenced in the SDK; kept as public API. */
   NotFound = 404,
+  /** @deprecated Unreferenced in the SDK; kept as public API. */
   Conflict = 409,
+  /** @deprecated Unreferenced in the SDK; kept as public API. */
   PayloadTooLarge = 413,
+  /** @deprecated Unreferenced in the SDK; kept as public API. */
   TooManyRequests = 429,
   InternalServerError = 500,
+  /** @deprecated Unreferenced in the SDK; kept as public API. */
   NotImplemented = 501,
+  /** @deprecated Unreferenced in the SDK; kept as public API. */
   ServiceUnavailable = 503,
+  /** @deprecated Unreferenced in the SDK; kept as public API. */
   GatewayTimeout = 504,
 }
 
 export enum HttpMethod {
   Get = "GET",
+  /** @deprecated Unreferenced in the SDK; kept as public API. */
   Head = "HEAD",
   Post = "POST",
+  /** @deprecated Unreferenced in the SDK; kept as public API. */
   Put = "PUT",
+  /** @deprecated Unreferenced in the SDK; kept as public API. */
   Delete = "DELETE",
+  /** @deprecated Unreferenced in the SDK; kept as public API. */
   Connect = "CONNECT",
+  /** @deprecated Unreferenced in the SDK; kept as public API. */
   Options = "OPTIONS",
+  /** @deprecated Unreferenced in the SDK; kept as public API. */
   Trace = "TRACE",
+  /** @deprecated Unreferenced in the SDK; kept as public API. */
   Patch = "PATCH",
 }

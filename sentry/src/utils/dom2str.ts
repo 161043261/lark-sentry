@@ -20,6 +20,7 @@
  * SOFTWARE.
  */
 
+/** @deprecated Never imported anywhere in the SDK; getCssSelectors covers the same need (dead-code audit). */
 function dom2str(target: HTMLElement): string {
   let current: HTMLElement | null = target;
   const path: string[] = [];

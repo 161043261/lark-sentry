@@ -24,7 +24,7 @@ import { z } from "zod";
 
 import { EventType, Status, type TReportPayload } from "../types";
 
-export const deviceInfoSchema = z.object({
+const deviceInfoSchema = z.object({
   browserName: z.string(),
   browserVersion: z.string(),
   osName: z.string(),
@@ -37,7 +37,7 @@ export const deviceInfoSchema = z.object({
   screenResolution: z.string(),
 });
 
-export const reportDataSchema = z.object({
+const reportDataSchema = z.object({
   id: z.string(),
   type: z.enum(EventType),
   name: z.string(),
@@ -57,5 +57,3 @@ export const reportDataSchema = z.object({
 });
 
 export const reportDataListSchema = z.array(reportDataSchema);
-
-export type ValidReportData = z.infer<typeof reportDataSchema>;

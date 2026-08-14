@@ -25,7 +25,7 @@ import type { IReportData, TReportPayload } from "../types";
 import { sentry } from "../utils";
 import { isPromise } from "./promise.js";
 
-export function payloadToReportData<T extends TReportPayload>(
+function payloadToReportData<T extends TReportPayload>(
   id: string,
   payload: T,
 ): IReportData<T> {
