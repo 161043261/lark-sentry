@@ -42,13 +42,13 @@ import { useEffect, useState } from "react";
 import { ReactErrorBoundary } from "@swifty.js/sentry/react";
 
 /** Interval between crash probability rolls. */
-const ROLL_INTERVAL_MS = 3_000;
+const ROLL_INTERVAL_MS = 20_000;
 
-/** Probability that a single roll triggers a render crash (50%). */
-const CRASH_PROBABILITY = 0.5;
+/** Probability that a single roll triggers a render crash (4%). */
+const CRASH_PROBABILITY = 0.04;
 
 /** Delay before the crashed boundary is reset for the next round. */
-const RESET_DELAY_MS = 500;
+const RESET_DELAY_MS = 1_000;
 
 interface CrashingProbeProps {
   shouldCrash: boolean;
