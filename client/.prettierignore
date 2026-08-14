@@ -1,1 +1,4 @@
-src/generated
+dist/
+logs/
+node_modules/
+src/generated/

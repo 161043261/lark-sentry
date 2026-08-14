@@ -23,8 +23,9 @@
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
-// import sentryPlugin from "@swifty.js/sentry/vite";
+import sentryPlugin from "@swifty.js/sentry/vite";
 import pageRoutes from "./plugins/vite-plugin-page-routes";
+import logReader from "./plugins/vite-plugin-log-reader";
 import { mkdirSync, readdirSync, renameSync } from "node:fs";
 import { join, resolve } from "node:path";
 
@@ -67,9 +68,15 @@ export default defineConfig({
     pageRoutes(),
     react(),
     tailwindcss(),
-    // sentryPlugin({ dsn: "/api/log" }),
+    sentryPlugin({ dsn: "/api/log" }),
+    logReader(),
     moveSourcemaps(),
   ],
+  resolve: {
+    alias: {
+      "@": resolve(import.meta.dirname, "src"),
+    },
+  },
   optimizeDeps: {
     // 禁止预构建依赖
     exclude: ["@swifty.js/sentry"],
@@ -77,19 +84,5 @@ export default defineConfig({
   build: {
     // hidden: 生成 sourcemap, 但是不在打包产物中追加 sourceMappingURL 注释
     sourcemap: "hidden",
-  },
-  server: {
-    proxy: {
-      "/api": {
-        target: "http://127.0.0.1:8088",
-        changeOrigin: true,
-        // rewrite: (path) => path.replace(/^\/api/, ""),
-      },
-      "/static": {
-        target: "http://127.0.0.1:8088",
-        changeOrigin: true,
-        // rewrite: (path) => path.replace(/^\/static/, ""),
-      },
-    },
   },
 });

@@ -20,35 +20,32 @@
  * SOFTWARE.
  */
 
-import { createRoot } from "react-dom/client";
-import { BrowserRouter } from "react-router-dom";
-import "./index.css";
-import App from "./app.tsx";
+import { useEffect, useState } from "react";
+import { Moon, Sun } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
-import { enablePlugin, init } from "@swifty.js/sentry";
-import {
-  PerformancePlugin,
-  ScreenRecordPlugin,
-  ExposurePlugin,
-} from "@swifty.js/sentry/plugins";
-import { startErrorSeeder } from "./crash/seeder";
+const STORAGE_KEY = "dashboard-theme";
 
-document.documentElement.classList.toggle(
-  "dark",
-  localStorage.getItem("dashboard-theme") !== "light",
-);
+function readStoredTheme(): "dark" | "light" {
+  return localStorage.getItem(STORAGE_KEY) === "light" ? "light" : "dark";
+}
 
-init({ dsn: "/api/log", debug: true });
-enablePlugin(new PerformancePlugin());
-enablePlugin(new ScreenRecordPlugin());
-enablePlugin(new ExposurePlugin());
+export function ThemeToggle() {
+  const [theme, setTheme] = useState<"dark" | "light">(readStoredTheme);
 
-// Plant probabilistic errors of every SDK-collectible type (must run after
-// init so the capture listeners are already installed). See ./dev/error-seeder.
-startErrorSeeder();
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", theme === "dark");
+    localStorage.setItem(STORAGE_KEY, theme);
+  }, [theme]);
 
-createRoot(document.getElementById("root")!).render(
-  <BrowserRouter>
-    <App />
-  </BrowserRouter>,
-);
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      aria-label="切换主题"
+      onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+    >
+      {theme === "dark" ? <Sun /> : <Moon />}
+    </Button>
+  );
+}

@@ -58,6 +58,9 @@ export default (env, argv) => {
     },
     resolve: {
       extensions: [".tsx", ".ts", ".js"],
+      alias: {
+        "@": resolve(__dirname, "src"),
+      },
       extensionAlias: {
         ".js": [".ts", ".tsx", ".js"],
       },
@@ -115,13 +118,6 @@ export default (env, argv) => {
       port: 5174,
       historyApiFallback: true,
       client: { overlay: false },
-      proxy: [
-        {
-          context: ["/api", "/static"],
-          target: "http://127.0.0.1:8088",
-          changeOrigin: true,
-        },
-      ],
     };
   }
 

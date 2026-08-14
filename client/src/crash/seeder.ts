@@ -72,7 +72,6 @@ function seedUncaughtTypeError(): void {
   setTimeout(() => {
     const brokenUser: { profile: { name: string } } | null = null;
     // Intentional crash: cannot read properties of null (reading 'profile')
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     console.log(brokenUser!.profile.name);
   }, 0);
 }
@@ -90,7 +89,6 @@ function seedUncaughtReferenceError(): void {
       __definitelyMissingFn__: () => void;
     };
     // Intentional crash: __definitelyMissingFn__ is not a function
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     (globalThis as LooseGlobal).__definitelyMissingFn__();
   }, 0);
 }
@@ -178,7 +176,6 @@ function seedManualTraceError(): void {
   try {
     throw new RangeError("Seeded manual report: order quantity out of range");
   } catch (error) {
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     traceError(error as Error);
   }
 }

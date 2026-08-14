@@ -21,41 +21,112 @@
  */
 
 import { Suspense } from "react";
-import { useRoutes, Outlet, Link } from "react-router-dom";
-import { FavoriteProvider } from "./context/favorite";
+import { Link, NavLink, Outlet, useRoutes } from "react-router-dom";
+import {
+  Bug,
+  Gauge,
+  Globe,
+  LayoutDashboard,
+  MousePointerClick,
+  Radar,
+} from "lucide-react";
 import { routes } from "./generated/routes";
-import { Toolbar } from "./components/toolbar";
-import { Spinner } from "./components/spinner";
+import { LogsProvider } from "@/lib/logs-context";
+import { LogControls } from "@/components/log-controls";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
+import { cn } from "@/lib/utils";
 import { RandomCrash } from "./crash";
+
+const NAV_ITEMS = [
+  { to: "/", label: "总览", icon: LayoutDashboard },
+  { to: "/errors", label: "错误监控", icon: Bug },
+  { to: "/network", label: "网络请求", icon: Globe },
+  { to: "/performance", label: "性能指标", icon: Gauge },
+  { to: "/behavior", label: "用户行为", icon: MousePointerClick },
+];
+
+function Sidebar() {
+  return (
+    <aside className="bg-sidebar text-sidebar-foreground fixed inset-y-0 left-0 z-10 flex w-56 flex-col border-r">
+      <div className="flex h-14 items-center gap-2 border-b px-4">
+        <Radar className="text-sidebar-primary size-5" />
+        <span className="text-sm font-semibold">Swifty Sentry</span>
+      </div>
+      <nav className="flex flex-1 flex-col gap-1 p-2">
+        {NAV_ITEMS.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            end={item.to === "/"}
+            swifty-sentry-ev={`nav-${item.to === "/" ? "overview" : item.to.slice(1)}`}
+            swifty-sentry-msg={`导航到${item.label}`}
+            className={({ isActive }) =>
+              cn(
+                "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors",
+                isActive &&
+                  "bg-sidebar-accent text-sidebar-accent-foreground font-medium",
+              )
+            }
+          >
+            <item.icon className="size-4" />
+            {item.label}
+          </NavLink>
+        ))}
+      </nav>
+      <div className="text-muted-foreground border-t p-3 text-xs">
+        数据来源：logs/*.jsonl
+        <br />由 @swifty.js/sentry 上报
+      </div>
+    </aside>
+  );
+}
 
 function NotFound() {
   return (
-    <div className="flex flex-col items-center justify-center py-32">
-      <p className="text-6xl font-bold text-gray-800">404</p>
-      <p className="mt-4 text-lg text-gray-400">Page not found</p>
-      <Link
-        to="/"
-        className="bg-accent-600 hover:bg-accent-500 mt-8 rounded-full px-6 py-2.5 text-sm font-medium text-white transition-colors"
-      >
-        Back to Home
-      </Link>
+    <div className="flex flex-col items-center justify-center gap-4 py-32">
+      <p className="text-6xl font-bold">404</p>
+      <p className="text-muted-foreground">页面不存在</p>
+      <Button variant="outline" render={<Link to="/" />}>
+        返回总览
+      </Button>
+    </div>
+  );
+}
+
+function PageFallback() {
+  return (
+    <div className="flex items-center justify-center py-32">
+      <Spinner className="size-6" />
     </div>
   );
 }
 
 function Layout() {
   return (
-    <FavoriteProvider>
-      <div className="flex min-h-screen flex-col">
-        <Toolbar />
-        <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-8">
-          <Suspense fallback={<Spinner />}>
-            <Outlet />
-          </Suspense>
-        </main>
+    <LogsProvider>
+      <div className="bg-background text-foreground min-h-screen">
+        <Sidebar />
+        <div className="flex min-h-screen flex-col pl-56">
+          <header className="bg-background/80 sticky top-0 z-10 flex h-14 items-center justify-between gap-4 border-b px-6 backdrop-blur">
+            <h1 className="text-muted-foreground text-sm font-medium">
+              前端监控 Dashboard
+            </h1>
+            <div className="flex items-center gap-2">
+              <LogControls />
+              <ThemeToggle />
+            </div>
+          </header>
+          <main className="flex-1 p-6">
+            <Suspense fallback={<PageFallback />}>
+              <Outlet />
+            </Suspense>
+          </main>
+        </div>
         <RandomCrash />
       </div>
-    </FavoriteProvider>
+    </LogsProvider>
   );
 }
 

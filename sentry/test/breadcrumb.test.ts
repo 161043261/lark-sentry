@@ -115,7 +115,6 @@ describe("breadcrumb attachment", () => {
     expect(errorReports.length).toBe(1);
     const crumbs = errorReports[0].breadcrumbs;
     expect(Array.isArray(crumbs)).toBe(true);
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     expect((crumbs as unknown[]).length).toBe(2);
   });
 });

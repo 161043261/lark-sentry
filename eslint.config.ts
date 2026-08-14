@@ -82,10 +82,4 @@ export default defineConfig([
       "unicorn/filename-case": ["error", { case: "kebabCase" }],
     },
   },
-  {
-    files: ["client/**/*.{ts,tsx}", "server/**/*.{ts,tsx}"],
-    rules: {
-      "@typescript-eslint/no-non-null-assertion": "warn",
-    },
-  },
 ]);
