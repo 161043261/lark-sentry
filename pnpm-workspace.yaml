@@ -31,6 +31,3 @@ allowBuilds:
 onlyBuiltDependencies:
   - "@parcel/watcher"
   - esbuild
-
-catalog:
-  "@swifty.js/cache": "^0.0.1"

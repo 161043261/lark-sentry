@@ -24,12 +24,9 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import cors from "@koa/cors";
 import Koa from "koa";
-import mount from "koa-mount";
-import serve from "koa-static";
 import { cfg } from "./config.js";
 import { logger } from "./logger.js";
 import { registerRoutes } from "./routes.js";
-import { initMovieCache, destroyMovieCache, lucideIconsDir } from "./movie.js";
 import { initSourcemap, destroySourcemap } from "./source-map.js";
 
 const app = new Koa();
@@ -62,17 +59,6 @@ async function startup() {
     infoLogger.info("Server starting...");
   }
 
-  // Initialize movie cache with 1000 faker-generated entries
-  try {
-    initMovieCache();
-    if (infoLogger) {
-      infoLogger.info("Movie cache initialized with 1000 entries");
-    }
-  } catch (error) {
-    console.error(`Failed to init movie cache: ${error}`);
-    process.exit(1);
-  }
-
   // Initialize sourcemap resolution
   initSourcemap(cfg.getConfig().sourcemap);
   if (infoLogger && cfg.getConfig().sourcemap.enabled) {
@@ -94,13 +80,10 @@ async function startup() {
         }
         return "";
       },
-      allowMethods: ["POST", "OPTIONS", "GET"],
+      allowMethods: ["POST", "OPTIONS", "GET", "HEAD"],
       allowHeaders: ["Content-Type", "Authorization"],
     }),
   );
-
-  // Serve lucide icon SVGs
-  app.use(mount("/static", serve(lucideIconsDir)));
 
   // Register Routes
   registerRoutes(app);
@@ -145,7 +128,6 @@ async function startup() {
     }
 
     // Close resources
-    destroyMovieCache();
     destroySourcemap();
     logger.close();
 

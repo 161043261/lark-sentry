@@ -23,9 +23,8 @@
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
-import sentryPlugin from "@swifty.js/sentry/vite";
+// import sentryPlugin from "@swifty.js/sentry/vite";
 import pageRoutes from "./plugins/vite-plugin-page-routes";
-import logReader from "./plugins/vite-plugin-log-reader";
 import { mkdirSync, readdirSync, renameSync } from "node:fs";
 import { join, resolve } from "node:path";
 
@@ -68,8 +67,7 @@ export default defineConfig({
     pageRoutes(),
     react(),
     tailwindcss(),
-    sentryPlugin({ dsn: "/api/log" }),
-    logReader(),
+    // sentryPlugin({ dsn: "/api/log" }),
     moveSourcemaps(),
   ],
   resolve: {
@@ -84,5 +82,14 @@ export default defineConfig({
   build: {
     // "hidden": generate sourcemaps without appending sourceMappingURL comments to the bundle output
     sourcemap: "hidden",
+  },
+  server: {
+    // SDK reports (POST/HEAD /api/log), dashboard reads (/api/logs/*) and the
+    // error-seeder's /api + /static probes all go to the standalone server,
+    // matching the production topology. Run it with `pnpm server` (port 8088).
+    proxy: {
+      "/api": { target: "http://localhost:8088", changeOrigin: true },
+      "/static": { target: "http://localhost:8088", changeOrigin: true },
+    },
   },
 });

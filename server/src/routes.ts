@@ -27,7 +27,7 @@ import getRawBody from "raw-body";
 import type Koa from "koa";
 import { cfg } from "./config.js";
 import { logger } from "./logger.js";
-import { getAllMovies } from "./movie.js";
+import { listLogFiles, readEvents } from "./log-reader.js";
 import { enrichReportRecord, isSourcemapEnabled } from "./source-map.js";
 
 async function enrichSdkLogBody(body: Buffer): Promise<Buffer | string> {
@@ -107,37 +107,28 @@ export function registerRoutes(app: Koa) {
     ctx.body = status;
   });
 
-  router.get("/api/movie", async (ctx) => {
-    try {
-      const keyword = ctx.query.keyword;
+  // The SDK probes dsn recovery with HEAD requests; acknowledge them without
+  // touching the log pipeline.
+  router.head("/api/log", (ctx) => {
+    ctx.status = 204;
+  });
 
-      if (keyword !== undefined && !String(keyword).trim()) {
-        ctx.body = { movies: [] };
-        return;
-      }
+  router.get("/api/logs/files", (ctx) => {
+    ctx.set("Cache-Control", "no-store");
+    ctx.body = listLogFiles();
+  });
 
-      const movies = await getAllMovies();
-
-      if (keyword !== undefined) {
-        const kw = String(keyword).trim().toLowerCase();
-        ctx.body = {
-          movies: movies.filter(
-            (m) =>
-              m.name.toLowerCase().includes(kw) ||
-              (m.description && m.description.toLowerCase().includes(kw)),
-          ),
-        };
-        return;
-      }
-
-      ctx.body = { movies };
-    } catch (err) {
-      ctx.status = 500;
-      ctx.body = {
-        code: 500,
-        message: "Failed to get movies: " + (err instanceof Error ? err.message : String(err)),
-      };
+  router.get("/api/logs/events", (ctx) => {
+    const raw = ctx.query.file;
+    const file = typeof raw === "string" && raw !== "" ? raw : "all";
+    const result = readEvents(file);
+    if (result === null) {
+      ctx.status = 400;
+      ctx.body = { code: 400, message: "invalid file name" };
+      return;
     }
+    ctx.set("Cache-Control", "no-store");
+    ctx.body = result;
   });
 
   app.use(router.routes());

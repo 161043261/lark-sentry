@@ -38,7 +38,7 @@ export interface LogConfig {
 
 export interface SourcemapConfig {
   enabled: boolean; // Default: false
-  dir: string; // Default: ./sourcemaps
+  dir: string; // Default: ../client/dist/.sourcemaps
 }
 
 export interface Config {
@@ -61,7 +61,7 @@ const defaultConfig: Config = {
   },
   sourcemap: {
     enabled: false,
-    dir: "./sourcemaps",
+    dir: "../client/dist/.sourcemaps",
   },
 };
 

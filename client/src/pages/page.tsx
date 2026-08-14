@@ -22,15 +22,7 @@
 
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  Cell,
-  Pie,
-  PieChart,
-  XAxis,
-} from "recharts";
+import { Area, AreaChart, CartesianGrid, Pie, PieChart, XAxis } from "recharts";
 import {
   Activity,
   Bug,
@@ -230,11 +222,7 @@ export default function OverviewPage() {
                   innerRadius={55}
                   strokeWidth={2}
                   label
-                >
-                  {pieData.map((entry) => (
-                    <Cell key={entry.key} fill={entry.fill} />
-                  ))}
-                </Pie>
+                />
               </PieChart>
             </ChartContainer>
           </CardContent>
