@@ -62,7 +62,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { StatCard } from "@/components/stat-card";
-import { useLogs } from "@/lib/logs-context";
+import { useLogs } from "@/lib/use-logs";
 import {
   buildTimeline,
   countByCategory,
@@ -83,9 +83,13 @@ const timelineConfig = {
   behavior: { label: "用户行为", color: "var(--chart-5)" },
 } satisfies ChartConfig;
 
-const TIMELINE_KEYS = Object.keys(timelineConfig) as Array<
-  keyof typeof timelineConfig
->;
+const TIMELINE_KEYS = [
+  "error",
+  "http",
+  "performance",
+  "pv",
+  "behavior",
+] as const;
 
 const CATEGORY_COLORS: Record<EventCategory, string> = {
   error: "var(--chart-1)",
@@ -145,7 +149,7 @@ export default function OverviewPage() {
 
   const pieData = categories.map((item) => ({
     ...item,
-    fill: CATEGORY_COLORS[item.key as EventCategory] ?? "var(--border)",
+    fill: CATEGORY_COLORS[item.key],
   }));
 
   return (

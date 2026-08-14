@@ -21,132 +21,153 @@
  */
 
 /**
- * Types mirroring the wire format produced by @swifty.js/sentry:
- * each jsonl line is an IReportData[] batch, optionally enriched with
- * `sourcemap.frames` by the vite dev-server plugin.
+ * Zod schemas (and inferred types) mirroring the wire format produced by
+ * @swifty.js/sentry: each jsonl line is an IReportData[] batch, optionally
+ * enriched with `sourcemap.frames` by the vite dev-server plugin. Field-level
+ * `.catch()` keeps a single malformed event from failing a whole response.
  */
 
-export type EventStatus = "OK" | "Error";
+import { z } from "zod";
 
-export interface DeviceInfo {
-  browserName: string;
-  browserVersion: string;
-  osName: string;
-  osVersion: string;
-  userAgent: string;
-  deviceType: string;
-  deviceModel: string;
-  fingerprint: string;
-  language: string;
-  screenResolution: string;
-}
+export const deviceInfoSchema = z.object({
+  browserName: z.string().catch("unknown"),
+  browserVersion: z.string().catch(""),
+  osName: z.string().catch("unknown"),
+  osVersion: z.string().catch(""),
+  userAgent: z.string().catch(""),
+  deviceType: z.string().catch("unknown"),
+  deviceModel: z.string().catch("unknown"),
+  fingerprint: z.string().catch(""),
+  language: z.string().catch(""),
+  screenResolution: z.string().catch(""),
+});
 
-export interface SnippetLine {
-  line: number;
-  code: string;
-  highlight: boolean;
-}
+export type DeviceInfo = z.infer<typeof deviceInfoSchema>;
 
-export interface ResolvedFrame {
-  resolved: boolean;
-  url: string;
-  line: number;
-  column: number;
-  func?: string;
-  source?: string;
-  originalLine?: number;
-  originalColumn?: number;
-  name?: string;
-  snippet?: SnippetLine[];
-}
+export const snippetLineSchema = z.object({
+  line: z.number().catch(0),
+  code: z.string().catch(""),
+  highlight: z.boolean().catch(false),
+});
 
-export interface ResourceTiming {
-  name: string;
-  initiatorType: string;
-  startTime: number;
-  responseEnd: number;
-  duration: number;
-  transferSize: number;
-  encodedBodySize: number;
-  decodedBodySize: number;
-  fromCache: boolean;
-}
+export type SnippetLine = z.infer<typeof snippetLineSchema>;
 
-/** Loose union of all SDK payload variants, keyed by optional fields. */
-export interface EventPayload {
-  id?: string;
-  deviceId?: string;
-  sessionId?: string;
-  type?: string;
-  name?: string;
-  time?: string;
-  timestamp?: number;
-  message?: string;
-  status?: EventStatus;
+export const resolvedFrameSchema = z.object({
+  resolved: z.boolean().catch(false),
+  url: z.string().catch(""),
+  line: z.number().catch(0),
+  column: z.number().catch(0),
+  func: z.string().optional().catch(undefined),
+  source: z.string().optional().catch(undefined),
+  originalLine: z.number().optional().catch(undefined),
+  originalColumn: z.number().optional().catch(undefined),
+  name: z.string().optional().catch(undefined),
+  snippet: z.array(snippetLineSchema).optional().catch(undefined),
+});
+
+export type ResolvedFrame = z.infer<typeof resolvedFrameSchema>;
+
+export const resourceTimingSchema = z.object({
+  name: z.string().catch(""),
+  initiatorType: z.string().catch(""),
+  startTime: z.number().catch(0),
+  responseEnd: z.number().catch(0),
+  duration: z.number().catch(0),
+  transferSize: z.number().catch(0),
+  encodedBodySize: z.number().catch(0),
+  decodedBodySize: z.number().catch(0),
+  fromCache: z.boolean().catch(false),
+});
+
+export type ResourceTiming = z.infer<typeof resourceTimingSchema>;
+
+export const longTaskSchema = z.looseObject({
+  name: z.string().catch(""),
+  startTime: z.number().catch(0),
+  duration: z.number().catch(0),
+});
+
+/** Loose union of all SDK payload variants; unknown keys pass through. */
+export const eventPayloadSchema = z.looseObject({
+  id: z.string().optional().catch(undefined),
+  deviceId: z.string().optional().catch(undefined),
+  sessionId: z.string().optional().catch(undefined),
   /** ICodeError */
-  line?: number;
-  column?: number;
+  line: z.number().optional().catch(undefined),
+  column: z.number().optional().catch(undefined),
   /** IHttpData */
-  method?: string;
-  api?: string;
-  elapsedTime?: number;
-  statusCode?: number;
-  requestData?: unknown;
-  responseData?: unknown;
+  method: z.string().optional().catch(undefined),
+  api: z.string().optional().catch(undefined),
+  elapsedTime: z.number().optional().catch(undefined),
+  statusCode: z.number().optional().catch(undefined),
   /** IResourceError */
-  src?: string;
-  href?: string;
+  src: z.string().optional().catch(undefined),
+  href: z.string().optional().catch(undefined),
   /** Performance metric */
-  value?: number;
-  rating?: "good" | "needs-improvement" | "poor";
-  resourceList?: ResourceTiming[];
-  longTasks?: Array<{ name: string; startTime: number; duration: number }>;
-  memory?: unknown;
+  value: z.number().optional().catch(undefined),
+  rating: z
+    .enum(["good", "needs-improvement", "poor"])
+    .optional()
+    .catch(undefined),
+  resourceList: z.array(resourceTimingSchema).optional().catch(undefined),
+  longTasks: z.array(longTaskSchema).optional().catch(undefined),
   /** IRouteData */
-  from?: string;
-  to?: string;
+  from: z.string().optional().catch(undefined),
+  to: z.string().optional().catch(undefined),
   /** IBatchErrorData */
-  batchError?: boolean;
-  batchErrorLength?: number;
-  batchErrorLastHappenTime?: number;
+  batchError: z.boolean().optional().catch(undefined),
+  batchErrorLength: z.number().optional().catch(undefined),
+  batchErrorLastHappenTime: z.number().optional().catch(undefined),
   /** React/Vue framework errors */
-  stack?: string;
+  stack: z.string().optional().catch(undefined),
   /** ScreenRecord */
-  event?: string;
-  events?: string;
-  eventCount?: number;
+  event: z.string().optional().catch(undefined),
+  events: z.string().optional().catch(undefined),
+  eventCount: z.number().optional().catch(undefined),
   /** PV / Click / Exposure / errors — extra can be a stack string or object */
-  extra?: unknown;
-  [key: string]: unknown;
-}
+  extra: z.unknown().optional(),
+});
 
-export interface ReportEvent {
-  id: string;
-  type: string;
-  name: string;
-  message: string;
-  status: EventStatus;
-  time: string;
-  timestamp: number;
-  url: string;
-  userId: string;
-  projectId: string;
-  sdkVersion: string;
-  deviceInfo?: DeviceInfo;
-  breadcrumbs?: unknown[];
-  payload?: EventPayload;
-  sourcemap?: { frames: ResolvedFrame[] };
-}
+export type EventPayload = z.infer<typeof eventPayloadSchema>;
 
-export interface LogFileInfo {
-  name: string;
-  size: number;
-  mtime: number;
-  lines: number;
-}
+export const reportEventSchema = z.looseObject({
+  id: z.string().catch(""),
+  type: z.string().catch("Unknown"),
+  name: z.string().catch(""),
+  message: z.string().catch(""),
+  status: z.string().catch("OK"),
+  time: z.string().catch(""),
+  timestamp: z.number().catch(0),
+  url: z.string().catch(""),
+  userId: z.string().catch("unknown"),
+  projectId: z.string().catch("unknown"),
+  sdkVersion: z.string().catch(""),
+  deviceInfo: deviceInfoSchema.optional().catch(undefined),
+  breadcrumbs: z.array(z.unknown()).optional().catch(undefined),
+  payload: eventPayloadSchema.optional().catch(undefined),
+  sourcemap: z
+    .object({ frames: z.array(resolvedFrameSchema).catch([]) })
+    .optional()
+    .catch(undefined),
+});
 
-export interface EventsResponse {
-  files: string[];
-  count: number;
-  events: ReportEvent[];
-}
+export type ReportEvent = z.infer<typeof reportEventSchema>;
+
+export const logFileInfoSchema = z.object({
+  name: z.string(),
+  size: z.number().catch(0),
+  mtime: z.number().catch(0),
+  lines: z.number().catch(0),
+});
+
+export type LogFileInfo = z.infer<typeof logFileInfoSchema>;
+
+export const logFilesSchema = z.array(logFileInfoSchema).catch([]);
+
+export const eventsResponseSchema = z.object({
+  files: z.array(z.string()).catch([]),
+  count: z.number().catch(0),
+  events: z.array(reportEventSchema).catch([]),
+});
+
+export type EventsResponse = z.infer<typeof eventsResponseSchema>;

@@ -34,7 +34,12 @@ import { defineConfig, globalIgnores } from "eslint/config";
 // const __dirname = dirname(__filename);
 
 export default defineConfig([
-  globalIgnores(["**/coverage/**", "**/dist/**", "**/node_modules/**"]),
+  globalIgnores([
+    "**/coverage/**",
+    "**/dist/**",
+    "**/node_modules/**",
+    "client/src/components/ui/**",
+  ]),
   {
     files: [
       "client/**/*.{ts,tsx}",

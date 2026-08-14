@@ -34,6 +34,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 import type { ServerResponse } from "node:http";
 import type { Plugin } from "vite";
+import { z } from "zod";
 
 const FILES_URL = "/api/logs/files";
 const EVENTS_URL = "/api/logs/events";
@@ -126,13 +127,16 @@ function readEvents(
     events.push(...readFileEvents(fullPath));
   }
 
-  events.sort((a, b) => {
-    const left = (a as { timestamp?: number }).timestamp ?? 0;
-    const right = (b as { timestamp?: number }).timestamp ?? 0;
-    return left - right;
-  });
+  events.sort((a, b) => timestampOf(a) - timestampOf(b));
 
   return { files: names, count: events.length, events };
+}
+
+const timestampedSchema = z.looseObject({ timestamp: z.number().catch(0) });
+
+function timestampOf(value: unknown): number {
+  const parsed = timestampedSchema.safeParse(value);
+  return parsed.success ? parsed.data.timestamp : 0;
 }
 
 export default function logReader(): Plugin {

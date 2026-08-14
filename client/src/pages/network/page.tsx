@@ -52,7 +52,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { StatCard } from "@/components/stat-card";
-import { useLogs } from "@/lib/logs-context";
+import { useLogs } from "@/lib/use-logs";
 import {
   countBy,
   formatDateTime,

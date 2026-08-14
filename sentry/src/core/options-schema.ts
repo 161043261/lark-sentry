@@ -71,7 +71,7 @@ export const optionsSchema = z.object({
   visitorId: z.string(),
   useImageReport: z.boolean(),
   screenRecordDurationMs: z.number().nonnegative(),
-  screenRecordEventTypes: z.array(z.nativeEnum(EventType)),
+  screenRecordEventTypes: z.array(z.enum(EventType)),
   hasSkeleton: z.boolean(),
   rootCssSelectors: z.array(z.string()),
   clickThrottleDelay: z.number().nonnegative(),
@@ -95,4 +95,5 @@ export const optionsSchema = z.object({
   debug: z.boolean(),
 });
 
-export type InitOptions = z.input<typeof optionsSchema> & { dsn: string };
+type Options = z.input<typeof optionsSchema>;
+export type InitOptions = Partial<Options> & Pick<Options, "dsn">;

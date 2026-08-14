@@ -58,39 +58,42 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { StatCard } from "@/components/stat-card";
-import { useLogs } from "@/lib/logs-context";
+import { useLogs } from "@/lib/use-logs";
 import { formatDateTime, formatMs, shortUrl, uniqueCount } from "@/lib/stats";
 import type { ReportEvent } from "@/lib/log-types";
+import { z } from "zod";
 
 const pvConfig = {
   pv: { label: "PV", color: "var(--chart-4)" },
 } satisfies ChartConfig;
 
-interface ClickExtra {
-  ev?: string;
-  msg?: string;
-  x?: number;
-  y?: number;
-  elementPath?: string;
-  triggerPageUrl?: string;
-}
+const clickExtraSchema = z.object({
+  ev: z.string().optional().catch(undefined),
+  msg: z.string().optional().catch(undefined),
+  x: z.number().optional().catch(undefined),
+  y: z.number().optional().catch(undefined),
+  elementPath: z.string().optional().catch(undefined),
+  triggerPageUrl: z.string().optional().catch(undefined),
+});
+
+type ClickExtra = z.infer<typeof clickExtraSchema>;
 
 function clickExtraOf(event: ReportEvent): ClickExtra {
-  const extra = event.payload?.extra;
-  if (extra && typeof extra === "object") return extra as ClickExtra;
-  return {};
+  const parsed = clickExtraSchema.safeParse(event.payload?.extra);
+  return parsed.success ? parsed.data : {};
 }
 
-interface ExposureExtra {
-  duration?: number;
-  threshold?: number;
-  params?: Record<string, unknown>;
-}
+const exposureExtraSchema = z.object({
+  duration: z.number().optional().catch(undefined),
+  threshold: z.number().optional().catch(undefined),
+  params: z.record(z.string(), z.unknown()).optional().catch(undefined),
+});
+
+type ExposureExtra = z.infer<typeof exposureExtraSchema>;
 
 function exposureExtraOf(event: ReportEvent): ExposureExtra {
-  const extra = event.payload?.extra;
-  if (extra && typeof extra === "object") return extra as ExposureExtra;
-  return {};
+  const parsed = exposureExtraSchema.safeParse(event.payload?.extra);
+  return parsed.success ? parsed.data : {};
 }
 
 function buildPvTimeline(events: ReportEvent[]) {

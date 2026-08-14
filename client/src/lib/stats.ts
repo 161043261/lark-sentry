@@ -155,7 +155,13 @@ export interface TypeCount {
   count: number;
 }
 
-export function countByCategory(events: ReportEvent[]): TypeCount[] {
+export interface CategoryCount {
+  key: EventCategory;
+  label: string;
+  count: number;
+}
+
+export function countByCategory(events: ReportEvent[]): CategoryCount[] {
   const counts = new Map<EventCategory, number>();
   for (const event of events) {
     const category = categoryOf(event);
@@ -207,7 +213,7 @@ export function latestVitals(events: ReportEvent[]): VitalSummary[] {
   for (const event of events) {
     if (event.type !== "Performance") continue;
     const name = event.name;
-    if (!(VITAL_NAMES as readonly string[]).includes(name)) continue;
+    if (!VITAL_NAMES.some((vital) => vital === name)) continue;
     const value = event.payload?.value;
     if (typeof value !== "number") continue;
     const existing = latest.get(name);

@@ -50,9 +50,16 @@ import {
   EmptyHeader,
   EmptyTitle,
 } from "@/components/ui/empty";
-import { useLogs } from "@/lib/logs-context";
+import { useLogs } from "@/lib/use-logs";
 import { formatBytes, formatMs, formatVital, latestVitals } from "@/lib/stats";
-import type { ReportEvent, ResourceTiming } from "@/lib/log-types";
+import {
+  resourceTimingSchema,
+  type ReportEvent,
+  type ResourceTiming,
+} from "@/lib/log-types";
+import { z } from "zod";
+
+const resourceExtraSchema = z.object({ resource: resourceTimingSchema });
 
 const VITAL_DESCRIPTIONS: Record<string, string> = {
   LCP: "最大内容绘制",
@@ -63,15 +70,28 @@ const VITAL_DESCRIPTIONS: Record<string, string> = {
   FSP: "首屏渲染",
 };
 
-const NAVIGATION_FIELDS: Array<{ key: string; label: string }> = [
-  { key: "dnsLookup", label: "DNS 解析" },
-  { key: "tcpConnection", label: "TCP 连接" },
-  { key: "tlsHandshake", label: "TLS 握手" },
-  { key: "timeToFirstByte", label: "首字节" },
-  { key: "contentTransfer", label: "内容传输" },
-  { key: "domProcessing", label: "DOM 处理" },
-  { key: "resourceLoad", label: "资源加载" },
-];
+const navigationExtraSchema = z.object({
+  dnsLookup: z.number().catch(0),
+  tcpConnection: z.number().catch(0),
+  tlsHandshake: z.number().catch(0),
+  timeToFirstByte: z.number().catch(0),
+  contentTransfer: z.number().catch(0),
+  domProcessing: z.number().catch(0),
+  resourceLoad: z.number().catch(0),
+});
+
+type NavigationExtra = z.infer<typeof navigationExtraSchema>;
+
+const NAVIGATION_FIELDS: Array<{ key: keyof NavigationExtra; label: string }> =
+  [
+    { key: "dnsLookup", label: "DNS 解析" },
+    { key: "tcpConnection", label: "TCP 连接" },
+    { key: "tlsHandshake", label: "TLS 握手" },
+    { key: "timeToFirstByte", label: "首字节" },
+    { key: "contentTransfer", label: "内容传输" },
+    { key: "domProcessing", label: "DOM 处理" },
+    { key: "resourceLoad", label: "资源加载" },
+  ];
 
 const navConfig = {
   value: { label: "耗时 (ms)", color: "var(--chart-2)" },
@@ -89,16 +109,13 @@ function ratingBadge(rating?: string) {
   return null;
 }
 
-function latestNavigationTiming(
-  events: ReportEvent[],
-): Record<string, number> | null {
+function latestNavigationTiming(events: ReportEvent[]): NavigationExtra | null {
   for (let index = events.length - 1; index >= 0; index -= 1) {
     const event = events[index];
     if (event.type !== "Performance" || event.name !== "NavigationTiming")
       continue;
-    const extra = event.payload?.extra;
-    if (extra && typeof extra === "object")
-      return extra as Record<string, number>;
+    const parsed = navigationExtraSchema.safeParse(event.payload?.extra);
+    if (parsed.success) return parsed.data;
   }
   return null;
 }
@@ -137,9 +154,9 @@ function collectResources(events: ReportEvent[]): ResourceTiming[] {
       }
     }
     if (event.name === "ResourceTiming") {
-      const extra = payload?.extra;
-      if (extra && typeof extra === "object" && "resource" in extra) {
-        const resource = (extra as { resource: ResourceTiming }).resource;
+      const parsed = resourceExtraSchema.safeParse(payload?.extra);
+      if (parsed.success) {
+        const resource = parsed.data.resource;
         seen.set(resource.name + resource.startTime, resource);
       }
     }

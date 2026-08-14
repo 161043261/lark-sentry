@@ -20,38 +20,38 @@
  * SOFTWARE.
  */
 
-import { createRoot } from "react-dom/client";
-import { BrowserRouter } from "react-router-dom";
-import "./index.css";
-import App from "./app.tsx";
+/**
+ * Context definition and consumer hook live in this component-free module so
+ * logs-context.tsx only exports the provider component (react-refresh rule).
+ */
 
-import { enablePlugin, init } from "@swifty.js/sentry";
-import {
-  PerformancePlugin,
-  ScreenRecordPlugin,
-  ExposurePlugin,
-} from "@swifty.js/sentry/plugins";
-import { startErrorSeeder } from "./crash/seeder";
+import { createContext, useContext } from "react";
+import type { LogFileInfo, ReportEvent } from "./log-types";
 
-document.documentElement.classList.toggle(
-  "dark",
-  localStorage.getItem("dashboard-theme") !== "light",
-);
+export const REFRESH_CHOICES = [
+  { value: "5000", label: "每 5 秒刷新" },
+  { value: "15000", label: "每 15 秒刷新" },
+  { value: "60000", label: "每 1 分钟刷新" },
+  { value: "0", label: "暂停自动刷新" },
+] as const;
 
-init({ dsn: "/api/log", debug: true });
-enablePlugin(new PerformancePlugin());
-enablePlugin(new ScreenRecordPlugin());
-enablePlugin(new ExposurePlugin());
+export interface LogsContextValue {
+  files: LogFileInfo[];
+  selectedFile: string;
+  setSelectedFile: (file: string) => void;
+  refreshMs: number;
+  setRefreshMs: (ms: number) => void;
+  events: ReportEvent[];
+  loading: boolean;
+  error: string | null;
+  lastUpdated: number | null;
+  refresh: () => void;
+}
 
-// Plant probabilistic errors of every SDK-collectible type (must run after
-// init so the capture listeners are already installed). See ./dev/error-seeder.
-startErrorSeeder();
+export const LogsContext = createContext<LogsContextValue | null>(null);
 
-const rootElement = document.getElementById("root");
-if (!rootElement) throw new Error("#root element is missing in index.html");
-
-createRoot(rootElement).render(
-  <BrowserRouter>
-    <App />
-  </BrowserRouter>,
-);
+export function useLogs(): LogsContextValue {
+  const context = useContext(LogsContext);
+  if (!context) throw new Error("useLogs must be used within <LogsProvider>");
+  return context;
+}

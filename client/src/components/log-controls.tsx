@@ -33,7 +33,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { REFRESH_CHOICES, useLogs } from "@/lib/logs-context";
+import { REFRESH_CHOICES, useLogs } from "@/lib/use-logs";
 import { formatClock } from "@/lib/stats";
 
 export function LogControls() {

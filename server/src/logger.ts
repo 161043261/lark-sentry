@@ -45,8 +45,8 @@ function ensureDir(dirpath: string) {
 class Logger {
   private infoLogger: pino.Logger | null = null;
   private errorLogger: pino.Logger | null = null;
-  private sentryFile: WriteStream | null = null;
-  private sentryLock = false;
+  private logFile: WriteStream | null = null;
+  private logLock = false;
   private currentMonth = "";
   private currentDay = "";
   private currentSize = 0;
@@ -103,11 +103,11 @@ class Logger {
     const filename = `${logConfig.file_prefix}_${timestamp}.jsonl`;
     const filepath = join(monthDir, filename);
 
-    if (this.sentryFile) {
-      this.sentryFile.close();
+    if (this.logFile) {
+      this.logFile.close();
     }
 
-    this.sentryFile = createWriteStream(filepath, { flags: "a" });
+    this.logFile = createWriteStream(filepath, { flags: "a" });
     try {
       this.currentSize = statSync(filepath).size;
     } catch {
@@ -152,22 +152,22 @@ class Logger {
   }
 
   public writeSdkLog(data: Buffer | string): void {
-    while (this.sentryLock) {
+    while (this.logLock) {
       // Busy wait - in production, enablePlugin a proper mutex
     }
 
-    this.sentryLock = true;
+    this.logLock = true;
 
     try {
       this.rotateIfNeeded();
 
-      if (this.sentryFile) {
+      if (this.logFile) {
         const content = Buffer.isBuffer(data) ? data.toString("utf-8") : data;
-        this.sentryFile.write(content + "\n");
+        this.logFile.write(content + "\n");
         this.currentSize += content.length + 1;
       }
     } finally {
-      this.sentryLock = false;
+      this.logLock = false;
     }
   }
 
@@ -180,9 +180,9 @@ class Logger {
   }
 
   public close(): void {
-    if (this.sentryFile) {
-      this.sentryFile.close();
-      this.sentryFile = null;
+    if (this.logFile) {
+      this.logFile.close();
+      this.logFile = null;
     }
 
     // Pino doesn't need explicit closing for streams

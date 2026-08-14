@@ -22,48 +22,35 @@
 
 /**
  * LogsProvider polls the vite dev-server log-reader middleware
- * (/api/logs/files + /api/logs/events) and shares the flattened event list
- * with every dashboard page.
+ * (/api/logs/files + /api/logs/events), validates the responses with zod and
+ * shares the flattened event list with every dashboard page.
  */
 
 import {
-  createContext,
   useCallback,
-  useContext,
   useEffect,
   useMemo,
   useRef,
   useState,
   type ReactNode,
 } from "react";
-import type { EventsResponse, LogFileInfo, ReportEvent } from "./log-types";
+import type { z } from "zod";
+import {
+  eventsResponseSchema,
+  logFilesSchema,
+  type LogFileInfo,
+  type ReportEvent,
+} from "./log-types";
+import { LogsContext, type LogsContextValue } from "./use-logs";
 
-export const REFRESH_CHOICES = [
-  { value: "5000", label: "每 5 秒刷新" },
-  { value: "15000", label: "每 15 秒刷新" },
-  { value: "60000", label: "每 1 分钟刷新" },
-  { value: "0", label: "暂停自动刷新" },
-] as const;
-
-interface LogsContextValue {
-  files: LogFileInfo[];
-  selectedFile: string;
-  setSelectedFile: (file: string) => void;
-  refreshMs: number;
-  setRefreshMs: (ms: number) => void;
-  events: ReportEvent[];
-  loading: boolean;
-  error: string | null;
-  lastUpdated: number | null;
-  refresh: () => void;
-}
-
-const LogsContext = createContext<LogsContextValue | null>(null);
-
-async function fetchJson<T>(url: string, signal: AbortSignal): Promise<T> {
+async function fetchJson<T>(
+  url: string,
+  schema: z.ZodType<T>,
+  signal: AbortSignal,
+): Promise<T> {
   const res = await fetch(url, { signal });
   if (!res.ok) throw new Error(`${url} -> HTTP ${res.status}`);
-  return (await res.json()) as T;
+  return schema.parse(await res.json());
 }
 
 export function LogsProvider({ children }: { children: ReactNode }) {
@@ -89,9 +76,10 @@ export function LogsProvider({ children }: { children: ReactNode }) {
     const load = async () => {
       try {
         const [fileList, response] = await Promise.all([
-          fetchJson<LogFileInfo[]>("/api/logs/files", controller.signal),
-          fetchJson<EventsResponse>(
+          fetchJson("/api/logs/files", logFilesSchema, controller.signal),
+          fetchJson(
             `/api/logs/events?file=${encodeURIComponent(selectedFile)}`,
+            eventsResponseSchema,
             controller.signal,
           ),
         ]);
@@ -147,10 +135,4 @@ export function LogsProvider({ children }: { children: ReactNode }) {
   );
 
   return <LogsContext.Provider value={value}>{children}</LogsContext.Provider>;
-}
-
-export function useLogs(): LogsContextValue {
-  const context = useContext(LogsContext);
-  if (!context) throw new Error("useLogs must be used within <LogsProvider>");
-  return context;
 }

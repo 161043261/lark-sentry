@@ -47,7 +47,7 @@ import {
 } from "@/components/ui/empty";
 import { StatCard } from "@/components/stat-card";
 import { Bug, CircleAlert, Layers, MonitorSmartphone } from "lucide-react";
-import { useLogs } from "@/lib/logs-context";
+import { useLogs } from "@/lib/use-logs";
 import { cn } from "@/lib/utils";
 import { formatDateTime, isErrorEvent, shortUrl } from "@/lib/stats";
 import type { ReportEvent, ResolvedFrame } from "@/lib/log-types";

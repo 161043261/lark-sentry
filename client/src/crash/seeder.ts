@@ -70,9 +70,10 @@ function chance(probability: number): boolean {
  */
 function seedUncaughtTypeError(): void {
   setTimeout(() => {
-    const brokenUser: { profile: { name: string } } | null = null;
-    // Intentional crash: cannot read properties of null (reading 'profile')
-    console.log(brokenUser!.profile.name);
+    // JSON claims a user object, runtime delivers null — the classic missed
+    // null check. Crashes: cannot read properties of null (reading 'profile')
+    const brokenUser: { profile: { name: string } } = JSON.parse("null");
+    console.log(brokenUser.profile.name);
   }, 0);
 }
 
@@ -85,11 +86,13 @@ function seedUncaughtTypeError(): void {
  */
 function seedUncaughtReferenceError(): void {
   setTimeout(() => {
-    type LooseGlobal = typeof globalThis & {
-      __definitelyMissingFn__: () => void;
-    };
-    // Intentional crash: __definitelyMissingFn__ is not a function
-    (globalThis as LooseGlobal).__definitelyMissingFn__();
+    // Reflect.get returns `any`, so the call type-checks yet crashes:
+    // missingFn is not a function
+    const missingFn: () => void = Reflect.get(
+      globalThis,
+      "__definitelyMissingFn__",
+    );
+    missingFn();
   }, 0);
 }
 
@@ -176,7 +179,8 @@ function seedManualTraceError(): void {
   try {
     throw new RangeError("Seeded manual report: order quantity out of range");
   } catch (error) {
-    traceError(error as Error);
+    // traceError accepts unknown; the SDK classifies the value itself.
+    traceError(error);
   }
 }
 
