@@ -40,11 +40,11 @@ import { cn } from "@/lib/utils";
 import { RandomCrash } from "./crash";
 
 const NAV_ITEMS = [
-  { to: "/", label: "总览", icon: LayoutDashboard },
-  { to: "/errors", label: "错误监控", icon: Bug },
-  { to: "/network", label: "网络请求", icon: Globe },
-  { to: "/performance", label: "性能指标", icon: Gauge },
-  { to: "/behavior", label: "用户行为", icon: MousePointerClick },
+  { to: "/", label: "Overview", icon: LayoutDashboard },
+  { to: "/errors", label: "Error Monitoring", icon: Bug },
+  { to: "/network", label: "Network Requests", icon: Globe },
+  { to: "/performance", label: "Performance", icon: Gauge },
+  { to: "/behavior", label: "User Behavior", icon: MousePointerClick },
 ];
 
 function Sidebar() {
@@ -61,7 +61,7 @@ function Sidebar() {
             to={item.to}
             end={item.to === "/"}
             swifty-sentry-ev={`nav-${item.to === "/" ? "overview" : item.to.slice(1)}`}
-            swifty-sentry-msg={`导航到${item.label}`}
+            swifty-sentry-msg={`Navigate to ${item.label}`}
             className={({ isActive }) =>
               cn(
                 "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors",
@@ -76,8 +76,9 @@ function Sidebar() {
         ))}
       </nav>
       <div className="text-muted-foreground border-t p-3 text-xs">
-        数据来源：logs/*.jsonl
-        <br />由 @swifty.js/sentry 上报
+        Data source: logs/*.jsonl
+        <br />
+        Reported by @swifty.js/sentry
       </div>
     </aside>
   );
@@ -87,9 +88,9 @@ function NotFound() {
   return (
     <div className="flex flex-col items-center justify-center gap-4 py-32">
       <p className="text-6xl font-bold">404</p>
-      <p className="text-muted-foreground">页面不存在</p>
+      <p className="text-muted-foreground">Page not found</p>
       <Button variant="outline" render={<Link to="/" />}>
-        返回总览
+        Back to Overview
       </Button>
     </div>
   );
@@ -111,7 +112,7 @@ function Layout() {
         <div className="flex min-h-screen flex-col pl-56">
           <header className="bg-background/80 sticky top-0 z-10 flex h-14 items-center justify-between gap-4 border-b px-6 backdrop-blur">
             <h1 className="text-muted-foreground text-sm font-medium">
-              前端监控 Dashboard
+              Frontend Monitoring Dashboard
             </h1>
             <div className="flex items-center gap-2">
               <LogControls />

@@ -29,10 +29,10 @@ import { createContext, useContext } from "react";
 import type { LogFileInfo, ReportEvent } from "./log-types";
 
 export const REFRESH_CHOICES = [
-  { value: "5000", label: "每 5 秒刷新" },
-  { value: "15000", label: "每 15 秒刷新" },
-  { value: "60000", label: "每 1 分钟刷新" },
-  { value: "0", label: "暂停自动刷新" },
+  { value: "5000", label: "Refresh every 5s" },
+  { value: "15000", label: "Refresh every 15s" },
+  { value: "60000", label: "Refresh every 1min" },
+  { value: "0", label: "Pause auto-refresh" },
 ] as const;
 
 export interface LogsContextValue {

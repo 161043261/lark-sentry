@@ -76,11 +76,11 @@ import {
 } from "@/lib/stats";
 
 const timelineConfig = {
-  error: { label: "错误", color: "var(--chart-1)" },
-  http: { label: "网络请求", color: "var(--chart-2)" },
-  performance: { label: "性能", color: "var(--chart-3)" },
-  pv: { label: "页面访问", color: "var(--chart-4)" },
-  behavior: { label: "用户行为", color: "var(--chart-5)" },
+  error: { label: "Errors", color: "var(--chart-1)" },
+  http: { label: "HTTP Requests", color: "var(--chart-2)" },
+  performance: { label: "Performance", color: "var(--chart-3)" },
+  pv: { label: "Page Views", color: "var(--chart-4)" },
+  behavior: { label: "User Behavior", color: "var(--chart-5)" },
 } satisfies ChartConfig;
 
 const TIMELINE_KEYS = [
@@ -137,10 +137,10 @@ export default function OverviewPage() {
     return (
       <Empty>
         <EmptyHeader>
-          <EmptyTitle>暂无上报数据</EmptyTitle>
+          <EmptyTitle>No Data Available</EmptyTitle>
           <EmptyDescription>
-            保持页面运行，@swifty.js/sentry 会持续上报数据到 logs/*.jsonl，
-            错误种子每 15 秒随机触发一次。
+            Keep the page running — @swifty.js/sentry continuously reports data
+            to logs/*.jsonl. Error seeds trigger randomly every 15 seconds.
           </EmptyDescription>
         </EmptyHeader>
       </Empty>
@@ -155,24 +155,30 @@ export default function OverviewPage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
-        <StatCard label="总事件数" value={events.length} icon={Activity} />
-        <StatCard label="JS 错误" value={errorCount} icon={Bug} />
+        <StatCard label="Total Events" value={events.length} icon={Activity} />
+        <StatCard label="JS Errors" value={errorCount} icon={Bug} />
         <StatCard
-          label="HTTP 请求"
+          label="HTTP Requests"
           value={httpCount}
           icon={Globe}
-          hint={`失败 ${failedHttpCount} 次`}
+          hint={`${failedHttpCount} failed`}
         />
-        <StatCard label="页面访问 PV" value={pvCount} icon={Eye} />
-        <StatCard label="会话数" value={sessionCount} icon={Users} />
-        <StatCard label="设备数" value={deviceCount} icon={MonitorSmartphone} />
+        <StatCard label="Page Views (PV)" value={pvCount} icon={Eye} />
+        <StatCard label="Sessions" value={sessionCount} icon={Users} />
+        <StatCard
+          label="Devices"
+          value={deviceCount}
+          icon={MonitorSmartphone}
+        />
       </div>
 
       <div className="grid gap-6 xl:grid-cols-3">
         <Card className="xl:col-span-2">
           <CardHeader>
-            <CardTitle>事件趋势</CardTitle>
-            <CardDescription>按时间分桶的各类事件上报量</CardDescription>
+            <CardTitle>Event Trend</CardTitle>
+            <CardDescription>
+              Event volume by category over time
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <ChartContainer config={timelineConfig} className="h-72 w-full">
@@ -205,8 +211,8 @@ export default function OverviewPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>事件类型分布</CardTitle>
-            <CardDescription>各类事件占比</CardDescription>
+            <CardTitle>Event Type Distribution</CardTitle>
+            <CardDescription>Proportion of each event category</CardDescription>
           </CardHeader>
           <CardContent>
             <ChartContainer
@@ -239,14 +245,16 @@ export default function OverviewPage() {
         <CardHeader>
           <CardTitle>
             <Link to="/errors" className="hover:underline">
-              最近错误
+              Recent Errors
             </Link>
           </CardTitle>
-          <CardDescription>最新 5 条 JS / 框架 / 资源错误</CardDescription>
+          <CardDescription>
+            Latest 5 JS / framework / resource errors
+          </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           {recentErrors.length === 0 ? (
-            <p className="text-muted-foreground text-sm">暂无错误上报</p>
+            <p className="text-muted-foreground text-sm">No errors reported</p>
           ) : (
             recentErrors.map((event) => (
               <div

@@ -8,6 +8,7 @@
     "esbuild",
     "evenodd",
     "fingerprintjs",
+    "fontsource",
     "GOPATH",
     "hangtiancheng",
     "hashchange",
@@ -16,10 +17,13 @@
     "linecap",
     "longtask",
     "Menlo",
+    "nums",
     "oxfmt",
     "protobufjs",
     "rrweb",
+    "shadcn",
     "swifty",
+    "TTFB",
     "unhandledrejection",
     "Vite"
   ]

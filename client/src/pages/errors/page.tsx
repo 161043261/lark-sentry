@@ -53,11 +53,11 @@ import { formatDateTime, isErrorEvent, shortUrl } from "@/lib/stats";
 import type { ReportEvent, ResolvedFrame } from "@/lib/log-types";
 
 const TYPE_TABS = [
-  { value: "all", label: "全部" },
-  { value: "Error", label: "运行时错误" },
-  { value: "Event unhandledrejection", label: "Promise 拒绝" },
-  { value: "React", label: "React 崩溃" },
-  { value: "Resource", label: "资源加载" },
+  { value: "all", label: "All" },
+  { value: "Error", label: "Runtime Errors" },
+  { value: "Event unhandledrejection", label: "Promise Rejections" },
+  { value: "React", label: "React Crashes" },
+  { value: "Resource", label: "Resource Loading" },
 ] as const;
 
 function eventKey(event: ReportEvent, index: number): string {
@@ -77,7 +77,7 @@ function FrameSnippet({ frame }: { frame: ResolvedFrame }) {
     <div className="bg-muted/30 flex flex-col gap-1 rounded-md border p-2">
       <div className="flex flex-wrap items-center gap-2 text-xs">
         <Badge variant={frame.resolved ? "secondary" : "outline"}>
-          {frame.resolved ? "已还原" : "未还原"}
+          {frame.resolved ? "Resolved" : "Unresolved"}
         </Badge>
         {frame.func ? (
           <code className="text-foreground font-mono">{frame.func}</code>
@@ -122,38 +122,38 @@ function ErrorDetail({ event }: { event: ReportEvent }) {
         <Badge variant="destructive">{event.type}</Badge>
         <Badge variant="outline">{event.name}</Badge>
         {payload?.batchError ? (
-          <Badge variant="secondary">批量 ×{payload.batchErrorLength}</Badge>
+          <Badge variant="secondary">Batch x{payload.batchErrorLength}</Badge>
         ) : null}
         <span className="text-muted-foreground text-xs tabular-nums">
           {formatDateTime(event.timestamp)}
         </span>
       </div>
 
-      <p className="font-medium break-all">{event.message || "（无消息）"}</p>
+      <p className="font-medium break-all">{event.message || "(No message)"}</p>
 
       <div className="text-muted-foreground grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
         <span className="truncate" title={event.url}>
-          页面：{shortUrl(event.url, 40)}
+          Page: {shortUrl(event.url, 40)}
         </span>
         {typeof payload?.line === "number" ? (
           <span>
-            位置：{payload.line}:{payload.column}
+            Position: {payload.line}:{payload.column}
           </span>
         ) : null}
         {payload?.src ? (
           <span className="col-span-2 truncate" title={payload.src}>
-            资源：{shortUrl(payload.src, 60)}
+            Resource: {shortUrl(payload.src, 60)}
           </span>
         ) : null}
-        <span className="truncate">会话：{payload?.sessionId ?? "-"}</span>
-        <span className="truncate">设备：{payload?.deviceId ?? "-"}</span>
+        <span className="truncate">Session: {payload?.sessionId ?? "-"}</span>
+        <span className="truncate">Device: {payload?.deviceId ?? "-"}</span>
       </div>
 
       {frames.length > 0 ? (
         <>
           <Separator />
           <p className="text-muted-foreground text-xs font-medium">
-            Sourcemap 还原调用栈（{frames.length} 帧）
+            Sourcemap-resolved stack trace ({frames.length} frames)
           </p>
           <div className="flex max-h-96 flex-col gap-2 overflow-auto">
             {frames.map((frame, index) => (
@@ -164,7 +164,9 @@ function ErrorDetail({ event }: { event: ReportEvent }) {
       ) : stack ? (
         <>
           <Separator />
-          <p className="text-muted-foreground text-xs font-medium">原始堆栈</p>
+          <p className="text-muted-foreground text-xs font-medium">
+            Raw Stack Trace
+          </p>
           <pre className="bg-muted/30 max-h-72 overflow-auto rounded-md border p-2 font-mono text-xs leading-5 whitespace-pre-wrap">
             {stack}
           </pre>
@@ -176,13 +178,13 @@ function ErrorDetail({ event }: { event: ReportEvent }) {
           <Separator />
           <div className="text-muted-foreground grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
             <span>
-              浏览器：{device.browserName} {device.browserVersion}
+              Browser: {device.browserName} {device.browserVersion}
             </span>
             <span>
-              系统：{device.osName} {device.osVersion}
+              OS: {device.osName} {device.osVersion}
             </span>
-            <span>分辨率：{device.screenResolution}</span>
-            <span>语言：{device.language}</span>
+            <span>Resolution: {device.screenResolution}</span>
+            <span>Language: {device.language}</span>
           </div>
         </>
       ) : null}
@@ -228,10 +230,10 @@ export default function ErrorsPage() {
     return (
       <Empty>
         <EmptyHeader>
-          <EmptyTitle>暂无错误上报</EmptyTitle>
+          <EmptyTitle>No Errors Reported</EmptyTitle>
           <EmptyDescription>
-            crash 目录的错误种子会随机触发各类 JS
-            错误，稍等片刻后刷新即可看到数据。
+            Error seeds in the crash directory randomly trigger various JS
+            errors. Wait a moment and refresh to see data.
           </EmptyDescription>
         </EmptyHeader>
       </Empty>
@@ -241,15 +243,15 @@ export default function ErrorsPage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-        <StatCard label="错误总数" value={errors.length} icon={Bug} />
+        <StatCard label="Total Errors" value={errors.length} icon={Bug} />
         <StatCard
-          label="React 渲染崩溃"
+          label="React Render Crashes"
           value={reactCount}
           icon={CircleAlert}
         />
-        <StatCard label="批量聚合错误" value={batchCount} icon={Layers} />
+        <StatCard label="Batched Errors" value={batchCount} icon={Layers} />
         <StatCard
-          label="受影响会话"
+          label="Affected Sessions"
           value={affectedSessions}
           icon={MonitorSmartphone}
         />
@@ -274,18 +276,18 @@ export default function ErrorsPage() {
       <div className="grid items-start gap-6 xl:grid-cols-5">
         <Card className="xl:col-span-3">
           <CardHeader>
-            <CardTitle>错误列表</CardTitle>
+            <CardTitle>Error List</CardTitle>
             <CardDescription>
-              点击行查看堆栈与 sourcemap 还原详情
+              Click a row to view stack trace and sourcemap resolution details
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-28">时间</TableHead>
-                  <TableHead className="w-32">类型</TableHead>
-                  <TableHead>消息</TableHead>
+                  <TableHead className="w-28">Time</TableHead>
+                  <TableHead className="w-32">Type</TableHead>
+                  <TableHead>Message</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -326,14 +328,14 @@ export default function ErrorsPage() {
 
         <Card className="xl:col-span-2">
           <CardHeader>
-            <CardTitle>错误详情</CardTitle>
+            <CardTitle>Error Details</CardTitle>
           </CardHeader>
           <CardContent>
             {selected ? (
               <ErrorDetail event={selected} />
             ) : (
               <p className="text-muted-foreground text-sm">
-                左侧选择一条错误查看详情
+                Select an error from the list to view details
               </p>
             )}
           </CardContent>

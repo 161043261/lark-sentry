@@ -158,9 +158,10 @@ export default function BehaviorPage() {
     return (
       <Empty>
         <EmptyHeader>
-          <EmptyTitle>暂无行为数据</EmptyTitle>
+          <EmptyTitle>No Behavior Data</EmptyTitle>
           <EmptyDescription>
-            PV、声明式点击（swifty-sentry-* 属性）与曝光时长会展示在这里。
+            PV, declarative clicks (swifty-sentry-* attributes), and exposure
+            durations will be displayed here.
           </EmptyDescription>
         </EmptyHeader>
       </Empty>
@@ -170,21 +171,29 @@ export default function BehaviorPage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-5">
-        <StatCard label="页面访问 PV" value={pvEvents.length} icon={Eye} />
-        <StatCard label="路由跳转" value={routeEvents.length} icon={Route} />
+        <StatCard label="Page Views (PV)" value={pvEvents.length} icon={Eye} />
         <StatCard
-          label="声明式点击"
+          label="Route Changes"
+          value={routeEvents.length}
+          icon={Route}
+        />
+        <StatCard
+          label="Declarative Clicks"
           value={clickEvents.length}
           icon={MousePointerClick}
         />
-        <StatCard label="会话数" value={sessionCount} icon={Users} />
-        <StatCard label="设备数" value={deviceCount} icon={MonitorSmartphone} />
+        <StatCard label="Sessions" value={sessionCount} icon={Users} />
+        <StatCard
+          label="Devices"
+          value={deviceCount}
+          icon={MonitorSmartphone}
+        />
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>PV 趋势</CardTitle>
-          <CardDescription>按分钟统计的页面访问量</CardDescription>
+          <CardTitle>PV Trend</CardTitle>
+          <CardDescription>Page views aggregated per minute</CardDescription>
         </CardHeader>
         <CardContent>
           <ChartContainer config={pvConfig} className="h-56 w-full">
@@ -213,16 +222,16 @@ export default function BehaviorPage() {
       <div className="grid gap-6 xl:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>页面访问明细</CardTitle>
-            <CardDescription>PageLoad / 路由 PV / 页面停留</CardDescription>
+            <CardTitle>Page View Details</CardTitle>
+            <CardDescription>PageLoad / Route PV / Page Stay</CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-28">时间</TableHead>
-                  <TableHead className="w-28">名称</TableHead>
-                  <TableHead>页面</TableHead>
+                  <TableHead className="w-28">Time</TableHead>
+                  <TableHead className="w-28">Name</TableHead>
+                  <TableHead>Page</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -257,22 +266,24 @@ export default function BehaviorPage() {
         <div className="flex flex-col gap-6">
           <Card>
             <CardHeader>
-              <CardTitle>声明式点击</CardTitle>
+              <CardTitle>Declarative Clicks</CardTitle>
               <CardDescription>
-                带 swifty-sentry-ev / msg 属性的元素点击
+                Clicks on elements with swifty-sentry-ev / msg attributes
               </CardDescription>
             </CardHeader>
             <CardContent>
               {clickEvents.length === 0 ? (
-                <p className="text-muted-foreground text-sm">暂无点击上报</p>
+                <p className="text-muted-foreground text-sm">
+                  No click events reported
+                </p>
               ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-28">时间</TableHead>
-                      <TableHead className="w-32">事件 ID</TableHead>
-                      <TableHead>描述</TableHead>
-                      <TableHead className="w-24">坐标</TableHead>
+                      <TableHead className="w-28">Time</TableHead>
+                      <TableHead className="w-32">Event ID</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead className="w-24">Position</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -314,21 +325,25 @@ export default function BehaviorPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>曝光时长</CardTitle>
+              <CardTitle>Exposure Duration</CardTitle>
               <CardDescription>
-                ExposurePlugin 观察的元素可见时长
+                Element visibility duration tracked by ExposurePlugin
               </CardDescription>
             </CardHeader>
             <CardContent>
               {exposureEvents.length === 0 ? (
-                <p className="text-muted-foreground text-sm">暂无曝光上报</p>
+                <p className="text-muted-foreground text-sm">
+                  No exposure events reported
+                </p>
               ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-28">时间</TableHead>
-                      <TableHead>参数</TableHead>
-                      <TableHead className="w-24 text-right">时长</TableHead>
+                      <TableHead className="w-28">Time</TableHead>
+                      <TableHead>Params</TableHead>
+                      <TableHead className="w-24 text-right">
+                        Duration
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>

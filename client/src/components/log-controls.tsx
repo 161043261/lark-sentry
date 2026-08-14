@@ -49,10 +49,10 @@ export function LogControls() {
   } = useLogs();
 
   const fileItems = [
-    { value: "all", label: "全部日志文件" },
+    { value: "all", label: "All Log Files" },
     ...files.map((file) => ({
       value: file.name,
-      label: `${file.name}（${file.lines} 批）`,
+      label: `${file.name} (${file.lines} batches)`,
     })),
   ];
 
@@ -65,11 +65,11 @@ export function LogControls() {
     <div className="flex flex-wrap items-center gap-2">
       {error ? (
         <Badge variant="destructive" title={error}>
-          日志接口异常
+          Log API Error
         </Badge>
       ) : lastUpdated ? (
         <span className="text-muted-foreground text-xs tabular-nums">
-          更新于 {formatClock(lastUpdated)}
+          Updated at {formatClock(lastUpdated)}
         </span>
       ) : null}
 
@@ -118,9 +118,9 @@ export function LogControls() {
       <Button
         variant="outline"
         size="icon-sm"
-        aria-label="立即刷新"
+        aria-label="Refresh now"
         swifty-sentry-ev="refresh-logs"
-        swifty-sentry-msg="手动刷新日志"
+        swifty-sentry-msg="Manual log refresh"
         onClick={refresh}
       >
         <RefreshCw />

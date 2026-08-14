@@ -56,21 +56,21 @@ export function categoryOf(event: ReportEvent): EventCategory {
 }
 
 export const CATEGORY_LABELS: Record<EventCategory, string> = {
-  error: "错误",
-  http: "网络请求",
-  performance: "性能",
-  pv: "页面访问",
-  behavior: "用户行为",
-  record: "录屏",
-  other: "其他",
+  error: "Errors",
+  http: "HTTP Requests",
+  performance: "Performance",
+  pv: "Page Views",
+  behavior: "User Behavior",
+  record: "Screen Recording",
+  other: "Other",
 };
 
-/** JS/框架/资源错误（不含 HTTP 失败）。 */
+/** JS/framework/resource errors (excludes HTTP failures). */
 export function isErrorEvent(event: ReportEvent): boolean {
   return categoryOf(event) === "error";
 }
 
-/** HTTP 请求事件（Fetch/XHR）。 */
+/** HTTP request events (Fetch/XHR). */
 export function isHttpEvent(event: ReportEvent): boolean {
   return categoryOf(event) === "http";
 }
@@ -274,7 +274,7 @@ export function shortUrl(url: string | undefined, max = 60): string {
       short = parsed.host + short;
     }
   } catch {
-    // keep原始字符串
+    // keep original string
   }
   if (short.length > max) short = short.slice(0, max - 1) + "…";
   return short;

@@ -62,12 +62,12 @@ import { z } from "zod";
 const resourceExtraSchema = z.object({ resource: resourceTimingSchema });
 
 const VITAL_DESCRIPTIONS: Record<string, string> = {
-  LCP: "最大内容绘制",
-  FCP: "首次内容绘制",
-  CLS: "累积布局偏移",
-  INP: "交互到下一帧",
-  TTFB: "首字节时间",
-  FSP: "首屏渲染",
+  LCP: "Largest Contentful Paint",
+  FCP: "First Contentful Paint",
+  CLS: "Cumulative Layout Shift",
+  INP: "Interaction to Next Paint",
+  TTFB: "Time to First Byte",
+  FSP: "First Screen Paint",
 };
 
 const navigationExtraSchema = z.object({
@@ -84,28 +84,28 @@ type NavigationExtra = z.infer<typeof navigationExtraSchema>;
 
 const NAVIGATION_FIELDS: Array<{ key: keyof NavigationExtra; label: string }> =
   [
-    { key: "dnsLookup", label: "DNS 解析" },
-    { key: "tcpConnection", label: "TCP 连接" },
-    { key: "tlsHandshake", label: "TLS 握手" },
-    { key: "timeToFirstByte", label: "首字节" },
-    { key: "contentTransfer", label: "内容传输" },
-    { key: "domProcessing", label: "DOM 处理" },
-    { key: "resourceLoad", label: "资源加载" },
+    { key: "dnsLookup", label: "DNS Lookup" },
+    { key: "tcpConnection", label: "TCP Connection" },
+    { key: "tlsHandshake", label: "TLS Handshake" },
+    { key: "timeToFirstByte", label: "First Byte" },
+    { key: "contentTransfer", label: "Content Transfer" },
+    { key: "domProcessing", label: "DOM Processing" },
+    { key: "resourceLoad", label: "Resource Load" },
   ];
 
 const navConfig = {
-  value: { label: "耗时 (ms)", color: "var(--chart-2)" },
+  value: { label: "Duration (ms)", color: "var(--chart-2)" },
 } satisfies ChartConfig;
 
 const longTaskConfig = {
-  duration: { label: "阻塞时长 (ms)", color: "var(--chart-1)" },
+  duration: { label: "Blocking Duration (ms)", color: "var(--chart-1)" },
 } satisfies ChartConfig;
 
 function ratingBadge(rating?: string) {
-  if (rating === "good") return <Badge variant="secondary">良好</Badge>;
+  if (rating === "good") return <Badge variant="secondary">Good</Badge>;
   if (rating === "needs-improvement")
-    return <Badge variant="outline">待优化</Badge>;
-  if (rating === "poor") return <Badge variant="destructive">较差</Badge>;
+    return <Badge variant="outline">Needs Improvement</Badge>;
+  if (rating === "poor") return <Badge variant="destructive">Poor</Badge>;
   return null;
 }
 
@@ -133,7 +133,7 @@ function collectLongTasks(events: ReportEvent[]): LongTaskRow[] {
     if (!Array.isArray(tasks)) continue;
     for (const task of tasks) {
       rows.push({
-        time: new Date(event.timestamp).toLocaleTimeString("zh-CN", {
+        time: new Date(event.timestamp).toLocaleTimeString("en-US", {
           hour12: false,
         }),
         duration: task.duration,
@@ -187,10 +187,10 @@ export default function PerformancePage() {
     return (
       <Empty>
         <EmptyHeader>
-          <EmptyTitle>暂无性能上报</EmptyTitle>
+          <EmptyTitle>No Performance Data</EmptyTitle>
           <EmptyDescription>
-            PerformancePlugin 会采集 Web
-            Vitals、导航耗时、长任务与资源加载数据。
+            PerformancePlugin collects Web Vitals, navigation timing, long
+            tasks, and resource loading data.
           </EmptyDescription>
         </EmptyHeader>
       </Empty>
@@ -225,8 +225,8 @@ export default function PerformancePage() {
       <div className="grid gap-6 xl:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>页面导航耗时拆解</CardTitle>
-            <CardDescription>最近一次 NavigationTiming 上报</CardDescription>
+            <CardTitle>Navigation Timing Breakdown</CardTitle>
+            <CardDescription>Latest NavigationTiming report</CardDescription>
           </CardHeader>
           <CardContent>
             {navData.length > 0 ? (
@@ -247,16 +247,18 @@ export default function PerformancePage() {
                 </BarChart>
               </ChartContainer>
             ) : (
-              <p className="text-muted-foreground text-sm">暂无导航耗时数据</p>
+              <p className="text-muted-foreground text-sm">
+                No navigation timing data available
+              </p>
             )}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>长任务 Long Task</CardTitle>
+            <CardTitle>Long Tasks</CardTitle>
             <CardDescription>
-              最近 {longTasks.length} 个长任务，累计阻塞{" "}
+              Last {longTasks.length} long tasks, total blocking time{" "}
               {formatMs(totalBlocked)}
             </CardDescription>
           </CardHeader>
@@ -281,7 +283,9 @@ export default function PerformancePage() {
                 </BarChart>
               </ChartContainer>
             ) : (
-              <p className="text-muted-foreground text-sm">暂无长任务数据</p>
+              <p className="text-muted-foreground text-sm">
+                No long task data available
+              </p>
             )}
           </CardContent>
         </Card>
@@ -289,18 +293,20 @@ export default function PerformancePage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>资源加载 Top 20</CardTitle>
-          <CardDescription>按耗时排序的静态资源加载明细</CardDescription>
+          <CardTitle>Resource Loading Top 20</CardTitle>
+          <CardDescription>
+            Static resource loading details sorted by duration
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>资源</TableHead>
-                <TableHead className="w-24">类型</TableHead>
-                <TableHead className="w-24 text-right">耗时</TableHead>
-                <TableHead className="w-24 text-right">体积</TableHead>
-                <TableHead className="w-20">缓存</TableHead>
+                <TableHead>Resource</TableHead>
+                <TableHead className="w-24">Type</TableHead>
+                <TableHead className="w-24 text-right">Duration</TableHead>
+                <TableHead className="w-24 text-right">Size</TableHead>
+                <TableHead className="w-20">Cache</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -325,9 +331,9 @@ export default function PerformancePage() {
                   </TableCell>
                   <TableCell>
                     {resource.fromCache ? (
-                      <Badge variant="secondary">命中</Badge>
+                      <Badge variant="secondary">Hit</Badge>
                     ) : (
-                      <Badge variant="outline">未命中</Badge>
+                      <Badge variant="outline">Miss</Badge>
                     )}
                   </TableCell>
                 </TableRow>

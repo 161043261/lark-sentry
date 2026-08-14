@@ -39,9 +39,11 @@ document.documentElement.classList.toggle(
 );
 
 init({ dsn: "/api/log", debug: true });
-enablePlugin(new PerformancePlugin());
-enablePlugin(new ScreenRecordPlugin());
-enablePlugin(new ExposurePlugin());
+enablePlugin(
+  new PerformancePlugin(),
+  new ScreenRecordPlugin(),
+  new ExposurePlugin(),
+);
 
 // Plant probabilistic errors of every SDK-collectible type (must run after
 // init so the capture listeners are already installed). See ./dev/error-seeder.

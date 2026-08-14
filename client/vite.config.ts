@@ -78,11 +78,11 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    // 禁止预构建依赖
+    // Exclude from dependency pre-bundling
     exclude: ["@swifty.js/sentry"],
   },
   build: {
-    // hidden: 生成 sourcemap, 但是不在打包产物中追加 sourceMappingURL 注释
+    // "hidden": generate sourcemaps without appending sourceMappingURL comments to the bundle output
     sourcemap: "hidden",
   },
 });

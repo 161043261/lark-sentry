@@ -63,11 +63,11 @@ import {
 } from "@/lib/stats";
 
 const statusConfig = {
-  count: { label: "次数", color: "var(--chart-2)" },
+  count: { label: "Count", color: "var(--chart-2)" },
 } satisfies ChartConfig;
 
 const latencyConfig = {
-  avg: { label: "平均耗时 (ms)", color: "var(--chart-3)" },
+  avg: { label: "Avg Duration (ms)", color: "var(--chart-3)" },
 } satisfies ChartConfig;
 
 function statusBadgeVariant(
@@ -96,8 +96,8 @@ export default function NetworkPage() {
     () =>
       countBy(requests, (event) => {
         const code = event.payload?.statusCode;
-        if (code === 0) return "网络失败";
-        return String(code ?? "未知");
+        if (code === 0) return "Network Failure";
+        return String(code ?? "Unknown");
       }).map((item) => ({ status: item.label, count: item.count })),
     [requests],
   );
@@ -129,9 +129,10 @@ export default function NetworkPage() {
     return (
       <Empty>
         <EmptyHeader>
-          <EmptyTitle>暂无网络请求上报</EmptyTitle>
+          <EmptyTitle>No Network Requests</EmptyTitle>
           <EmptyDescription>
-            SDK 会自动捕获 fetch 与 XMLHttpRequest 请求，稍等片刻后刷新。
+            The SDK automatically captures fetch and XMLHttpRequest calls. Wait
+            a moment and refresh.
           </EmptyDescription>
         </EmptyHeader>
       </Empty>
@@ -146,17 +147,27 @@ export default function NetworkPage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-        <StatCard label="请求总数" value={requests.length} icon={Globe} />
-        <StatCard label="失败请求" value={failed.length} icon={ShieldAlert} />
-        <StatCard label="失败率" value={failureRate} icon={Zap} />
-        <StatCard label="平均耗时" value={formatMs(avgElapsed)} icon={Timer} />
+        <StatCard label="Total Requests" value={requests.length} icon={Globe} />
+        <StatCard
+          label="Failed Requests"
+          value={failed.length}
+          icon={ShieldAlert}
+        />
+        <StatCard label="Failure Rate" value={failureRate} icon={Zap} />
+        <StatCard
+          label="Avg Duration"
+          value={formatMs(avgElapsed)}
+          icon={Timer}
+        />
       </div>
 
       <div className="grid gap-6 xl:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>状态码分布</CardTitle>
-            <CardDescription>含 statusCode 0（网络层失败）</CardDescription>
+            <CardTitle>Status Code Distribution</CardTitle>
+            <CardDescription>
+              Includes statusCode 0 (network-layer failures)
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <ChartContainer config={statusConfig} className="h-64 w-full">
@@ -177,8 +188,10 @@ export default function NetworkPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>接口平均耗时 Top 8</CardTitle>
-            <CardDescription>按 API 聚合的平均响应耗时</CardDescription>
+            <CardTitle>Avg Latency by API (Top 8)</CardTitle>
+            <CardDescription>
+              Mean response time aggregated per endpoint
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <ChartContainer config={latencyConfig} className="h-64 w-full">
@@ -203,19 +216,19 @@ export default function NetworkPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>请求明细</CardTitle>
-          <CardDescription>最近 100 条 fetch / XHR 上报</CardDescription>
+          <CardTitle>Request Details</CardTitle>
+          <CardDescription>Latest 100 fetch / XHR reports</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-28">时间</TableHead>
-                <TableHead className="w-20">方式</TableHead>
-                <TableHead className="w-24">类型</TableHead>
+                <TableHead className="w-28">Time</TableHead>
+                <TableHead className="w-20">Method</TableHead>
+                <TableHead className="w-24">Type</TableHead>
                 <TableHead>API</TableHead>
-                <TableHead className="w-20">状态码</TableHead>
-                <TableHead className="w-24 text-right">耗时</TableHead>
+                <TableHead className="w-20">Status</TableHead>
+                <TableHead className="w-24 text-right">Duration</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
