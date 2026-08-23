@@ -28,7 +28,6 @@ import {
   Globe,
   LayoutDashboard,
   MousePointerClick,
-  Radar,
 } from "lucide-react";
 import { routes } from "./generated/routes";
 import { LogsProvider } from "@/lib/logs-context";
@@ -50,8 +49,7 @@ const NAV_ITEMS = [
 function Sidebar() {
   return (
     <aside className="bg-sidebar text-sidebar-foreground fixed inset-y-0 left-0 z-10 flex w-56 flex-col border-r">
-      <div className="flex h-14 items-center gap-2 border-b px-4">
-        <Radar className="text-sidebar-primary size-5" />
+      <div className="flex h-14 items-center border-b px-4">
         <span className="text-sm font-semibold">Swifty Sentry</span>
       </div>
       <nav className="flex flex-1 flex-col gap-1 p-2">

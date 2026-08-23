@@ -28,14 +28,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { TableRow, TableHead } from "@/components/ui/table";
+import { VirtualTable } from "@/components/virtual-table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -320,64 +314,65 @@ export default function ErrorsPage() {
         </TabsList>
       </Tabs>
 
-      <div className="grid items-start gap-6 xl:grid-cols-5">
-        <Card className="xl:col-span-3">
+      <div className="grid gap-6 xl:grid-cols-5">
+        <Card className="flex h-[580px] flex-col overflow-hidden xl:col-span-3">
           <CardHeader>
             <CardTitle>Error List</CardTitle>
             <CardDescription>
               Click a row to view stack trace and sourcemap resolution details
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
+          <CardContent className="min-h-0 flex-1">
+            <VirtualTable
+              items={filtered}
+              estimateRowHeight={41}
+              maxHeight={480}
+              header={
                 <TableRow>
                   <TableHead className="w-28">Time</TableHead>
                   <TableHead className="w-32">Type</TableHead>
                   <TableHead>Message</TableHead>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.slice(0, 100).map((event, index) => {
-                  const key = eventKey(event, index);
-                  return (
-                    <TableRow
-                      key={key}
-                      className={cn(
-                        "cursor-pointer",
-                        selected === event && "bg-muted/60",
-                      )}
-                      onClick={() => setSelectedKey(key)}
-                    >
-                      <TableCell className="text-muted-foreground text-xs tabular-nums">
-                        {formatDateTime(event.timestamp)}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="destructive">{event.type}</Badge>
-                      </TableCell>
-                      <TableCell className="max-w-0">
-                        <span className="block truncate" title={event.message}>
-                          {event.payload?.batchError ? (
-                            <Badge variant="secondary" className="mr-1">
-                              ×{event.payload.batchErrorLength}
-                            </Badge>
-                          ) : null}
-                          {event.message || event.name}
-                        </span>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+              }
+              renderRow={(event, index) => {
+                const key = eventKey(event, index);
+                return (
+                  <TableRow
+                    key={key}
+                    className={cn(
+                      "cursor-pointer",
+                      selected === event && "bg-muted/60",
+                    )}
+                    onClick={() => setSelectedKey(key)}
+                  >
+                    <td className="text-muted-foreground p-2 text-xs whitespace-nowrap tabular-nums">
+                      {formatDateTime(event.timestamp)}
+                    </td>
+                    <td className="p-2 align-middle whitespace-nowrap">
+                      <Badge variant="destructive">{event.type}</Badge>
+                    </td>
+                    <td className="max-w-0 p-2 align-middle whitespace-nowrap">
+                      <span className="block truncate" title={event.message}>
+                        {event.payload?.batchError ? (
+                          <Badge variant="secondary" className="mr-1">
+                            ×{event.payload.batchErrorLength}
+                          </Badge>
+                        ) : null}
+                        {event.message || event.name}
+                      </span>
+                    </td>
+                  </TableRow>
+                );
+              }}
+            />
           </CardContent>
         </Card>
 
-        <Card className="xl:col-span-2">
+        <Card className="flex h-[580px] flex-col overflow-hidden xl:col-span-2">
           <CardHeader>
             <CardTitle>Error Details</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="min-h-0 flex-1 overflow-y-auto">
             {selected ? (
               <ErrorDetail event={selected} />
             ) : (

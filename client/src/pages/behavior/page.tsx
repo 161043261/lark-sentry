@@ -42,14 +42,8 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { TableRow, TableHead } from "@/components/ui/table";
+import { VirtualTable } from "@/components/virtual-table";
 import { Badge } from "@/components/ui/badge";
 import {
   Empty,
@@ -163,6 +157,16 @@ export default function BehaviorPage() {
     [events],
   );
 
+  const pvReversed = useMemo(() => [...pvEvents].reverse(), [pvEvents]);
+  const clickReversed = useMemo(
+    () => [...clickEvents].reverse(),
+    [clickEvents],
+  );
+  const exposureReversed = useMemo(
+    () => [...exposureEvents].reverse(),
+    [exposureEvents],
+  );
+
   const pvTimeline = useMemo(() => buildPvTimeline(events), [events]);
   const sessionCount = useMemo(
     () => uniqueCount(events, (event) => event.payload?.sessionId),
@@ -258,47 +262,45 @@ export default function BehaviorPage() {
             <CardDescription>PageLoad / Route PV / Page Stay</CardDescription>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
+            <VirtualTable
+              items={pvReversed}
+              estimateRowHeight={41}
+              maxHeight={640}
+              header={
                 <TableRow>
                   <TableHead className="w-28">Time</TableHead>
                   <TableHead className="w-28">Name</TableHead>
                   <TableHead>Page</TableHead>
                   <TableHead className="w-20 text-right">Dwell</TableHead>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {pvEvents
-                  .slice(-30)
-                  .reverse()
-                  .map((event, index) => {
-                    const dwell = dwellDurationOf(event);
-                    return (
-                      <TableRow
-                        key={event.payload?.id ?? `${event.timestamp}-${index}`}
+              }
+              renderRow={(event, index) => {
+                const dwell = dwellDurationOf(event);
+                return (
+                  <TableRow
+                    key={event.payload?.id ?? `${event.timestamp}-${index}`}
+                  >
+                    <td className="text-muted-foreground p-2 text-xs whitespace-nowrap tabular-nums">
+                      {formatDateTime(event.timestamp)}
+                    </td>
+                    <td className="p-2 align-middle whitespace-nowrap">
+                      <Badge variant="outline">{event.name}</Badge>
+                    </td>
+                    <td className="max-w-0 p-2 align-middle whitespace-nowrap">
+                      <span
+                        className="block truncate font-mono text-xs"
+                        title={event.message}
                       >
-                        <TableCell className="text-muted-foreground text-xs tabular-nums">
-                          {formatDateTime(event.timestamp)}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{event.name}</Badge>
-                        </TableCell>
-                        <TableCell className="max-w-0">
-                          <span
-                            className="block truncate font-mono text-xs"
-                            title={event.message}
-                          >
-                            {shortUrl(event.message || event.url, 60)}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-right text-xs tabular-nums">
-                          {typeof dwell === "number" ? formatMs(dwell) : "-"}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-              </TableBody>
-            </Table>
+                        {shortUrl(event.message || event.url, 60)}
+                      </span>
+                    </td>
+                    <td className="p-2 text-right text-xs whitespace-nowrap tabular-nums">
+                      {typeof dwell === "number" ? formatMs(dwell) : "-"}
+                    </td>
+                  </TableRow>
+                );
+              }}
+            />
           </CardContent>
         </Card>
 
@@ -316,48 +318,44 @@ export default function BehaviorPage() {
                   No click events reported
                 </p>
               ) : (
-                <Table>
-                  <TableHeader>
+                <VirtualTable
+                  items={clickReversed}
+                  estimateRowHeight={41}
+                  maxHeight={300}
+                  header={
                     <TableRow>
                       <TableHead className="w-28">Time</TableHead>
                       <TableHead className="w-32">Event ID</TableHead>
                       <TableHead>Description</TableHead>
                       <TableHead className="w-24">Position</TableHead>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {clickEvents
-                      .slice(-15)
-                      .reverse()
-                      .map((event, index) => {
-                        const extra = clickExtraOf(event);
-                        return (
-                          <TableRow
-                            key={
-                              event.payload?.id ?? `${event.timestamp}-${index}`
-                            }
-                          >
-                            <TableCell className="text-muted-foreground text-xs tabular-nums">
-                              {formatDateTime(event.timestamp)}
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="secondary">
-                                {extra.ev ?? event.name}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="max-w-0">
-                              <span className="block truncate text-xs">
-                                {extra.msg ?? event.message}
-                              </span>
-                            </TableCell>
-                            <TableCell className="text-muted-foreground text-xs tabular-nums">
-                              {extra.x ?? "-"}, {extra.y ?? "-"}
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                  </TableBody>
-                </Table>
+                  }
+                  renderRow={(event, index) => {
+                    const extra = clickExtraOf(event);
+                    return (
+                      <TableRow
+                        key={event.payload?.id ?? `${event.timestamp}-${index}`}
+                      >
+                        <td className="text-muted-foreground p-2 text-xs whitespace-nowrap tabular-nums">
+                          {formatDateTime(event.timestamp)}
+                        </td>
+                        <td className="p-2 align-middle whitespace-nowrap">
+                          <Badge variant="secondary">
+                            {extra.ev ?? event.name}
+                          </Badge>
+                        </td>
+                        <td className="max-w-0 p-2 align-middle whitespace-nowrap">
+                          <span className="block truncate text-xs">
+                            {extra.msg ?? event.message}
+                          </span>
+                        </td>
+                        <td className="text-muted-foreground p-2 text-xs whitespace-nowrap tabular-nums">
+                          {extra.x ?? "-"}, {extra.y ?? "-"}
+                        </td>
+                      </TableRow>
+                    );
+                  }}
+                />
               )}
             </CardContent>
           </Card>
@@ -375,8 +373,11 @@ export default function BehaviorPage() {
                   No exposure events reported
                 </p>
               ) : (
-                <Table>
-                  <TableHeader>
+                <VirtualTable
+                  items={exposureReversed}
+                  estimateRowHeight={41}
+                  maxHeight={300}
+                  header={
                     <TableRow>
                       <TableHead className="w-28">Time</TableHead>
                       <TableHead>Params</TableHead>
@@ -384,39 +385,30 @@ export default function BehaviorPage() {
                         Duration
                       </TableHead>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {exposureEvents
-                      .slice(-15)
-                      .reverse()
-                      .map((event, index) => {
-                        const extra = exposureExtraOf(event);
-                        return (
-                          <TableRow
-                            key={
-                              event.payload?.id ?? `${event.timestamp}-${index}`
-                            }
-                          >
-                            <TableCell className="text-muted-foreground text-xs tabular-nums">
-                              {formatDateTime(event.timestamp)}
-                            </TableCell>
-                            <TableCell className="max-w-0">
-                              <span className="block truncate font-mono text-xs">
-                                {extra.params
-                                  ? JSON.stringify(extra.params)
-                                  : "-"}
-                              </span>
-                            </TableCell>
-                            <TableCell className="text-right text-xs tabular-nums">
-                              {typeof extra.duration === "number"
-                                ? formatMs(extra.duration)
-                                : "-"}
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                  </TableBody>
-                </Table>
+                  }
+                  renderRow={(event, index) => {
+                    const extra = exposureExtraOf(event);
+                    return (
+                      <TableRow
+                        key={event.payload?.id ?? `${event.timestamp}-${index}`}
+                      >
+                        <td className="text-muted-foreground p-2 text-xs whitespace-nowrap tabular-nums">
+                          {formatDateTime(event.timestamp)}
+                        </td>
+                        <td className="max-w-0 p-2 align-middle whitespace-nowrap">
+                          <span className="block truncate font-mono text-xs">
+                            {extra.params ? JSON.stringify(extra.params) : "-"}
+                          </span>
+                        </td>
+                        <td className="p-2 text-right text-xs whitespace-nowrap tabular-nums">
+                          {typeof extra.duration === "number"
+                            ? formatMs(extra.duration)
+                            : "-"}
+                        </td>
+                      </TableRow>
+                    );
+                  }}
+                />
               )}
             </CardContent>
           </Card>

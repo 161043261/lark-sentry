@@ -36,14 +36,8 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { TableRow, TableHead } from "@/components/ui/table";
+import { VirtualTable } from "@/components/virtual-table";
 import { Badge } from "@/components/ui/badge";
 import {
   Empty,
@@ -185,7 +179,7 @@ export default function NetworkPage() {
       .slice(0, 8);
   }, [requests]);
 
-  const recent = useMemo(() => requests.slice(-100).reverse(), [requests]);
+  const recent = useMemo(() => [...requests].reverse(), [requests]);
 
   if (loading) return <PageSkeleton />;
 
@@ -286,8 +280,11 @@ export default function NetworkPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
+          <VirtualTable
+            items={recent}
+            estimateRowHeight={41}
+            maxHeight={480}
+            header={
               <TableRow>
                 <TableHead className="w-28">Time</TableHead>
                 <TableHead className="w-20">Method</TableHead>
@@ -296,41 +293,39 @@ export default function NetworkPage() {
                 <TableHead className="w-20">Status</TableHead>
                 <TableHead className="w-24 text-right">Duration</TableHead>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {recent.map((row) => (
-                <TableRow key={row.key}>
-                  <TableCell className="text-muted-foreground text-xs tabular-nums">
-                    {formatDateTime(row.timestamp)}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{row.method}</Badge>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground text-xs">
-                    {row.transport}
-                  </TableCell>
-                  <TableCell className="max-w-0">
-                    <span
-                      className="block truncate font-mono text-xs"
-                      title={row.api}
-                    >
-                      {shortUrl(row.api, 80)}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={statusBadgeVariant(row.statusCode)}>
-                      {row.statusCode ?? "-"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right text-xs tabular-nums">
-                    {typeof row.elapsedTime === "number"
-                      ? formatMs(row.elapsedTime)
-                      : "-"}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+            }
+            renderRow={(row) => (
+              <TableRow key={row.key}>
+                <td className="text-muted-foreground p-2 text-xs whitespace-nowrap tabular-nums">
+                  {formatDateTime(row.timestamp)}
+                </td>
+                <td className="p-2 align-middle whitespace-nowrap">
+                  <Badge variant="outline">{row.method}</Badge>
+                </td>
+                <td className="text-muted-foreground p-2 text-xs whitespace-nowrap">
+                  {row.transport}
+                </td>
+                <td className="max-w-0 p-2 align-middle whitespace-nowrap">
+                  <span
+                    className="block truncate font-mono text-xs"
+                    title={row.api}
+                  >
+                    {shortUrl(row.api, 80)}
+                  </span>
+                </td>
+                <td className="p-2 align-middle whitespace-nowrap">
+                  <Badge variant={statusBadgeVariant(row.statusCode)}>
+                    {row.statusCode ?? "-"}
+                  </Badge>
+                </td>
+                <td className="p-2 text-right text-xs whitespace-nowrap tabular-nums">
+                  {typeof row.elapsedTime === "number"
+                    ? formatMs(row.elapsedTime)
+                    : "-"}
+                </td>
+              </TableRow>
+            )}
+          />
         </CardContent>
       </Card>
     </div>
