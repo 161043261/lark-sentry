@@ -265,7 +265,7 @@ export default function BehaviorPage() {
             <VirtualTable
               items={pvReversed}
               estimateRowHeight={41}
-              maxHeight={640}
+              maxHeight={720}
               header={
                 <TableRow>
                   <TableHead className="w-28">Time</TableHead>
