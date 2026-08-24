@@ -4,12 +4,6 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-catalogs:
-  default:
-    '@swifty.js/cache':
-      specifier: ^0.0.1
-      version: 0.0.1
-
 importers:
 
   .:
@@ -272,7 +266,7 @@ importers:
         specifier: ^15.7.0
         version: 15.7.0(koa@3.2.1)(supports-color@10.2.2)
       '@swifty.js/cache':
-        specifier: 'catalog:'
+        specifier: latest
         version: 0.0.1
       koa:
         specifier: ^3.2.1
