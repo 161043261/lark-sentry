@@ -25,6 +25,7 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 // import sentryPlugin from "@swifty.js/sentry/vite";
 import pageRoutes from "./plugins/vite-plugin-page-routes";
+import reactDisplayName from "./plugins/vite-plugin-react-display-name";
 import { mkdirSync, readdirSync, renameSync } from "node:fs";
 import { join, resolve } from "node:path";
 
@@ -65,6 +66,7 @@ function moveSourcemaps(): Plugin {
 export default defineConfig({
   plugins: [
     pageRoutes(),
+    reactDisplayName(),
     react(),
     tailwindcss(),
     // sentryPlugin({ dsn: "/api/log" }),
