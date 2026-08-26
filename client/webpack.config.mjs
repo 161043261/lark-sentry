@@ -31,6 +31,11 @@ import PageRoutesPlugin from "./plugins/webpack-plugin-page-routes.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+const displayNameLoader = resolve(
+  __dirname,
+  "plugins/webpack-loader-react-display-name.js",
+);
+
 // Reuse the vite index.html, stripping the vite-specific module script
 // (webpack injects its own bundles via HtmlWebpackPlugin).
 const htmlTemplate = readFileSync(
@@ -69,13 +74,25 @@ export default (env, argv) => {
       rules: [
         {
           test: /\.tsx$/,
-          loader: "esbuild-loader",
-          options: { loader: "tsx", jsx: "automatic", target: "es2020" },
+          use: [
+            {
+              loader: "esbuild-loader",
+              options: { loader: "tsx", jsx: "automatic", target: "es2020" },
+            },
+            // build-only displayName injection, runs first (right-to-left)
+            // on the raw TSX — mirrors the vite plugin's apply: "build"
+            ...(isDev ? [] : [displayNameLoader]),
+          ],
         },
         {
           test: /\.ts$/,
-          loader: "esbuild-loader",
-          options: { loader: "ts", target: "es2020" },
+          use: [
+            {
+              loader: "esbuild-loader",
+              options: { loader: "ts", target: "es2020" },
+            },
+            ...(isDev ? [] : [displayNameLoader]),
+          ],
         },
         {
           test: /\.css$/,
@@ -100,7 +117,8 @@ export default (env, argv) => {
       new PageRoutesPlugin(),
       new HtmlWebpackPlugin({ templateContent: htmlTemplate }),
       new CopyWebpackPlugin({
-        patterns: [{ from: "public", to: "." }],
+        // vite silently skips a missing publicDir; mirror that here
+        patterns: [{ from: "public", to: ".", noErrorOnMissing: true }],
       }),
       ...(isDev
         ? []
