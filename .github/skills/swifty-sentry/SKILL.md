@@ -96,8 +96,8 @@ Behavior, in source order:
 2. Validate `{ ...DEFAULT_OPTIONS, ...options }` with zod (`optionsSchema`) and write the result to the `sentry` singleton via `setOptions`. A schema violation **throws** a `ZodError`.
 3. If `disabled` is `true`, return without installing any listeners. Options are still applied.
 4. If `dsn` is `""`, log an error and return. Options are still applied.
-5. Set the breadcrumb heap capacity from `maxBreadcrumbs`.
-6. Call `setup()`, which installs bus subscriptions plus capture decorators for every enabled event type, starts page-view lifecycle tracking, and registers the `beforeunload` dwell flush.
+5. Set the breadcrumb buffer capacity from `maxBreadcrumbs`.
+6. Call `setup()`, which installs bus subscriptions plus capture decorators for every enabled event type, starts page-view lifecycle tracking, and registers the `pagehide` dwell flush.
 7. Kick off `initIdentity()` (FingerprintJS) without awaiting it.
 
 The internal event bus isolates handler exceptions: if one handler throws, the remaining handlers for that event type still execute.
@@ -110,7 +110,7 @@ import { destroy } from "@swifty.js/sentry";
 destroy();
 ```
 
-Calls `plugin.destroy?.()` on every registered plugin and clears the registry, runs the `setup()` cleanup in reverse order (reversing all capture decorators, removing the `beforeunload` listener, resetting page-view state, clearing all bus subscriptions), destroys the batch-error manager, and resets the `DataReporter` singleton (clearing its timers and queued events). Use this when resetting tests, unloading a micro-frontend, or dynamically disabling monitoring.
+Calls `plugin.destroy?.()` on every registered plugin and clears the registry, runs the `setup()` cleanup in reverse order (reversing all capture decorators, removing the `pagehide` listener, resetting page-view state, clearing all bus subscriptions), destroys the batch-error manager, and resets the `DataReporter` singleton (clearing its timers, removing its online/offline listeners, and dropping queued events). Use this when resetting tests, unloading a micro-frontend, or dynamically disabling monitoring.
 
 ### isInitialized
 
@@ -178,8 +178,6 @@ Call `enablePlugin` after `init`, so plugin initialization sees the parsed optio
 | `enableUnhandledRejection` | `boolean` | `true`      | Capture unhandled promise rejections.                          |
 | `enableHashChange`         | `boolean` | `true`      | Capture hash navigation.                                       |
 | `enableHistory`            | `boolean` | `true`      | Capture history (pushState/replaceState/popstate) navigation.  |
-| `enablePerformance`        | `boolean` | `true`      | Enable performance-related capture.                            |
-| `enableScreenRecord`       | `boolean` | `true`      | Enable screen-record-related reporting.                        |
 | `enableWhiteScreen`        | `boolean` | `true`      | Enable white-screen detection.                                 |
 | `enableFingerprint`        | `boolean` | `false`     | Enable FingerprintJS anonymous visitor identity.               |
 | `enableHttpPerformance`    | `boolean` | `false`     | Report successful HTTP requests as performance events.         |
@@ -192,14 +190,12 @@ Call `enablePlugin` after `init`, so plugin initialization sees the parsed optio
 | ---------------------------- | ---------------------- | --------------------------------------------------- | ----------------------------------------------------- |
 | `anonymousId`                | `string`               | `"unknown"`                                         | SDK-generated anonymous visitor id.                   |
 | `visitorId`                  | `string`               | `"unknown"`                                         | Backend-bound visitor id.                             |
-| `useImageReport`             | `boolean`              | `false`                                             | Allow image transport.                                |
 | `screenRecordDurationMs`     | `number`               | `3000`                                              | Rolling screen record window length in ms.            |
 | `screenRecordEventTypes`     | `EventType[]`          | `[Error, Xhr, Fetch, Resource, UnhandledRejection]` | Event types that trigger screen record reporting.     |
 | `hasSkeleton`                | `boolean`              | `false`                                             | Whether the page has a skeleton screen.               |
 | `rootCssSelectors`           | `string[]`             | `["html", "body", "#app", "#root"]`                 | Root selectors used by white-screen detection.        |
 | `clickThrottleDelay`         | `number`               | `0`                                                 | Click capture throttle delay in milliseconds.         |
-| `requestTimeoutMilliseconds` | `number`               | `3000`                                              | Request timeout in milliseconds.                      |
-| `maxBreadcrumbs`             | `number`               | `30`                                                | Breadcrumb capacity (min-heap, dumps sorted by time). |
+| `maxBreadcrumbs`             | `number`               | `30`                                                | Breadcrumb capacity (FIFO buffer of the newest items). |
 | `ignoreErrors`               | `(string \| RegExp)[]` | `[]`                                                | Runtime error ignore rules.                           |
 | `excludeApis`                | `(string \| RegExp)[]` | `[]`                                                | HTTP request ignore rules.                            |
 | `cacheMaxLength`             | `number`               | `10`                                                | Maximum batch size before flush.                      |
@@ -209,7 +205,7 @@ Call `enablePlugin` after `init`, so plugin initialization sees the parsed optio
 | `offlineCacheKey`            | `string`               | `"swifty_sentry_offline_cache"`                     | localStorage key for offline cache.                   |
 | `tracesSampleRate`           | `number`               | `1`                                                 | Sampling rate from 0 to 1.                            |
 
-Schema constraints enforced by zod: `maxBreadcrumbs`, `cacheMaxLength`, and `maxQueueLength` must be positive integers; `screenRecordDurationMs`, `clickThrottleDelay`, `requestTimeoutMilliseconds`, `cacheWaitingTime`, and `retryIntervalMilliseconds` must be non-negative; `tracesSampleRate` must be between 0 and 1.
+Schema constraints enforced by zod: `maxBreadcrumbs`, `cacheMaxLength`, and `maxQueueLength` must be positive integers; `screenRecordDurationMs`, `clickThrottleDelay`, `cacheWaitingTime`, and `retryIntervalMilliseconds` must be non-negative; `tracesSampleRate` must be between 0 and 1.
 
 ### Hook Options
 
@@ -219,7 +215,6 @@ Schema constraints enforced by zod: `maxBreadcrumbs`, `cacheMaxLength`, and `max
 | `onBeforeReportData`     | `function` | `undefined` | Hook before one event enters the Reporter queue. Receives `IReportData`, returns the data or `false` to drop. |
 | `beforePushEventList`    | `function` | `undefined` | Hook before a batch enters transport. Receives `readonly IReportData[]`, returns the array or `false`.        |
 | `afterSendData`          | `function` | `undefined` | Hook after a batch is sent successfully. Receives `readonly IReportData[]`.                                   |
-| `handleHttpError`        | `function` | `undefined` | Custom HTTP error callback. Receives HTTP data, returns `boolean`.                                            |
 
 ## Event Types
 
@@ -253,9 +248,9 @@ The SDK captures errors from multiple sources, all routed through the `handleErr
 
 2. **Resource load errors** -- a failed `<img>`, `<script>`, or `<link>` dispatches a plain `Event` (not an `ErrorEvent`) whose target is the failed element. `<img>`/`<script>` expose `src`, `<link>` exposes `href` -- never both, so both fields are optional in `IExtendedErrorEvent`. Reported as `EventType.Resource` with `name` set to the `localName`, `src`/`href` fields, and a synthesized `message` of `Failed to load <localName>: <src|href>`.
 
-3. **`console.error`** -- the SDK decorates `console.error`, publishing the first `Error` argument or, if none, all arguments stringified and joined by a space. A reentrancy flag prevents the SDK's own `console.error` output from re-triggering capture. The original `console.error` is always called afterwards.
+3. **`console.error`** -- the SDK decorates `console.error`, publishing the first `Error` argument or, if none, all arguments stringified and joined by a space. A reentrancy flag prevents the SDK's own `console.error` output from re-triggering capture, and the SDK's debug logger uses a native `console.error` reference captured before decoration so debug output never self-reports. The original `console.error` is always called afterwards.
 
-4. **Unhandled promise rejections** -- captured via `globalThis.addEventListener("unhandledrejection", listener)`. Only `ErrorEvent` reasons carry filename/line/column, so those go to `handleCodeError`; every other reason goes through the generic `handleError` pipeline.
+4. **Unhandled promise rejections** -- captured via `globalThis.addEventListener("unhandledrejection", listener)`. The handler unwraps the event's `reason` and classifies that value: an `ErrorEvent` reason (carrying filename/line/column) goes to `handleCodeError`; every other reason -- `Error` instances, strings, plain objects -- goes through the generic `handleError` pipeline with the reason as `extra`.
 
 5. **React ErrorBoundary errors** -- reported as `EventType.React` via `reportFrameworkError` with the error, its stack, and React's `ErrorInfo` as `context`.
 
@@ -267,14 +262,14 @@ The SDK captures errors from multiple sources, all routed through the `handleErr
 
 | `extra` is                            | Path                | Reported type          |
 | ------------------------------------- | ------------------- | ---------------------- |
-| `ErrorEvent`                          | `handleCodeError`   | `Error` (with line/column) |
+| `ErrorEvent`                          | `handleCodeError`   | `Error` (with line/column; `extra` = the underlying `Error`'s stack when present) |
 | Plain `Event` with resource-like target | `reportResourceError` | `Resource`           |
 | `Error`                               | `reportRuntimeError` | `Error` (`extra` = `stack \|\| error`) |
 | Anything else                         | `reportUnknownError` | `Error` with `name: "Unknown Error"` |
 
 ### Error Deduplication
 
-All three error paths deduplicate by default using a base64url-encoded key (`base64v2`) stored in a `BoundedSet<string>` (LRU-style, capacity 1000) on the `sentry` singleton, preventing unbounded memory growth in long-running SPAs:
+All three error paths deduplicate by default using a raw string key stored in a `BoundedSet<string>` (LRU-style, capacity 1000) on the `sentry` singleton, preventing unbounded memory growth in long-running SPAs:
 
 | Path            | Dedup key                                             |
 | --------------- | ----------------------------------------------------- |
@@ -306,13 +301,15 @@ The SDK decorates `XMLHttpRequest.prototype.open`, `XMLHttpRequest.prototype.sen
 ### XHR Capture
 
 - `open()` decoration stores method (uppercased), URL, and base data on the XHR instance under the `__sentry__` property.
-- `send()` decoration adds a `loadend` listener that records status code, request body, `{ responseType, response }`, the parsed `server-timing` header, and elapsed time, then publishes via the event bus. Requests filtered by `shouldIgnoreRequest` are skipped inside the listener.
+- `send()` decoration refreshes the payload timestamp (so `elapsedTime` measures from `send()`, not `open()`) and adds a **once-only** `loadend` listener that records status code, the parsed `server-timing` header, and elapsed time, then publishes via the event bus. Requests filtered by `shouldIgnoreRequest` are skipped inside the listener.
+- `requestData` and `responseData` (`{ responseType, response }`) are captured **only for error statuses** (`0` or `>= 400`); string responses are truncated to 8 KB.
 
 ### Fetch Capture
 
-- `globalThis.fetch` decoration wraps the original fetch and records method (uppercased, default `GET`), URL, request body, response status, `Server-Timing` headers, and elapsed time.
-- Response text is read via `res.clone().text()` so the original response body stays consumable by the caller.
-- If `res.clone().text()` fails (e.g., streaming responses), the event is still published without `responseData`.
+- `globalThis.fetch` decoration accepts `string`, `URL`, and `Request` inputs: the URL comes from the string itself, `URL.href`, or `Request.url`; the method comes from `RequestInit.method`, else `Request.method`, else `GET` (always uppercased).
+- Requests matching `shouldIgnoreRequest` (including the SDK's own report POSTs) bypass instrumentation entirely -- the original fetch is called with zero overhead.
+- The response status, `Server-Timing` headers, and elapsed time are recorded for every captured request.
+- The response body is read via `res.clone().text()` **only for error statuses** (`0` or `>= 400`), truncated to 8 KB, and read in the background so the caller's response is never delayed; if the clone read fails (e.g., streaming responses), the event is still published without `responseData`.
 - Network errors (fetch rejection) publish with `statusCode: 0` and `message` set to the error message, or `"Network error"` for non-`Error` rejections. The original error is re-thrown to preserve caller behavior.
 
 ### Status Classification
@@ -321,6 +318,7 @@ The SDK decorates `XMLHttpRequest.prototype.open`, `XMLHttpRequest.prototype.sen
 
 | Status Code Range | SDK Status     | Derived message              |
 | ----------------- | -------------- | ---------------------------- |
+| 0                 | `Status.Error` | Original network-error message, else `"Network error"` |
 | 100 - 199         | `Status.OK`    | `"Informational response"`   |
 | 200 - 299         | `Status.OK`    | `"Successful responses"`     |
 | 300 - 399         | `Status.OK`    | `"Redirection messages"`     |
@@ -358,7 +356,7 @@ The SDK reports PV (page view) events through the `pv-lifecycle` module. All PV 
    - URLs are normalized against `location.href`. If `currentPage.url === normalizedTo`, the event is skipped.
    - `PageDwell` is reported for the previous page, with `extra: { url, referrer, duration }`. Durations of 100 ms or less are dropped to reduce noise.
    - A new PV is reported, named `"HistoryChange"` or `"HashChange"` depending on the source.
-3. **`beforeunload`** -- flushes the current dwell time via `flushCurrentPageDwell(true)`.
+3. **`pagehide`** -- flushes the current dwell time via `flushCurrentPageDwell(true)` (`pagehide` fires reliably on mobile where `beforeunload` does not).
 
 ### Manual Page View
 
@@ -441,7 +439,7 @@ interface DeclarativeClickData {
 
 `elementPath` is produced by `dom2str`: a `" > "`-joined selector chain like `body > div#app > button.btn.primary`, traversing at most 5 levels up, stopping at `html`, capped at 128 characters (whole selectors are dropped rather than truncated), and returning `"<unknown>"` on any exception.
 
-`handleClick` sets the report `name` to `clickData.ev || clickData.msg` and `message` to `clickData.msg || clickData.ev`. The full `DeclarativeClickData` object is stored in the `extra` field. A breadcrumb is always pushed, but `handleClick` performs a secondary `sentry.options.enableClick` check before calling `reporter.send()`.
+`handleClick` sets the report `name` to `clickData.ev || clickData.msg` and `message` to `clickData.msg || clickData.ev`. The full `DeclarativeClickData` object is stored in the `extra` field. The handler pushes a breadcrumb and reports the event; the whole click pipeline is only installed when `enableClick` is `true` at `init` time.
 
 ### Click Throttling
 
@@ -485,7 +483,7 @@ The SDK tracks three identity values:
 | `visitorId`   | Backend-bound visitor id, set via `setVisitorId()`.                                |
 | `userId`      | Current user id, set via `setUserId()` or `init({ userId })`.                      |
 
-These are separate from `deviceInfo.fingerprint`, which is always present: a CRC32 hash of a canvas-rendered probe image, falling back to `crypto.randomUUID()` (or a timestamp/random string) when canvas is unavailable.
+All three identity values are attached to every report envelope: `IReportData` carries `userId`, `anonymousId`, and `visitorId` on each event.
 
 ### Enable FingerprintJS
 
@@ -592,18 +590,6 @@ const userId = getUserId();
 `getBaseInfo()` returns a fresh `IReportPayload` base object (`id`, `deviceId`, `sessionId`, `time`, `timestamp`, empty `name`/`message`, `Status.OK`, `EventType.Custom`).
 `getUserId()` returns `sentry.options.userId`.
 
-### getIPs
-
-Attempts to collect WebRTC ICE candidate IP values using `RTCPeerConnection` against `stun:stun.l.google.com:19302`. Returns an empty array in browsers without `RTCPeerConnection`.
-
-```ts
-import { getIPs } from "@swifty.js/sentry";
-
-const ips = await getIPs();
-```
-
-Accepts an optional `timeout` parameter (default 500 ms, clamped to a minimum of 100 ms).
-
 ## Reporter Hooks
 
 Register hooks after initialization or provide equivalent hooks in `init` options. Both forms write to the same option fields, so the later call wins.
@@ -653,7 +639,7 @@ init({
 - `onBeforeReportData` / `beforeSendData`: Receives a single `IReportData`. Return the (possibly modified) data to proceed, or `false` to drop the event. May return a Promise.
 - `beforePushEventList`: Receives the batch array before transport. Return the (possibly filtered) array, or `false` to drop the whole batch. May return a Promise. Returning an empty array (or `false`) schedules another flush instead of sending.
 - `afterSendData`: Receives the batch array after successful transport. The return value is ignored and not awaited.
-- `onBeforePushBreadcrumb`: Receives `IBreadcrumbItem` before it is stored in the breadcrumb min-heap. Must return the (possibly modified) item synchronously. Breadcrumb `userAction` is determined by `event2breadcrumb`: `Error`/`Vue`/`React`/`UnhandledRejection` map to `BreadcrumbType.CodeError`; `Xhr`/`Fetch` to `Http`; `Click` to `Click`; `HashChange`/`History` to `Route`; `Resource` to `Resource`; everything else to `Custom`.
+- `onBeforePushBreadcrumb`: Receives `IBreadcrumbItem` before it is stored in the bounded breadcrumb buffer. Must return the (possibly modified) item synchronously. Breadcrumb `userAction` is determined by `event2breadcrumb`: `Error`/`Vue`/`React`/`UnhandledRejection` map to `BreadcrumbType.CodeError`; `Xhr`/`Fetch` to `Http`; `Click` to `Click`; `HashChange`/`History` to `Route`; `Resource` to `Resource`; everything else to `Custom`.
 
 ## Reporter
 
@@ -679,9 +665,8 @@ Reporter is the unified data outlet (`DataReporter` singleton, lazily instantiat
 1. Returns early if the queue is empty; an `isFlushing` guard prevents concurrent flush races.
 2. If offline, the queue is capped to `maxQueueLength`, persisted, and the flush aborts.
 3. A batch of up to `cacheMaxLength` items is spliced off the queue head and passed through `beforePushEventList` (Promise results are awaited). An empty result schedules the next flush.
-4. Transport priority:
-   - `navigator.sendBeacon` for batches up to 60 KB.
-   - Image transport when `useImageReport` is `true` and the batch is up to 2 KB (appends `?data=` / `&data=` with URL-encoded JSON, dispatched through a `requestIdleCallback` queue).
+4. The batch is JSON-serialized **once**, then sent by transport priority:
+   - `navigator.sendBeacon` for bodies up to 60 KB.
    - `fetch` POST with `Content-Type: application/json`. `keepalive: true` is set only when the body is at most 60 KB, because Chromium rejects larger keepalive fetches and the queue head would stall forever.
 5. On transport failure, the batch is prepended back onto the queue, capped, and persisted; the server-recovery probe is armed.
 6. On success, the `afterSendData` hook is called.
@@ -710,7 +695,7 @@ Each reported event is an `IReportData` object:
 
 | Field         | Type                | Description                                              |
 | ------------- | ------------------- | -------------------------------------------------------- |
-| `id`          | `string`            | Reporter instance id (`crypto.randomUUID()`), shared by every event from one reporter. |
+| `id`          | `string`            | Reporter instance id (`generateUUID()`, secure-context safe), shared by every event from one reporter. |
 | `type`        | `EventType`         | Event type enum value.                                   |
 | `name`        | `string`            | Event name.                                              |
 | `message`     | `string`            | Event message.                                           |
@@ -719,10 +704,12 @@ Each reported event is an `IReportData` object:
 | `timestamp`   | `number`            | Numeric timestamp (`Date.now()`).                        |
 | `url`         | `string`            | Current page URL (`location.href`).                      |
 | `userId`      | `string`            | User identifier.                                         |
+| `anonymousId` | `string`            | FingerprintJS anonymous visitor id (`"unknown"` when disabled). |
+| `visitorId`   | `string`            | Backend-bound visitor id (`"unknown"` until `setVisitorId`). |
 | `projectId`   | `string`            | Project identifier.                                      |
 | `sdkVersion`  | `string`            | SDK version from package.json.                           |
 | `breadcrumbs` | `IBreadcrumbItem[]` | Present **only** for error-class types (see below).      |
-| `deviceInfo`  | `IDeviceInfo`       | Device, browser, OS, language, screen, and fingerprint.  |
+| `deviceInfo`  | `IDeviceInfo`       | Device, browser, OS, language, and screen data (lazily collected on first report). |
 | `payload`     | `TReportPayload`    | Original event payload, including its own `id`.           |
 
 Breadcrumbs are the trail leading up to a failure, so they are attached only to `Error`, `UnhandledRejection`, `Resource`, `Vue`, `React`, and `OtherFrameworks` events. Attaching them to every batched event would multiply payload size for no diagnostic value.
@@ -785,7 +772,7 @@ Takes no constructor options. Every metric is reported as an `EventType.Performa
 | Reported `name`               | Source                                                                                   |
 | ----------------------------- | ---------------------------------------------------------------------------------------- |
 | `LCP`, `FCP`, `CLS`, `INP`, `TTFB` | Web Vitals via the `web-vitals` library, carrying `value` and `rating`. The metric's own `id` overwrites the payload `id`. |
-| `FSP`                         | First Screen Paint -- a `MutationObserver` tracks the latest in-viewport DOM mutation timestamp (excluding `link`/`script`/`style`), resolved once `document.readyState === "complete"`. |
+| `FSP`                         | First Screen Paint -- a `MutationObserver` tracks the latest in-viewport DOM mutation timestamp (excluding `link`/`script`/`style`), resolved via a `requestAnimationFrame` loop once `document.readyState === "complete"`; a pending observation is cancelled by `destroy()`. |
 | `NavigationTiming`            | Page-load metrics in `extra`: paintTime, domInteractive, domContentLoaded, loadEvent, firstByte, dnsLookup, tcpConnection, tlsHandshake, timeToFirstByte, contentTransfer, domProcessing, resourceLoad, redirect, unloadTime, triggerPageUrl. Reported on page ready. |
 | `ResourceList`                | Snapshot of all buffered `resource` entries at page ready, in `resourceList`.             |
 | `ResourceTiming`              | One event per live `resource` entry from `PerformanceObserver`, with `value` = duration and `extra.resource`. |
@@ -825,10 +812,10 @@ Screen recording is based on `@rrweb/record`. The plugin keeps a rolling record 
 
 ### How It Works
 
-1. `init()` **overwrites** `sentry.options.enableScreenRecord = true`, `screenRecordEventTypes`, and `screenRecordDurationMs` from the constructor options. Enabling the plugin therefore turns screen recording on regardless of the `init()` option values; pass `eventTypes`/`durationMs` to the constructor to configure it.
+1. `init()` writes `screenRecordEventTypes` and `screenRecordDurationMs` from the constructor options into the SDK options via `sentry.setOptions` (arrays are copied, so plugin instances never share option array references). Pass `eventTypes`/`durationMs` to the constructor to configure the trigger set and window length.
 2. `@rrweb/record` and `pako` are dynamically imported, then `record()` starts with `recordCanvas: true` and `checkoutEveryNms` set to `durationMs`. A load failure is logged and the plugin degrades to a no-op.
-3. Emitted events are validated (`{ timestamp: number }`, loose object) and kept in a rolling window filtered by `screenRecordDurationMs`.
-4. When `sentry.shouldScreenRecord` is `true` (set by `shouldQueuePayload` for matching event types) and the window is non-empty, the window is JSON-serialized, gzip-compressed with `pako.gzip`, base64-encoded into the payload's `event` field, and reported with `name: "ScreenRecord"` and `eventCount`.
+3. Emitted events are validated (`{ timestamp: number }`, loose object) and kept in a rolling window pruned in place to the last `screenRecordDurationMs` milliseconds.
+4. When `sentry.shouldScreenRecord` is `true` (set by `shouldQueuePayload` for matching event types) and the window is non-empty, the window is JSON-serialized, gzip-compressed with `pako.gzip`, base64-encoded (in 32 KB chunks) into the payload's `event` field, and reported with `name: "ScreenRecord"` and `eventCount`.
 5. `sentry.shouldScreenRecord` is reset to `false` after reporting.
 6. `destroy()` calls the `stopRecord` function returned by rrweb.
 
@@ -898,7 +885,7 @@ if (first && second) {
 | `threshold` | `number` (0-1)            | `0.5`    | Intersection ratio threshold.             |
 | `params`    | `Record<string, unknown>` | `{}`     | Custom parameters included in the report. |
 
-All inputs are validated with zod (`exposureTargetSchema`), so an invalid `target` or out-of-range `threshold` throws. A `threshold` of `0` falls back to `0.5` (the code uses `item.threshold || 0.5`). Re-observing an element already in the internal map is a no-op, so the original `threshold` and `params` are kept.
+All inputs are validated with zod (`exposureTargetSchema`), so an invalid `target` or out-of-range `threshold` throws. An explicit `threshold` of `0` is respected (the code uses `item.threshold ?? 0.5`, so only an omitted threshold falls back to `0.5`). Re-observing an element already in the internal map is a no-op, so the original `threshold` and `params` are kept.
 
 ### Cancel Observation
 
@@ -1148,20 +1135,21 @@ The logger reads `globalThis.__sentry__.options.debug` on every call, so togglin
 globalThis.__sentry__?.setOptions({ debug: false });
 ```
 
+The logger's error output uses a native `console.error` reference captured before the SDK decorates `console.error`, so enabling `debug` never causes the SDK to report its own log lines as errors.
+
 The `sentry` singleton is assigned to `globalThis.__sentry__` on first access, which also makes it a convenient debugging handle for inspecting live options and `deviceInfo`.
 
 ## Browser Compatibility
 
-- `sendBeacon` is preferred for batches up to 60 KB.
-- Image transport (opt-in via `useImageReport`) handles batches up to 2 KB; `fetch` POST is the final fallback, using `keepalive` only for bodies up to 60 KB.
+- `sendBeacon` is preferred for batches up to 60 KB; `fetch` POST is the fallback, using `keepalive` only for bodies up to 60 KB.
 - `PerformanceObserver` powers Web Vitals, long task, and resource timing when available.
 - `MutationObserver` powers first-screen paint and the dynamic-resource fallback.
 - `IntersectionObserver` is required by `ExposurePlugin`.
-- `requestIdleCallback` is used opportunistically (white-screen sampling, image transport queue, FSP kickoff) with microtask/direct-call fallbacks.
+- `requestIdleCallback` is used opportunistically by white-screen sampling, with a direct-call fallback.
 - `performance.measureUserAgentSpecificMemory` is optional (Chrome-only).
 - `@rrweb/record` and `pako` are dynamically imported only by `ScreenRecordPlugin`.
 - `@fingerprintjs/fingerprintjs` is dynamically imported only when `enableFingerprint: true`.
-- `RTCPeerConnection` is used by `getIPs()` only when available.
+- UUIDs come from `generateUUID()`: `crypto.randomUUID` when available, else a `crypto.getRandomValues`-based v4 fallback, so the SDK works on insecure (plain-http) contexts.
 - `localStorage`/`sessionStorage` access is wrapped in try/catch, so private-mode or blocked-storage browsers fall back to per-call UUIDs.
 
 ## Session and Device Identity

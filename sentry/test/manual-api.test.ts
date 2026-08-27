@@ -28,7 +28,6 @@ import {
   beforePushEventList,
   beforeSendData,
   getBaseInfo,
-  getIPs,
   getUserId,
   sendLocal,
   setUserId,
@@ -108,6 +107,8 @@ describe("manual public APIs", () => {
           ...payload,
           url: location.href,
           userId: "unknown",
+          anonymousId: "unknown",
+          visitorId: "unknown",
           projectId: "unknown",
           sdkVersion: "1.0.2",
           deviceInfo: sentry.deviceInfo,
@@ -120,14 +121,5 @@ describe("manual public APIs", () => {
 
     expect(sendBeacon).toHaveBeenCalledTimes(1);
     expect(localStorage.getItem(DEFAULT_OPTIONS.offlineCacheKey)).toBeNull();
-  });
-
-  it("returns an empty IP list when WebRTC is unavailable", async () => {
-    Object.defineProperty(globalThis, "RTCPeerConnection", {
-      configurable: true,
-      value: undefined,
-    });
-
-    await expect(getIPs()).resolves.toEqual([]);
   });
 });

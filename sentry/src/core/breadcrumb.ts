@@ -22,9 +22,9 @@
 
 import type { IBreadcrumbItem } from "../types";
 
-import { MinHeap, sentry } from "../utils";
+import { BoundedList, sentry } from "../utils";
 
-class Breadcrumb extends MinHeap<IBreadcrumbItem> {
+class Breadcrumb extends BoundedList<IBreadcrumbItem> {
   static #instance: Breadcrumb;
 
   public static get instance() {

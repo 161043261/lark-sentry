@@ -21,17 +21,13 @@
  */
 
 import { isHTMLElement } from "../../utils";
+import type { Cleanup } from "../../utils/decorate-prop.js";
 
 type Callback = (value: number) => void;
 
-interface RenderEntry {
-  readonly startTime: number;
-  readonly children: readonly HTMLElement[];
-}
+const excludedElementNames = new Set(["link", "script", "style"]);
 
-let entries: RenderEntry[] = [];
-let observer: MutationObserver | null = null;
-let requestId = 0;
+function noop(): void {}
 
 function isInViewport(element: HTMLElement): boolean {
   const rect = element.getBoundingClientRect();
@@ -43,76 +39,76 @@ function isInViewport(element: HTMLElement): boolean {
   );
 }
 
-function getRenderTime(): number {
-  if (entries.length === 0) {
-    return 0;
-  }
-  return Math.max(...entries.map((entry) => entry.startTime));
-}
-
-function checkDomChange(callback: Callback): void {
-  cancelAnimationFrame(requestId);
-  requestId = requestAnimationFrame(() => {
-    if (document.readyState === "complete") {
-      observer?.disconnect();
-      const firstScreenPaint = getRenderTime();
-      entries = [];
-      callback(firstScreenPaint);
-      return;
+function hasInViewportAddition(mutationList: MutationRecord[]): boolean {
+  for (const mutation of mutationList) {
+    if (!isHTMLElement(mutation.target)) {
+      continue;
     }
-    checkDomChange(callback);
-  });
+    if (!mutation.addedNodes.length || !isInViewport(mutation.target)) {
+      continue;
+    }
+    for (const node of Array.from(mutation.addedNodes)) {
+      if (
+        isHTMLElement(node) &&
+        !excludedElementNames.has(node.tagName.toLowerCase()) &&
+        isInViewport(node)
+      ) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
-function observeFirstScreenPaint(callback: Callback): void {
+/**
+ * Tracks the timestamp of the latest in-viewport DOM mutation and resolves it
+ * as the First Screen Paint once the document is complete. Returns a cleanup
+ * that cancels observation if the plugin is destroyed before resolution.
+ */
+export function getFirstScreenPaint(callback: Callback): Cleanup {
   if (!("MutationObserver" in globalThis) || typeof globalThis.MutationObserver !== "function") {
     callback(0);
-    return;
+    return noop;
   }
-  const excludedElementNames = new Set(["link", "script", "style"]);
-  observer = new globalThis.MutationObserver((mutationList) => {
-    checkDomChange(callback);
-    const children: HTMLElement[] = [];
-    for (const mutation of mutationList) {
-      if (!isHTMLElement(mutation.target)) {
-        continue;
-      }
-      if (!mutation.addedNodes.length || !isInViewport(mutation.target)) {
-        continue;
-      }
-      for (const node of Array.from(mutation.addedNodes)) {
-        if (
-          isHTMLElement(node) &&
-          !excludedElementNames.has(node.tagName.toLowerCase()) &&
-          isInViewport(node)
-        ) {
-          children.push(node);
-        }
-      }
-    }
-    if (children.length) {
-      entries.push({
-        children,
-        startTime: globalThis.performance.now(),
-      });
+
+  let latestRenderTime = 0;
+  let requestId = 0;
+  let done = false;
+
+  const observer = new globalThis.MutationObserver((mutationList) => {
+    if (hasInViewportAddition(mutationList)) {
+      latestRenderTime = globalThis.performance.now();
     }
   });
+
+  const finish = () => {
+    if (done) return;
+    done = true;
+    observer.disconnect();
+    cancelAnimationFrame(requestId);
+    callback(latestRenderTime);
+  };
+
+  const waitForPageReady = () => {
+    if (document.readyState === "complete") {
+      finish();
+      return;
+    }
+    requestId = requestAnimationFrame(waitForPageReady);
+  };
+
   observer.observe(document, {
     childList: true,
     subtree: true,
     characterData: true,
     attributes: true,
   });
-}
+  waitForPageReady();
 
-export function getFirstScreenPaint(callback: Callback): void {
-  if ("requestIdleCallback" in globalThis) {
-    requestIdleCallback((deadline) => {
-      if (deadline.timeRemaining() > 0) {
-        observeFirstScreenPaint(callback);
-      }
-    });
-    return;
-  }
-  observeFirstScreenPaint(callback);
+  return () => {
+    if (done) return;
+    done = true;
+    observer.disconnect();
+    cancelAnimationFrame(requestId);
+  };
 }

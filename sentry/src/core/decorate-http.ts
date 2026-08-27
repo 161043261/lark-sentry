@@ -34,6 +34,18 @@ import { pub } from "./bus.js";
 
 type TXhrProtoOpen = (method: string, url: string, async?: boolean, ...rest: string[]) => void;
 
+// Response bodies are only captured for failed requests and truncated so a
+// single error can never blow up report payloads.
+const MAX_BODY_LENGTH = 8 * 1024;
+
+function truncateBody(value: string): string {
+  return value.length > MAX_BODY_LENGTH ? value.slice(0, MAX_BODY_LENGTH) : value;
+}
+
+function isErrorStatusCode(statusCode: number): boolean {
+  return statusCode === 0 || statusCode >= 400;
+}
+
 export function pubXhr(): Cleanup {
   const xhrProto = XMLHttpRequest.prototype;
   const cleanupOpen = decorateProp(xhrProto, "open", (oldPropVal: TXhrProtoOpen) => {
@@ -63,18 +75,27 @@ export function pubXhr(): Cleanup {
     ) {
       if (!this.__sentry__) return oldPropVal.call(this, body);
       const { method, api } = this.__sentry__;
-      this.addEventListener("loadend", () => {
-        if (shouldIgnoreRequest(method, api)) return;
-        this.__sentry__.statusCode = this.status;
-        this.__sentry__.requestData = { body };
-        this.__sentry__.responseData = {
-          responseType: this.responseType,
-          response: this.response,
-        };
-        this.__sentry__.serverTiming = parseServerTiming(this.getResponseHeader("server-timing"));
-        this.__sentry__.elapsedTime = Date.now() - this.__sentry__.timestamp;
-        pub(EventType.Xhr, this.__sentry__);
-      });
+      const startedAt = Date.now();
+      this.__sentry__.timestamp = startedAt;
+      this.__sentry__.time = new Date(startedAt).toISOString();
+      this.addEventListener(
+        "loadend",
+        () => {
+          if (shouldIgnoreRequest(method, api)) return;
+          this.__sentry__.statusCode = this.status;
+          if (isErrorStatusCode(this.status)) {
+            this.__sentry__.requestData = { body };
+            this.__sentry__.responseData = {
+              responseType: this.responseType,
+              response: typeof this.response === "string" ? truncateBody(this.response) : this.response,
+            };
+          }
+          this.__sentry__.serverTiming = parseServerTiming(this.getResponseHeader("server-timing"));
+          this.__sentry__.elapsedTime = Date.now() - startedAt;
+          pub(EventType.Xhr, this.__sentry__);
+        },
+        { once: true },
+      );
       return oldPropVal.call(this, body);
     };
   });
@@ -84,47 +105,68 @@ export function pubXhr(): Cleanup {
   };
 }
 
+function getRequestUrl(input: RequestInfo | URL): string {
+  if (typeof input === "string") return input;
+  if (input instanceof URL) return input.href;
+  return input.url;
+}
+
+function getRequestMethod(input: RequestInfo | URL, options?: RequestInit): string {
+  if (options?.method) return options.method.toUpperCase();
+  if (typeof Request !== "undefined" && input instanceof Request) {
+    return input.method.toUpperCase();
+  }
+  return HttpMethod.Get;
+}
+
 export function pubFetch(): Cleanup {
   return decorateProp(globalThis, "fetch", (oldPropVal) => {
-    return async function (url: RequestInfo | URL, options?: RequestInit) {
-      const method = options?.method?.toUpperCase() ?? HttpMethod.Get;
+    return function (input: RequestInfo | URL, options?: RequestInit) {
+      const api = getRequestUrl(input);
+      const method = getRequestMethod(input, options);
+      if (shouldIgnoreRequest(method, api)) {
+        return oldPropVal.call(globalThis, input, options);
+      }
       const httpData: IHttpData = {
         ...getBaseData(),
         type: EventType.Fetch,
         method,
         requestData: { body: options?.body },
         name: "Fetch",
-        api: url.toString(),
+        api,
         elapsedTime: 0,
         statusCode: HttpStatusCode.OK,
       };
+      const startedAt = httpData.timestamp;
       return oldPropVal
-        .call(globalThis, url, options)
+        .call(globalThis, input, options)
         .then((res: Response) => {
-          const resClone = res.clone();
-          httpData.elapsedTime = Date.now() - httpData.timestamp;
-          httpData.statusCode = resClone.status;
-          httpData.serverTiming = getServerTimingFromHeaders(resClone.headers);
-          resClone
-            .text()
-            .then((responseText: string) => {
-              if (shouldIgnoreRequest(method, url.toString())) return;
-              httpData.responseData = responseText;
-              pub(EventType.Fetch, httpData);
-            })
-            .catch(() => {
-              if (shouldIgnoreRequest(method, url.toString())) return;
-              pub(EventType.Fetch, httpData);
-            });
+          httpData.elapsedTime = Date.now() - startedAt;
+          httpData.statusCode = res.status;
+          httpData.serverTiming = getServerTimingFromHeaders(res.headers);
+          if (isErrorStatusCode(res.status)) {
+            // Read the body from a clone in the background so the caller's
+            // response stream is untouched and never delayed.
+            res
+              .clone()
+              .text()
+              .then((responseText: string) => {
+                httpData.responseData = truncateBody(responseText);
+              })
+              .catch(() => undefined)
+              .finally(() => {
+                pub(EventType.Fetch, httpData);
+              });
+          } else {
+            pub(EventType.Fetch, httpData);
+          }
           return res;
         })
         .catch((err: unknown) => {
-          if (!shouldIgnoreRequest(method, url.toString())) {
-            httpData.elapsedTime = Date.now() - httpData.timestamp;
-            httpData.statusCode = 0;
-            httpData.message = err instanceof Error ? err.message : "Network error";
-            pub(EventType.Fetch, httpData);
-          }
+          httpData.elapsedTime = Date.now() - startedAt;
+          httpData.statusCode = 0;
+          httpData.message = err instanceof Error ? err.message : "Network error";
+          pub(EventType.Fetch, httpData);
           throw err;
         });
     };

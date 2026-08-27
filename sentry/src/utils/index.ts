@@ -20,13 +20,9 @@
  * SOFTWARE.
  */
 
-export * from "./base64.js";
-
 export * from "./data-structures.js";
 
 export * from "./click-data.js";
-
-export { default as debounce } from "./debounce.js";
 
 export { default as decorateProp } from "./decorate-prop.js";
 
@@ -55,5 +51,7 @@ export * from "./server-timing.js";
 export * from "./throttle.js";
 
 export { default as transformHttpData } from "./transform-http-data.js";
+
+export * from "./uuid.js";
 
 export * from "./logger.js";

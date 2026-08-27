@@ -21,7 +21,8 @@
  */
 
 import type { IDataReporter, IReportData, TReportPayload } from "../types";
-import { CallbackQueue, sentryLogger, sentry } from "../utils";
+import { generateUUID, sentryLogger, sentry } from "../utils";
+import type { Cleanup } from "../utils/decorate-prop.js";
 import { applyBeforePushHook } from "./batch.js";
 import { scheduleFlush } from "./flush-scheduler.js";
 import { initNetworkListener } from "./network-listener.js";
@@ -30,21 +31,21 @@ import { isPromise } from "./promise.js";
 import { runBeforeReportHook } from "./report-data.js";
 import { shouldQueuePayload } from "./send-preflight.js";
 import { scheduleServerRecovery } from "./server-recovery.js";
-import { isObjectOverSizeLimit, reportByFetch, reportByImage, sendBeacon } from "./transports.js";
+import { getBodyByteLength, MAX_KEEPALIVE_BYTES, reportByFetch, sendBeacon } from "./transports.js";
 
 export class DataReporter implements IDataReporter {
-  cbQueue = new CallbackQueue();
-  id = crypto.randomUUID();
+  id = generateUUID();
   private events: IReportData[] = [];
   private timeoutID?: ReturnType<typeof setTimeout>;
   private retryTimer?: ReturnType<typeof setTimeout>;
   private isOnline = true;
   private isFlushing = false;
+  private removeNetworkListener: Cleanup;
 
   static #instance: DataReporter | null = null;
 
   constructor() {
-    initNetworkListener({
+    this.removeNetworkListener = initNetworkListener({
       setOnline: (online) => {
         this.isOnline = online;
       },
@@ -60,7 +61,7 @@ export class DataReporter implements IDataReporter {
     return this.#instance;
   }
 
-  /** Reset the singleton: clear timers, events, and discard the instance. */
+  /** Reset the singleton: clear timers, listeners, events, and discard the instance. */
   static reset(): void {
     if (this.#instance) {
       this.#instance.dispose();
@@ -71,6 +72,7 @@ export class DataReporter implements IDataReporter {
   private dispose(): void {
     if (this.timeoutID) clearTimeout(this.timeoutID);
     if (this.retryTimer) clearTimeout(this.retryTimer);
+    this.removeNetworkListener();
     this.events = [];
     this.isFlushing = false;
   }
@@ -140,13 +142,10 @@ export class DataReporter implements IDataReporter {
   }
 
   private sendBatch(finalSendData: readonly IReportData[]): Promise<boolean> | boolean {
-    const isOverBeaconSize = isObjectOverSizeLimit(finalSendData, 60);
-    if (!isOverBeaconSize && sendBeacon(finalSendData)) return true;
-    if (sentry.options.useImageReport && !isObjectOverSizeLimit(finalSendData, 2)) {
-      reportByImage(finalSendData, this.cbQueue);
-      return true;
-    }
-    return reportByFetch(finalSendData, () => this.handleServerError());
+    const body = JSON.stringify(finalSendData);
+    const withinKeepaliveBudget = getBodyByteLength(body) <= MAX_KEEPALIVE_BYTES;
+    if (withinKeepaliveBudget && sendBeacon(body)) return true;
+    return reportByFetch(body, withinKeepaliveBudget, () => this.handleServerError());
   }
 
   private scheduleNextFlush(): void {

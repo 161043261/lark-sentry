@@ -36,6 +36,7 @@ import {
 } from "web-vitals";
 
 import { getBaseData, metric2perfData, sentryLogger } from "../../utils";
+import type { Cleanup } from "../../utils/decorate-prop.js";
 import { getFirstScreenPaint } from "./first-screen-paint.js";
 
 function getMetricDuration(data: IPerformanceData): number | undefined {
@@ -45,7 +46,7 @@ function getMetricDuration(data: IPerformanceData): number | undefined {
   return undefined;
 }
 
-export function getWebVitals(onReport: TOnReportPerformanceData) {
+export function getWebVitals(onReport: TOnReportPerformanceData): Cleanup {
   sentryLogger.info("Starting web vitals monitoring...");
 
   const reportAndLog = (data: IPerformanceData) => {
@@ -73,7 +74,7 @@ export function getWebVitals(onReport: TOnReportPerformanceData) {
     reportAndLog(metric2perfData(metric));
   });
 
-  getFirstScreenPaint((value: number) => {
+  return getFirstScreenPaint((value: number) => {
     const perfData: IPerformanceData = {
       ...getBaseData(),
       name: "FSP",

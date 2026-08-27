@@ -101,12 +101,13 @@ function setup(): Cleanup {
 
   initPageView();
 
-  const beforeUnloadHandler = () => {
+  // pagehide fires reliably on mobile where beforeunload does not.
+  const pageHideHandler = () => {
     flushCurrentPageDwell(true);
   };
-  globalThis.addEventListener("beforeunload", beforeUnloadHandler);
+  globalThis.addEventListener("pagehide", pageHideHandler);
   cleanups.push(() => {
-    globalThis.removeEventListener("beforeunload", beforeUnloadHandler);
+    globalThis.removeEventListener("pagehide", pageHideHandler);
   });
 
   sentryLogger.success(

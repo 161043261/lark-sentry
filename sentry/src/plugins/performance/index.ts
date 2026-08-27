@@ -43,7 +43,7 @@ class PerformancePlugin extends SentryPlugin {
   }
 
   init(): void {
-    this.startWebVitals();
+    this.cleanups.push(this.startWebVitals());
     this.cleanups.push(this.observeLongTasks());
     this.cleanups.push(observeResourceTimings((data) => this.report(data)));
     this.cleanups.push(observeResourceElementFallback((data) => this.report(data)));
@@ -66,13 +66,13 @@ class PerformancePlugin extends SentryPlugin {
     reporter.send(data);
   }
 
-  private startWebVitals(): void {
+  private startWebVitals(): Cleanup {
     try {
-      getWebVitals((data: IPerformanceData) => {
+      return getWebVitals((data: IPerformanceData) => {
         this.report(data);
       });
     } catch {
-      return;
+      return noop;
     }
   }
 

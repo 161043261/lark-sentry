@@ -34,11 +34,6 @@ const breadcrumbHookSchema = z.custom<IOptions["onBeforePushBreadcrumb"]>(
   "Expected a breadcrumb hook function",
 );
 
-const httpErrorHookSchema = z.custom<IOptions["handleHttpError"]>(
-  (value: unknown) => typeof value === "function",
-  "Expected an HTTP error hook function",
-);
-
 const reportBatchHookSchema = z.custom<IOptions["beforePushEventList"]>(
   (value: unknown) => typeof value === "function",
   "Expected a report batch hook function",
@@ -63,19 +58,15 @@ export const optionsSchema = z.object({
   enableUnhandledRejection: z.boolean(),
   enableHashChange: z.boolean(),
   enableHistory: z.boolean(),
-  enablePerformance: z.boolean(),
-  enableScreenRecord: z.boolean(),
   enableWhiteScreen: z.boolean(),
   enableFingerprint: z.boolean(),
   anonymousId: z.string(),
   visitorId: z.string(),
-  useImageReport: z.boolean(),
   screenRecordDurationMs: z.number().nonnegative(),
   screenRecordEventTypes: z.array(z.enum(EventType)),
   hasSkeleton: z.boolean(),
   rootCssSelectors: z.array(z.string()),
   clickThrottleDelay: z.number().nonnegative(),
-  requestTimeoutMilliseconds: z.number().nonnegative(),
   maxBreadcrumbs: z.number().int().positive(),
   repeatCodeError: z.boolean(),
   enableHttpPerformance: z.boolean(),
@@ -91,7 +82,6 @@ export const optionsSchema = z.object({
   afterSendData: afterSendDataHookSchema.optional(),
   offlineCacheKey: z.string(),
   tracesSampleRate: z.number().min(0).max(1),
-  handleHttpError: httpErrorHookSchema.optional(),
   debug: z.boolean(),
 });
 

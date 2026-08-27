@@ -22,10 +22,11 @@
 
 import { EventType, Status, type IReportPayload } from "../types";
 import { getDeviceId, getSessionId } from "./session.js";
+import { generateUUID } from "./uuid.js";
 
 function getBaseData(): IReportPayload {
   return {
-    id: crypto.randomUUID ? crypto.randomUUID() : getDeviceId(),
+    id: generateUUID(),
     deviceId: getDeviceId(),
     sessionId: getSessionId(),
     message: "",

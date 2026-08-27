@@ -25,9 +25,6 @@ import type { AfterSendDataHook, ReportBatchHook, ReportDataHook } from "../type
 import { getBaseData, sentry } from "../utils/index.js";
 import { handleError } from "./handlers.js";
 import reporter from "../reporter/index.js";
-import { getIPs } from "./ip.js";
-
-export { getIPs };
 
 export function traceError(error: unknown): void {
   handleError({

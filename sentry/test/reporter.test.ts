@@ -79,36 +79,22 @@ describe("DataReporter", () => {
     expect(sendBeacon).not.toHaveBeenCalled();
   });
 
-  it("uses image transport when beacon fails and image reporting is enabled", async () => {
-    const setSrc = vi.fn();
-    vi.spyOn(navigator, "sendBeacon").mockReturnValue(false);
-    Object.defineProperty(Image.prototype, "src", {
-      configurable: true,
-      set: setSrc,
-    });
-    sentry.setOptions({
-      ...DEFAULT_OPTIONS,
-      dsn: "/api/log",
-      useImageReport: true,
-    });
-
-    const reporter = new DataReporter();
-    await reporter.send(createPayload(), true);
-
-    expect(setSrc).toHaveBeenCalledTimes(1);
-    expect(setSrc.mock.calls[0]?.[0]).toContain("/api/log?data=");
-  });
-
-  it("falls back to fetch when beacon fails and image reporting is disabled", async () => {
+  it("falls back to fetch when beacon fails even for small batches", async () => {
     const fetch = vi.fn(() => Promise.resolve(new Response(null, { status: 204 })));
     vi.spyOn(navigator, "sendBeacon").mockReturnValue(false);
     vi.stubGlobal("fetch", fetch);
-    sentry.setOptions({ ...DEFAULT_OPTIONS, dsn: "/api/log" });
+    sentry.setOptions({
+      ...DEFAULT_OPTIONS,
+      dsn: "/api/log",
+    });
 
     const reporter = new DataReporter();
     await reporter.send(createPayload(), true);
 
-    expect(fetch).toHaveBeenCalledWith("/api/log", expect.objectContaining({ method: "POST" }));
+    expect(fetch).toHaveBeenCalledWith(
+      "/api/log",
+      expect.objectContaining({ method: "POST", keepalive: true }),
+    );
   });
 
   it("drops data when onBeforeReportData returns false", async () => {

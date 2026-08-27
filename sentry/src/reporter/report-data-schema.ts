@@ -32,7 +32,6 @@ const deviceInfoSchema = z.object({
   userAgent: z.string(),
   deviceType: z.string(),
   deviceModel: z.string(),
-  fingerprint: z.string(),
   language: z.string(),
   screenResolution: z.string(),
 });
@@ -47,6 +46,8 @@ const reportDataSchema = z.object({
   status: z.enum(Status),
   url: z.string(),
   userId: z.string(),
+  anonymousId: z.string(),
+  visitorId: z.string(),
   projectId: z.string(),
   sdkVersion: z.string(),
   breadcrumbs: z

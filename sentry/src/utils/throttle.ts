@@ -35,21 +35,3 @@ export function throttle<This, Args extends unknown[], Return>(
     }
   };
 }
-
-/** @deprecated Never imported anywhere in the SDK; kept intentionally (dead-code audit). */
-export function throttleV2<This, Args extends unknown[], Return>(
-  fn: (this: This, ...args: Args) => Return,
-  delay = 300,
-): (this: This, ...args: Args) => void {
-  let timer: ReturnType<typeof setTimeout> | null = null;
-
-  return function (this: This, ...args: Args) {
-    if (timer) {
-      return;
-    }
-    timer = setTimeout(() => {
-      fn.apply(this, args);
-      timer = null;
-    }, delay);
-  };
-}

@@ -29,7 +29,6 @@ import {
   type TEventHandler,
 } from "../types";
 import {
-  base64v2,
   event2breadcrumb,
   isError,
   isErrorEvent,
@@ -81,7 +80,7 @@ function reportResourceError(
     ...resourceError,
     userAction: event2breadcrumb(EventType.Resource),
   });
-  const errorId = base64v2(`${EventType.Resource}-${localName}-${src || href}`);
+  const errorId = `${EventType.Resource}-${localName}-${src || href}`;
   if (sentry.options.repeatCodeError || !sentry.codeErrors.has(errorId)) {
     sentry.codeErrors.add(errorId);
     reporter.send(resourceError);
@@ -118,7 +117,7 @@ function reportBaseError(data: IBaseDataWithEvent): void {
     ...payload,
     userAction: event2breadcrumb(EventType.Error),
   });
-  const errorId = base64v2(`${EventType.Error}-${payload.name}-${payload.message}`);
+  const errorId = `${EventType.Error}-${payload.name}-${payload.message}`;
   if (sentry.options.repeatCodeError || !sentry.codeErrors.has(errorId)) {
     sentry.codeErrors.add(errorId);
     reporter.send(payload);

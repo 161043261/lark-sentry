@@ -21,30 +21,33 @@
  */
 
 import { EventType, Status, type IBaseDataWithEvent, type TEventHandler } from "../types";
-import {
-  event2breadcrumb,
-  getDeclarativeClickData,
-  isErrorEvent,
-  sentryLogger,
-  sentry,
-} from "../utils";
+import { event2breadcrumb, getDeclarativeClickData, isErrorEvent, sentryLogger } from "../utils";
 import reporter from "../reporter";
 import breadcrumb from "./breadcrumb.js";
 import checkWhiteScreen from "./white-screen.js";
 import { handleCodeError } from "./handle-code-error.js";
 import { handleError } from "./handle-error.js";
 
+function extractRejectionReason(extra: unknown): unknown {
+  // PromiseRejectionEvent carries the actual rejection value in `reason`.
+  if (extra instanceof Event && "reason" in extra) {
+    return Reflect.get(extra, "reason");
+  }
+  return extra;
+}
+
 export const handleUnhandledRejection: TEventHandler<IBaseDataWithEvent> = (
   data: IBaseDataWithEvent,
 ) => {
-  sentryLogger.error("Unhandled rejection captured", data.extra);
+  const reason = extractRejectionReason(data.extra);
+  sentryLogger.error("Unhandled rejection captured", reason);
   // Only ErrorEvent reasons carry filename/line/column and can be treated as
   // code errors; every other rejection reason goes through the generic pipeline.
-  if (!isErrorEvent(data.extra)) {
-    handleError(data);
+  if (isErrorEvent(reason)) {
+    handleCodeError(reason);
     return;
   }
-  handleCodeError(data.extra);
+  handleError({ ...data, extra: reason });
 };
 
 export const handleWhiteScreen: TEventHandler<IBaseDataWithEvent> = (data: IBaseDataWithEvent) => {
@@ -69,7 +72,5 @@ export const handleClick: TEventHandler<IBaseDataWithEvent> = ({
     extra: clickData,
   };
   breadcrumb.push({ ...data, userAction: event2breadcrumb(EventType.Click) });
-  if (sentry.options.enableClick) {
-    reporter.send(data);
-  }
+  reporter.send(data);
 };

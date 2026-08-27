@@ -26,7 +26,11 @@ function transformHttpData(data: IHttpData): IHttpData {
   const { statusCode } = data;
   let message: string;
   let status: Status;
-  if (statusCode >= 100 && statusCode < 200) {
+  if (statusCode === 0) {
+    // Network failure or aborted request: keep the original error message.
+    message = data.message || "Network error";
+    status = Status.Error;
+  } else if (statusCode >= 100 && statusCode < 200) {
     message = "Informational response";
     status = Status.OK;
   } else if (statusCode >= 200 && statusCode < 300) {

@@ -38,29 +38,21 @@ export interface ScreenRecordPluginOptions {
 }
 
 class ScreenRecordPlugin extends SentryPlugin {
-  durationMs = DEFAULT_OPTIONS.screenRecordDurationMs;
-  eventTypes: EventType[] = DEFAULT_OPTIONS.screenRecordEventTypes;
+  durationMs: number;
+  eventTypes: EventType[];
   private cleanup: Cleanup | null = null;
 
-  constructor(
-    options: ScreenRecordPluginOptions = {
-      durationMs: DEFAULT_OPTIONS.screenRecordDurationMs,
-      eventTypes: DEFAULT_OPTIONS.screenRecordEventTypes,
-    },
-  ) {
+  constructor(options: ScreenRecordPluginOptions = {}) {
     super(EventType.ScreenRecord);
-    const {
-      durationMs = DEFAULT_OPTIONS.screenRecordDurationMs,
-      eventTypes = DEFAULT_OPTIONS.screenRecordEventTypes,
-    } = options;
-    this.durationMs = durationMs;
-    this.eventTypes = eventTypes;
+    this.durationMs = options.durationMs ?? DEFAULT_OPTIONS.screenRecordDurationMs;
+    this.eventTypes = [...(options.eventTypes ?? DEFAULT_OPTIONS.screenRecordEventTypes)];
   }
 
   init() {
-    sentry.options.enableScreenRecord = true;
-    sentry.options.screenRecordEventTypes = this.eventTypes;
-    sentry.options.screenRecordDurationMs = this.durationMs;
+    sentry.setOptions({
+      screenRecordEventTypes: [...this.eventTypes],
+      screenRecordDurationMs: this.durationMs,
+    });
     void recorder(reporter).then((cleanup) => {
       this.cleanup = cleanup;
     });

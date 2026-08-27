@@ -46,7 +46,6 @@ export interface IDeviceInfo {
   userAgent: string;
   deviceType: string;
   deviceModel: string;
-  fingerprint: string;
   language: string;
   screenResolution: string;
 }
@@ -121,11 +120,12 @@ export type IPerformanceData =
 export interface ICodeError extends IReportPayload {
   line: number;
   column: number;
+  // Stack trace of the underlying Error, when the ErrorEvent carried one.
+  extra?: string;
 }
 
 export interface IScreenRecordData extends IReportPayload {
   event: string;
-  events?: string;
   eventCount?: number;
 }
 
@@ -173,6 +173,8 @@ export type TOnReportPerformanceData = (data: IPerformanceData) => void;
 export interface IReportData<T extends TReportPayload = TReportPayload> extends IReportPayload {
   url: string;
   userId: string;
+  anonymousId: string;
+  visitorId: string;
   projectId: string;
   sdkVersion: string;
   breadcrumbs?: IBreadcrumbItem[] | undefined;

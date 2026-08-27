@@ -50,6 +50,8 @@ function payloadToReportData<T extends TReportPayload>(id: string, payload: T): 
     id,
     url: location.href,
     userId: sentry.options.userId,
+    anonymousId: sentry.options.anonymousId,
+    visitorId: sentry.options.visitorId,
     projectId: sentry.options.projectId,
     sdkVersion: SDK_VERSION,
     deviceInfo: sentry.deviceInfo,

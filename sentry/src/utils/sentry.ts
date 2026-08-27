@@ -31,56 +31,6 @@ declare global {
   var __sentry__: ISentry | undefined;
 }
 
-const crc32Table = /* @__PURE__ */ (() => {
-  const table = new Uint32Array(256);
-  for (let i = 0; i < 256; i++) {
-    let c = i;
-    for (let j = 0; j < 8; j++) {
-      c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
-    }
-    table[i] = c;
-  }
-  return table;
-})();
-
-function crc32(input: string): number {
-  let crc = 0xffffffff;
-  for (let i = 0; i < input.length; i++) {
-    crc = crc32Table[(crc ^ input.charCodeAt(i)) & 0xff] ^ (crc >>> 8);
-  }
-  return (crc ^ 0xffffffff) >>> 0;
-}
-
-function getClientFingerprint(): string {
-  try {
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    if (ctx) {
-      ctx.textBaseline = "top";
-      ctx.font = "14px 'Arial'";
-      ctx.fillStyle = "#f60";
-      ctx.fillRect(125, 1, 62, 20);
-      ctx.fillStyle = "#069";
-      ctx.fillText("@swifty.js/sentry", 2, 15);
-      ctx.fillStyle = "rgba(102, 204, 0, 0.7)";
-      ctx.fillText("@swifty.js/sentry", 4, 17);
-      const b64 = canvas.toDataURL().replace("data:image/png;base64,", "");
-      const bin = atob(b64);
-      return crc32(bin).toString(16);
-    }
-  } catch {
-    return getFallbackFingerprint();
-  }
-  return getFallbackFingerprint();
-}
-
-function getFallbackFingerprint(): string {
-  if (globalThis.crypto && typeof globalThis.crypto.randomUUID === "function") {
-    return globalThis.crypto.randomUUID();
-  }
-  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-}
-
 function getLanguage(): string {
   return "navigator" in globalThis ? globalThis.navigator.language || UNKNOWN : UNKNOWN;
 }
@@ -90,6 +40,21 @@ function getScreenResolution(): string {
     return UNKNOWN;
   }
   return `${globalThis.screen.width}x${globalThis.screen.height}`;
+}
+
+function collectDeviceInfo(): IDeviceInfo {
+  const res = new UAParser().getResult();
+  return {
+    browserName: res.browser.name ?? UNKNOWN,
+    browserVersion: res.browser.version ?? UNKNOWN,
+    osName: res.os.name ?? UNKNOWN,
+    osVersion: res.os.version ?? UNKNOWN,
+    userAgent: res.ua,
+    deviceModel: res.device.model ?? UNKNOWN,
+    deviceType: res.device.type ?? UNKNOWN,
+    language: getLanguage(),
+    screenResolution: getScreenResolution(),
+  };
 }
 
 class Sentry implements ISentry {
@@ -107,26 +72,15 @@ class Sentry implements ISentry {
 
   whiteScreenTimer: ReturnType<typeof setInterval> | null = null;
 
-  options: IOptions = DEFAULT_OPTIONS;
-
-  deviceInfo: IDeviceInfo;
+  options: IOptions = { ...DEFAULT_OPTIONS };
 
   shouldScreenRecord = false;
 
-  constructor() {
-    const res = new UAParser().getResult();
-    this.deviceInfo = {
-      browserName: res.browser.name ?? UNKNOWN,
-      browserVersion: res.browser.version ?? UNKNOWN,
-      osName: res.os.name ?? UNKNOWN,
-      osVersion: res.os.version ?? UNKNOWN,
-      userAgent: res.ua,
-      deviceModel: res.device.model ?? UNKNOWN,
-      deviceType: res.device.type ?? UNKNOWN,
-      fingerprint: getClientFingerprint(),
-      language: getLanguage(),
-      screenResolution: getScreenResolution(),
-    };
+  #deviceInfo: IDeviceInfo | null = null;
+
+  get deviceInfo(): IDeviceInfo {
+    this.#deviceInfo ??= collectDeviceInfo();
+    return this.#deviceInfo;
   }
 
   setOptions(newOptions: Partial<IOptions>) {

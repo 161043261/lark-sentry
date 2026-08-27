@@ -88,7 +88,6 @@
     "@rollup/plugin-node-resolve": "^16.0.3",
     "@rollup/plugin-terser": "^1.0.0",
     "@rollup/plugin-typescript": "^12.3.0",
-    "@rrweb/record": "2.1.0",
     "@types/jsdom": "^28.0.3",
     "@types/node": "^25.9.5",
     "@types/pako": "^2.0.4",

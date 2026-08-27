@@ -23,10 +23,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { DEFAULT_OPTIONS } from "@/constants/index.js";
-import { handleHttp } from "@/core/handlers.js";
+import { handleHttp, handleUnhandledRejection } from "@/core/handlers.js";
 import { destroy, init } from "@/index.js";
 import { EventType, HttpMethod, HttpStatusCode, Status, type IHttpData } from "@/types/index.js";
-import { sentry } from "@/utils/index.js";
+import { getBaseData, sentry } from "@/utils/index.js";
 import { findPayload, getPayloads } from "./report-payloads.js";
 
 function createHttpData(statusCode: number, serverTiming: readonly string[] = []): IHttpData {
@@ -118,5 +118,68 @@ describe("capture layer parity", () => {
     await Promise.resolve();
 
     expect(sendBeacon.mock.calls.length).toBe(initialReports);
+  });
+
+  it("reports the rejection reason instead of the event wrapper", async () => {
+    const sendBeacon = vi.spyOn(navigator, "sendBeacon").mockReturnValue(true);
+    sentry.setOptions({
+      ...DEFAULT_OPTIONS,
+      dsn: "/api/log",
+      cacheMaxLength: 1,
+    });
+
+    const rejectionEvent = new Event("unhandledrejection");
+    Object.defineProperty(rejectionEvent, "reason", {
+      value: new Error("rejection reason boom"),
+    });
+    handleUnhandledRejection({
+      ...getBaseData(),
+      type: EventType.UnhandledRejection,
+      extra: rejectionEvent,
+    });
+    await vi.waitFor(() => {
+      expect(sendBeacon).toHaveBeenCalled();
+    });
+
+    const payloads = sendBeacon.mock.calls.flatMap(getPayloads);
+    const payload = findPayload(payloads, "Error");
+    expect(payload).toMatchObject({
+      type: EventType.Error,
+      message: "rejection reason boom",
+    });
+  });
+
+  it("resolves Request objects to their URL and method in fetch capture", async () => {
+    const sendBeacon = vi.spyOn(navigator, "sendBeacon").mockReturnValue(true);
+    const fetchMock = vi.fn(() => Promise.resolve(new Response("fail", { status: 500 })));
+    vi.stubGlobal("fetch", fetchMock);
+
+    init({
+      dsn: "/api/log",
+      cacheMaxLength: 1,
+      enableClick: false,
+      enableError: false,
+      enableHashChange: false,
+      enableHistory: false,
+      enableUnhandledRejection: false,
+      enableWhiteScreen: false,
+      enableXhr: false,
+    });
+    sendBeacon.mockClear();
+
+    await globalThis.fetch(new Request("http://localhost:3000/api/orders", { method: "PUT" }));
+    await vi.waitFor(() => {
+      expect(sendBeacon).toHaveBeenCalled();
+    });
+
+    const payloads = sendBeacon.mock.calls.flatMap(getPayloads);
+    const payload = findPayload(payloads, "Fetch");
+    expect(payload).toMatchObject({
+      type: EventType.Fetch,
+      api: "http://localhost:3000/api/orders",
+      method: "PUT",
+      statusCode: 500,
+      responseData: "fail",
+    });
   });
 });

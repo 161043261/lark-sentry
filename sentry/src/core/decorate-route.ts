@@ -36,14 +36,13 @@ function normalizeRouteUrl(url: string | URL): string {
 }
 
 export function pubHistory(): Cleanup {
-  const oldOnpopstate = globalThis.onpopstate;
   latestHref = getCurrentRouteUrl();
 
-  globalThis.onpopstate = function (this: Window, ev: PopStateEvent) {
+  const popstateListener = () => {
     const from = latestHref;
     const to = getCurrentRouteUrl();
     if (from === to) {
-      return oldOnpopstate?.call(this, ev);
+      return;
     }
     latestHref = to;
     pub(EventType.History, {
@@ -52,10 +51,8 @@ export function pubHistory(): Cleanup {
       from,
       to,
     });
-    if (typeof oldOnpopstate === "function") {
-      return oldOnpopstate.call(this, ev);
-    }
   };
+  globalThis.addEventListener("popstate", popstateListener);
 
   const historyDecorator = (oldPropsVal: History["pushState"]) => {
     return function (this: History, data: unknown, unused: string, url?: string | URL | null) {
@@ -81,7 +78,7 @@ export function pubHistory(): Cleanup {
   const cleanupPushState = decorateProp(globalThis.history, "pushState", historyDecorator);
   const cleanupReplaceState = decorateProp(globalThis.history, "replaceState", historyDecorator);
   return () => {
-    globalThis.onpopstate = oldOnpopstate;
+    globalThis.removeEventListener("popstate", popstateListener);
     cleanupReplaceState();
     cleanupPushState();
   };

@@ -62,6 +62,10 @@ const sentryStyles: SentryStyles = {
   },
 };
 
+// Captured before init() decorates console.error, so SDK debug output never
+// re-enters the error capture pipeline.
+const nativeConsoleError = console.error.bind(console);
+
 export const sentryLogger = {
   get isEnabled() {
     return globalThis.__sentry__?.options.debug ?? false;
@@ -170,7 +174,7 @@ export const sentryLogger = {
     );
     if (error !== undefined) {
       console.group("Error Details");
-      console.error(error);
+      nativeConsoleError(error);
       console.groupEnd();
     }
     console.groupEnd();

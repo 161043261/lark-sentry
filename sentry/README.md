@@ -108,19 +108,15 @@ if (!isInitialized()) {
 | `enableUnhandledRejection`   | `boolean`              | `true`                                              | Capture unhandled promise rejections.                  |
 | `enableHashChange`           | `boolean`              | `true`                                              | Capture hash navigation.                               |
 | `enableHistory`              | `boolean`              | `true`                                              | Capture history navigation.                            |
-| `enablePerformance`          | `boolean`              | `true`                                              | Enable performance-related capture.                    |
-| `enableScreenRecord`         | `boolean`              | `true`                                              | Enable screen-record-related reporting.                |
 | `enableWhiteScreen`          | `boolean`              | `true`                                              | Enable white-screen detection.                         |
 | `enableFingerprint`          | `boolean`              | `false`                                             | Enable FingerprintJS anonymous visitor identity.       |
 | `anonymousId`                | `string`               | `"unknown"`                                         | SDK-generated anonymous visitor id.                    |
 | `visitorId`                  | `string`               | `"unknown"`                                         | Backend-bound visitor id.                              |
-| `useImageReport`             | `boolean`              | `false`                                             | Allow image transport.                                 |
 | `screenRecordDurationMs`     | `number`               | `3000`                                              | Rolling screen record window length.                   |
 | `screenRecordEventTypes`     | `EventType[]`          | `[Error, Xhr, Fetch, Resource, UnhandledRejection]` | Event types that trigger screen record reporting.      |
 | `hasSkeleton`                | `boolean`              | `false`                                             | Whether the page has a skeleton screen.                |
 | `rootCssSelectors`           | `string[]`             | `["html", "body", "#app", "#root"]`                 | Root selectors used by white-screen detection.         |
 | `clickThrottleDelay`         | `number`               | `0`                                                 | Click capture throttle delay in milliseconds.          |
-| `requestTimeoutMilliseconds` | `number`               | `3000`                                              | Request timeout in milliseconds.                       |
 | `maxBreadcrumbs`             | `number`               | `30`                                                | Breadcrumb capacity.                                   |
 | `repeatCodeError`            | `boolean`              | `false`                                             | Report duplicate code errors.                          |
 | `enableHttpPerformance`      | `boolean`              | `false`                                             | Report successful HTTP requests as performance events. |
@@ -136,7 +132,6 @@ if (!isInitialized()) {
 | `onBeforeReportData`         | `function`             | `undefined`                                         | Hook before one event enters Reporter queue.           |
 | `beforePushEventList`        | `function`             | `undefined`                                         | Hook before a batch enters transport.                  |
 | `afterSendData`              | `function`             | `undefined`                                         | Hook after a batch enters transport successfully.      |
-| `handleHttpError`            | `function`             | `undefined`                                         | Custom HTTP error callback.                            |
 
 Example production configuration:
 
@@ -170,9 +165,11 @@ Reporter sends `IReportData` objects to the configured `dsn`.
 | `timestamp`  | Numeric timestamp.                         |
 | `url`        | Current page URL.                          |
 | `userId`     | User identifier.                           |
+| `anonymousId` | FingerprintJS anonymous visitor id.       |
+| `visitorId`  | Backend-bound visitor id.                  |
 | `projectId`  | Project identifier.                        |
 | `sdkVersion` | SDK version.                               |
-| `deviceInfo` | Device, browser, OS, and fingerprint data. |
+| `deviceInfo` | Device, browser, OS, and screen data.      |
 | `payload`    | Original event payload.                    |
 
 ## Event Types
@@ -266,7 +263,7 @@ On hash or history route changes, it:
 - Deduplicates unchanged URLs.
 - Reports `PageDwell` for the previous page.
 - Reports a new PV for the next page.
-- Flushes current dwell time on `beforeunload` when possible.
+- Flushes current dwell time on `pagehide` when possible.
 
 Dwell time less than or equal to 100 ms is ignored to reduce noise.
 
@@ -410,13 +407,12 @@ Reporter behavior:
 - Flushes cached events after network recovery.
 - Probes server recovery with HEAD requests after failed fetch reports.
 - Avoids concurrent flush races with an `isFlushing` guard.
-- Supports `sendBeacon`, image, and fetch transports.
+- Supports `sendBeacon` and fetch transports.
 
 Transport priority:
 
 1. Use `navigator.sendBeacon` for batches up to 60 KB.
-2. Use image transport when `useImageReport` is true and the batch is up to 2 KB.
-3. Use fetch POST as the fallback.
+2. Use fetch POST as the fallback, with `keepalive` enabled for bodies up to 60 KB.
 
 Flush offline cache manually:
 
@@ -524,16 +520,6 @@ import { getBaseInfo, getUserId } from "@swifty.js/sentry";
 
 const baseInfo = getBaseInfo();
 const userId = getUserId();
-```
-
-### getIPs
-
-`getIPs` attempts to collect WebRTC ICE candidate IP values in browsers that support the required APIs. It returns an empty array when unsupported.
-
-```ts
-import { getIPs } from "@swifty.js/sentry";
-
-const ips = await getIPs();
 ```
 
 ## Plugin System

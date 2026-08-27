@@ -37,19 +37,12 @@ type RecordEvent = z.infer<typeof recordEventSchema>;
 
 function noop(): void {}
 
-function getRollingWindow(
-  events: readonly RecordEvent[],
-  currentTimestamp: number,
-): readonly RecordEvent[] {
-  const minTimestamp = currentTimestamp - sentry.options.screenRecordDurationMs;
-  return events.filter((event) => event.timestamp >= minTimestamp);
-}
-
 function bytesToBase64(bytes: Uint8Array): string {
+  const CHUNK_SIZE = 0x8000;
   let binary = "";
-  bytes.forEach((byte) => {
-    binary += String.fromCharCode(byte);
-  });
+  for (let i = 0; i < bytes.length; i += CHUNK_SIZE) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK_SIZE));
+  }
   return btoa(binary);
 }
 
@@ -64,18 +57,23 @@ export async function recorder(reporter: IDataReporter): Promise<Cleanup> {
     const [{ record }, pako] = await Promise.all([import("@rrweb/record"), import("pako")]);
 
     pakoInstance = pako.default;
-    let recordWindow: readonly RecordEvent[] = [];
+    const recordWindow: RecordEvent[] = [];
+
+    const pruneWindow = (currentTimestamp: number) => {
+      const minTimestamp = currentTimestamp - sentry.options.screenRecordDurationMs;
+      while (recordWindow.length > 0 && recordWindow[0].timestamp < minTimestamp) {
+        recordWindow.shift();
+      }
+    };
 
     const stopRecord = record({
-      emit(e, isCheckout) {
+      emit(e) {
         const result = recordEventSchema.safeParse(e);
         if (!result.success) {
           return;
         }
-        recordWindow = getRollingWindow([...recordWindow, result.data], result.data.timestamp);
-        if (isCheckout) {
-          recordWindow = getRollingWindow(recordWindow, result.data.timestamp);
-        }
+        recordWindow.push(result.data);
+        pruneWindow(result.data.timestamp);
         if (sentry.shouldScreenRecord && recordWindow.length > 0) {
           const screenRecordData: IScreenRecordData = {
             ...getBaseData(),

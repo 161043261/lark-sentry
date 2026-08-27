@@ -20,32 +20,30 @@
  * SOFTWARE.
  */
 
-import type { IReportData } from "../types";
-import { CallbackQueue, sentryLogger, sentry } from "../utils";
+import { sentryLogger, sentry } from "../utils";
 
-export function isObjectOverSizeLimit(obj: unknown, limitInKB: number): boolean {
-  const json = JSON.stringify(obj);
-  const size = new TextEncoder().encode(json).byteLength;
-  return size > limitInKB * 1024;
+// Chromium rejects keepalive fetches (and sendBeacon payloads) over the
+// ~64KB in-flight budget, so large batches (e.g. screen recordings) must
+// fall back to a plain fetch or they would fail forever and stall the queue.
+export const MAX_KEEPALIVE_BYTES = 60 * 1024;
+
+export function getBodyByteLength(body: string): number {
+  return new TextEncoder().encode(body).byteLength;
 }
 
-export function sendBeacon(data: readonly IReportData[]): boolean {
+export function sendBeacon(body: string): boolean {
   if (typeof navigator !== "undefined" && navigator.sendBeacon) {
-    return navigator.sendBeacon(sentry.options.dsn, JSON.stringify(data));
+    return navigator.sendBeacon(sentry.options.dsn, body);
   }
   return false;
 }
 
 export async function reportByFetch(
-  data: readonly IReportData[],
+  body: string,
+  keepalive: boolean,
   handleServerError: () => void,
 ): Promise<boolean> {
   try {
-    // Chromium rejects keepalive fetches over the ~64KB in-flight budget, so
-    // large batches (e.g. screen recordings) must fall back to a plain fetch
-    // or they would fail forever and stall the queue head.
-    const body = JSON.stringify(data);
-    const keepalive = new TextEncoder().encode(body).byteLength <= 60 * 1024;
     const res = await fetch(sentry.options.dsn, {
       method: "POST",
       body,
@@ -59,13 +57,4 @@ export async function reportByFetch(
     handleServerError();
     return false;
   }
-}
-
-export function reportByImage(data: readonly IReportData[], cbQueue: CallbackQueue): void {
-  const { dsn } = sentry.options;
-  cbQueue.push(() => {
-    const image = new Image();
-    const sep = dsn.includes("?") ? "&" : "?";
-    image.src = `${dsn}${sep}data=${encodeURIComponent(JSON.stringify(data))}`;
-  });
 }

@@ -28,7 +28,7 @@ import {
   type IReportPayload,
   type TReportPayload,
 } from "../types";
-import { base64v2, event2breadcrumb, getBaseData, isIgnoredError, sentry } from "../utils";
+import { event2breadcrumb, getBaseData, isIgnoredError, sentry } from "../utils";
 import { UNKNOWN } from "../constants";
 import reporter from "../reporter";
 import breadcrumb from "./breadcrumb.js";
@@ -89,7 +89,7 @@ export function destroyBatchErrorManager(): void {
 }
 
 export function handleCodeError(err: ErrorEvent): void {
-  const { filename, colno: column, lineno: line, message } = err;
+  const { filename, colno: column, lineno: line, message, error } = err;
   if (isIgnoredError(message)) return;
   const data: IReportPayload = {
     ...getBaseData(),
@@ -98,10 +98,11 @@ export function handleCodeError(err: ErrorEvent): void {
     message,
     status: Status.Error,
   };
-  const codeError: ICodeError = { ...data, column, line };
+  const stack = error instanceof Error && error.stack ? error.stack : undefined;
+  const codeError: ICodeError = { ...data, column, line, ...(stack ? { extra: stack } : {}) };
   breadcrumb.push({ ...data, userAction: event2breadcrumb(EventType.Error) });
   const hasUnknownSource = !filename || filename === UNKNOWN;
-  const errorId = base64v2(`${EventType.Error}-${message}-${filename}-${line}-${column}`);
+  const errorId = `${EventType.Error}-${message}-${filename}-${line}-${column}`;
   if (hasUnknownSource || sentry.options.repeatCodeError || !sentry.codeErrors.has(errorId)) {
     sentry.codeErrors.add(errorId);
     batchErrorManager.push(codeError);

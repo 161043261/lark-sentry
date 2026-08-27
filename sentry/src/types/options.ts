@@ -57,10 +57,6 @@ export interface IOptions {
   enableHashChange: boolean;
   // Capture history navigation.
   enableHistory: boolean;
-  // Capture performance metrics.
-  enablePerformance: boolean;
-  // Enable screen recording.
-  enableScreenRecord: boolean;
   // Enable white screen detection.
   enableWhiteScreen: boolean;
   // Enable FingerprintJS visitor identity.
@@ -69,8 +65,6 @@ export interface IOptions {
   anonymousId: string;
   // Backend-bound visitor id.
   visitorId: string;
-  // Use image transport.
-  useImageReport: boolean;
   // Screen record window duration.
   screenRecordDurationMs: number;
   screenRecordEventTypes: EventType[];
@@ -79,8 +73,6 @@ export interface IOptions {
   rootCssSelectors: string[];
   // Click capture throttle delay.
   clickThrottleDelay: number;
-  // Request timeout.
-  requestTimeoutMilliseconds: number;
   // Breadcrumb capacity.
   maxBreadcrumbs: number;
   // Report duplicate code errors.
@@ -111,8 +103,6 @@ export interface IOptions {
   offlineCacheKey: string;
   // Sampling rate between 0 and 1.
   tracesSampleRate: number;
-  // HTTP error callback.
-  handleHttpError?: (<T>(data: T) => boolean) | undefined;
   // Enable debug logging in the console.
   debug: boolean;
 }
