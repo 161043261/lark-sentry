@@ -37,7 +37,7 @@ The package exposes six entry points:
 
 Each public export provides ESM, CJS, and TypeScript declaration files.
 
-The core entry re-exports everything from `src/types` (`export * from "./types"`), so `EventType`, `Status`, `BreadcrumbType`, `HttpMethod`, `HttpStatusCode`, the abstract `SentryPlugin` class, and all `I*`/`T*` interfaces are importable from `@swifty.js/sentry` directly.
+The core entry re-exports everything from `src/types` (`export * from "./types"`), so `EventType`, `Status`, `BreadcrumbType`, the abstract `SentryPlugin` class, the hook types (`BeforeSendHook`, `BeforeSendBatchHook`, `AfterSendHook`, `BeforeBreadcrumbHook`), and all `I*`/`T*` interfaces are importable from `@swifty.js/sentry` directly.
 
 ## Installation
 
@@ -97,7 +97,7 @@ Behavior, in source order:
 3. If `disabled` is `true`, return without installing any listeners. Options are still applied.
 4. If `dsn` is `""`, log an error and return. Options are still applied.
 5. Set the breadcrumb buffer capacity from `maxBreadcrumbs`.
-6. Call `setup()`, which installs bus subscriptions plus capture decorators for every enabled event type, starts page-view lifecycle tracking, and registers the `pagehide` dwell flush.
+6. Call `setup()`, which installs bus subscriptions plus capture decorators for every enabled event type, starts white-screen detection when `enableWhiteScreen` is `true`, starts page-view lifecycle tracking, and registers the `pagehide` dwell flush.
 7. Kick off `initIdentity()` (FingerprintJS) without awaiting it.
 
 The internal event bus isolates handler exceptions: if one handler throws, the remaining handlers for that event type still execute.
@@ -110,7 +110,7 @@ import { destroy } from "@swifty.js/sentry";
 destroy();
 ```
 
-Calls `plugin.destroy?.()` on every registered plugin and clears the registry, runs the `setup()` cleanup in reverse order (reversing all capture decorators, removing the `pagehide` listener, resetting page-view state, clearing all bus subscriptions), destroys the batch-error manager, and resets the `DataReporter` singleton (clearing its timers, removing its online/offline listeners, and dropping queued events). Use this when resetting tests, unloading a micro-frontend, or dynamically disabling monitoring.
+Calls `plugin.destroy?.()` on every registered plugin and clears the registry, runs the `setup()` cleanup in reverse order (reversing all capture decorators, stopping white-screen sampling, removing the `pagehide` listener, resetting page-view state, clearing all bus subscriptions), destroys the batch-error manager, resets the `DataReporter` singleton (clearing its timers, removing its online/offline listeners, and dropping queued events), and resets per-session state: the breadcrumb buffer, the error-deduplication set, and the `shouldScreenRecord` flag. A later `init` therefore starts completely clean. Use this when resetting tests, unloading a micro-frontend, or dynamically disabling monitoring.
 
 ### isInitialized
 
@@ -209,12 +209,12 @@ Schema constraints enforced by zod: `maxBreadcrumbs`, `cacheMaxLength`, and `max
 
 ### Hook Options
 
-| Option                   | Type       | Default     | Description                                                                                                   |
-| ------------------------ | ---------- | ----------- | ------------------------------------------------------------------------------------------------------------- |
-| `onBeforePushBreadcrumb` | `function` | `undefined` | Hook before storing a breadcrumb. Receives `IBreadcrumbItem`, returns the (possibly modified) item.           |
-| `onBeforeReportData`     | `function` | `undefined` | Hook before one event enters the Reporter queue. Receives `IReportData`, returns the data or `false` to drop. |
-| `beforePushEventList`    | `function` | `undefined` | Hook before a batch enters transport. Receives `readonly IReportData[]`, returns the array or `false`.        |
-| `afterSendData`          | `function` | `undefined` | Hook after a batch is sent successfully. Receives `readonly IReportData[]`.                                   |
+| Option             | Type       | Default     | Description                                                                                                   |
+| ------------------ | ---------- | ----------- | ------------------------------------------------------------------------------------------------------------- |
+| `beforeBreadcrumb` | `function` | `undefined` | Hook before storing a breadcrumb. Receives `IBreadcrumbItem`, returns the (possibly modified) item.           |
+| `beforeSend`       | `function` | `undefined` | Hook before one event enters the Reporter queue. Receives `IReportData`, returns the data or `false` to drop. |
+| `beforeSendBatch`  | `function` | `undefined` | Hook before a batch enters transport. Receives `readonly IReportData[]`, returns the array or `false`.        |
+| `afterSend`        | `function` | `undefined` | Hook after a batch is sent successfully. Receives `readonly IReportData[]`.                                   |
 
 ## Event Types
 
@@ -447,22 +447,22 @@ Set `clickThrottleDelay` to a positive number of milliseconds to throttle click 
 
 ## White-Screen Detection
 
-White-screen detection samples viewport points after the page is ready and checks whether those points still resolve to configured root elements.
+White-screen detection samples viewport points after the page is ready and checks whether those points still resolve to configured root elements. It is started directly by `setup()` when `enableWhiteScreen` is `true` (it does not go through the event bus) and is stopped by `destroy()`.
 
 ### Algorithm
 
 1. Waits for `document.readyState === "complete"` or the `load` event.
-2. Starts a `setInterval` at `WHITE_SCREEN_SAMPLE_INTERVAL` (1000 ms), wrapping each sample in `requestIdleCallback` when available.
+2. Starts a `setInterval` at `WHITE_SCREEN_SAMPLE_INTERVAL` (1000 ms), wrapping each sample in `requestIdleCallback` (with a 1000 ms timeout) when available.
 3. Each sample probes 9 points on the horizontal center line and 9 on the vertical center line (18 total) with `document.elementFromPoint`.
 4. A point counts as "empty" when it resolves to `null` or to an element whose id, class+attribute, or tag selector is listed in `rootCssSelectors`.
-5. The page is considered white when 18 or more points are empty.
-6. Sampling stops after `MAX_WHITE_SCREEN_SAMPLE_COUNT` (10) samples, or as soon as a non-white sample is observed, or immediately after reporting.
+5. A sample is "white" when all 18 points are empty.
+6. Sampling stops as soon as a non-white sample is observed (real content rendered). A white screen is reported only when the page stays white for `MAX_WHITE_SCREEN_SAMPLE_COUNT` (10) consecutive samples, after which sampling stops.
 
-The reported event is `EventType.WhiteScreen` with `status: Status.Error`, `name: "WhiteScreen"`, `message: "sample count <n>"`, and `extra: "WhiteScreen"`.
+The reported event is `EventType.WhiteScreen` with `status: Status.Error`, `name: "WhiteScreen"`, `message: "sample count <n>"`, and `extra: { sampleCount }`.
 
 ### Skeleton Screen Mode
 
-When `hasSkeleton: true`, the first sample records the CSS selectors it encountered as a baseline and reports nothing. Each subsequent sample compares its selector set against that baseline; if they are identical, the skeleton never transitioned to content and a white screen is reported.
+When `hasSkeleton: true`, the first sample records the CSS selectors it encountered as a baseline and reports nothing. Each subsequent sample compares its selector set against that baseline: a difference means the skeleton transitioned to content and sampling stops; if the set is still identical at the `MAX_WHITE_SCREEN_SAMPLE_COUNT`th sample, the skeleton never transitioned and a white screen is reported.
 
 ```ts
 init({
@@ -578,18 +578,6 @@ reportFrameworkError({
 
 `type` must be `EventType.React`, `EventType.Vue`, or `EventType.OtherFrameworks`. All three fields are required. The reported `name` comes from `error.name`, else the prototype constructor name (or `"Object"`), else `"null"`/`"undefined"`, else `typeof`. The `message` comes from `error.message`, the string itself, `"null"`/`"undefined"`, or JSON serialization (falling back to `String(error)`). The payload `extra` is `{ error, stack, context }`, where `stack` reads `error.stack` for `Error` instances or a string `stack` property on plain objects.
 
-### getBaseInfo and getUserId
-
-```ts
-import { getBaseInfo, getUserId } from "@swifty.js/sentry";
-
-const baseInfo = getBaseInfo();
-const userId = getUserId();
-```
-
-`getBaseInfo()` returns a fresh `IReportPayload` base object (`id`, `deviceId`, `sessionId`, `time`, `timestamp`, empty `name`/`message`, `Status.OK`, `EventType.Custom`).
-`getUserId()` returns `sentry.options.userId`.
-
 ## Reporter Hooks
 
 Register hooks after initialization or provide equivalent hooks in `init` options. Both forms write to the same option fields, so the later call wins.
@@ -597,22 +585,18 @@ Register hooks after initialization or provide equivalent hooks in `init` option
 ### Programmatic Hook Registration
 
 ```ts
-import {
-  beforeSendData,
-  beforePushEventList,
-  afterSendData,
-} from "@swifty.js/sentry";
+import { beforeSend, beforeSendBatch, afterSend } from "@swifty.js/sentry";
 
-beforeSendData((data) => {
+beforeSend((data) => {
   if (data.type === "Click") return false; // drop click events
   return data;
 });
 
-beforePushEventList((eventList) => {
+beforeSendBatch((eventList) => {
   return eventList.filter((item) => item.status !== "OK");
 });
 
-afterSendData((eventList) => {
+afterSend((eventList) => {
   console.log("reported", eventList.length);
 });
 ```
@@ -622,13 +606,13 @@ afterSendData((eventList) => {
 ```ts
 init({
   dsn: "/api/log",
-  onBeforeReportData(data) {
+  beforeSend(data) {
     return data;
   },
-  beforePushEventList(eventList) {
+  beforeSendBatch(eventList) {
     return eventList;
   },
-  afterSendData(eventList) {
+  afterSend(eventList) {
     console.log(eventList.length);
   },
 });
@@ -636,10 +620,10 @@ init({
 
 ### Hook Behavior
 
-- `onBeforeReportData` / `beforeSendData`: Receives a single `IReportData`. Return the (possibly modified) data to proceed, or `false` to drop the event. May return a Promise.
-- `beforePushEventList`: Receives the batch array before transport. Return the (possibly filtered) array, or `false` to drop the whole batch. May return a Promise. Returning an empty array (or `false`) schedules another flush instead of sending.
-- `afterSendData`: Receives the batch array after successful transport. The return value is ignored and not awaited.
-- `onBeforePushBreadcrumb`: Receives `IBreadcrumbItem` before it is stored in the bounded breadcrumb buffer. Must return the (possibly modified) item synchronously. Breadcrumb `userAction` is determined by `event2breadcrumb`: `Error`/`Vue`/`React`/`UnhandledRejection` map to `BreadcrumbType.CodeError`; `Xhr`/`Fetch` to `Http`; `Click` to `Click`; `HashChange`/`History` to `Route`; `Resource` to `Resource`; everything else to `Custom`.
+- `beforeSend` (`BeforeSendHook`): Receives a single `IReportData`. Return the (possibly modified) data to proceed, or `false` to drop the event. May return a Promise.
+- `beforeSendBatch` (`BeforeSendBatchHook`): Receives the batch array before transport. Return the (possibly filtered) array, or `false` to drop the whole batch. May return a Promise. Returning an empty array (or `false`) schedules another flush instead of sending.
+- `afterSend` (`AfterSendHook`): Receives the batch array after successful transport. The return value is ignored and not awaited.
+- `beforeBreadcrumb` (`BeforeBreadcrumbHook`): Receives `IBreadcrumbItem` before it is stored in the bounded breadcrumb buffer. Must return the (possibly modified) item synchronously. Breadcrumb `userAction` is determined by `event2breadcrumb`: `Error`/`Vue`/`React`/`UnhandledRejection` map to `BreadcrumbType.CodeError`; `Xhr`/`Fetch` to `Http`; `Click` to `Click`; `HashChange`/`History` to `Route`; `Resource` to `Resource`; everything else to `Custom`.
 
 ## Reporter
 
@@ -653,7 +637,7 @@ Reporter is the unified data outlet (`DataReporter` singleton, lazily instantiat
    - Rejects if `dsn` is empty.
    - Rejects if `Math.random() > tracesSampleRate` (sampling).
    - Sets `sentry.shouldScreenRecord = true` if the payload type is in `screenRecordEventTypes`.
-2. `runBeforeReportHook(id, payload)` -- builds the `IReportData` envelope and applies the `onBeforeReportData` hook (awaiting it if it returns a Promise).
+2. `runBeforeReportHook(id, payload)` -- builds the `IReportData` envelope and applies the `beforeSend` hook (awaiting it if it returns a Promise).
 3. If the hook returned `false`, the event is dropped.
 4. The event is pushed onto the internal `events` array.
 5. If offline, the queue is capped to `maxQueueLength`, persisted to localStorage, and the call returns.
@@ -664,12 +648,12 @@ Reporter is the unified data outlet (`DataReporter` singleton, lazily instantiat
 
 1. Returns early if the queue is empty; an `isFlushing` guard prevents concurrent flush races.
 2. If offline, the queue is capped to `maxQueueLength`, persisted, and the flush aborts.
-3. A batch of up to `cacheMaxLength` items is spliced off the queue head and passed through `beforePushEventList` (Promise results are awaited). An empty result schedules the next flush.
+3. A batch of up to `cacheMaxLength` items is spliced off the queue head and passed through `beforeSendBatch` (Promise results are awaited). An empty result schedules the next flush.
 4. The batch is JSON-serialized **once**, then sent by transport priority:
    - `navigator.sendBeacon` for bodies up to 60 KB.
    - `fetch` POST with `Content-Type: application/json`. `keepalive: true` is set only when the body is at most 60 KB, because Chromium rejects larger keepalive fetches and the queue head would stall forever.
 5. On transport failure, the batch is prepended back onto the queue, capped, and persisted; the server-recovery probe is armed.
-6. On success, the `afterSendData` hook is called.
+6. On success, the `afterSend` hook is called.
 7. If events remain, another flush is scheduled after 100 ms.
 
 ### Offline Cache
@@ -682,12 +666,12 @@ Reporter is the unified data outlet (`DataReporter` singleton, lazily instantiat
 ### Manual Offline Cache Flush
 
 ```ts
-import { sendLocal } from "@swifty.js/sentry";
+import { flushOfflineCache } from "@swifty.js/sentry";
 
-await sendLocal();
+await flushOfflineCache();
 ```
 
-`sendLocal` loads the offline cache into the queue and flushes it.
+`flushOfflineCache` loads the offline cache into the queue and flushes it.
 
 ## Report Data Schema
 
@@ -720,10 +704,6 @@ Plugins extend the SDK without coupling optional capabilities to the core entry.
 
 ```ts
 abstract class SentryPlugin {
-  public type: EventType;
-  constructor(type: EventType) {
-    this.type = type;
-  }
   abstract init(): void;
   destroy?(): void;
 }
@@ -732,14 +712,10 @@ abstract class SentryPlugin {
 Custom plugin:
 
 ```ts
-import { EventType, SentryPlugin, enablePlugin } from "@swifty.js/sentry";
+import { SentryPlugin, enablePlugin } from "@swifty.js/sentry";
 
 class HeartbeatPlugin extends SentryPlugin {
   private timer: ReturnType<typeof setInterval> | null = null;
-
-  constructor() {
-    super(EventType.Custom);
-  }
 
   init(): void {
     this.timer = setInterval(() => {
@@ -822,10 +798,10 @@ Screen recording is based on `@rrweb/record`. The plugin keeps a rolling record 
 ### Decode Record Payload
 
 ```ts
-const events = unzipScreenRecord(recordPayload);
+const events = await unzipScreenRecord(recordPayload);
 ```
 
-`unzipScreenRecord(data: string): unknown` base64-decodes, `pako.ungzip`-decompresses, then JSON-parses. It returns `null` when the input is empty or `pako` has not been loaded, so it must run in a context where `ScreenRecordPlugin` has already initialized.
+`unzipScreenRecord(data: string): Promise<unknown>` base64-decodes, `pako.ungzip`-decompresses, then JSON-parses. It returns `null` for empty input and dynamically imports `pako` when the plugin has not loaded it yet, so it works in any context.
 
 ## ExposurePlugin
 
@@ -1013,22 +989,23 @@ export default defineConfig({
 | `sentryPlugin`  | Vite 8       | Default export. For current Vite.       |
 | `sentryPlugin7` | Vite 7       | For projects using Vite 7 specifically. |
 
-`sentryPlugin` (Vite 8) requires an options argument (pass at least `{}`); `sentryPlugin7` defaults its options to `{}`. Both share the same `ISentryPluginOptions` type.
+`sentryPlugin` and `sentryPlugin7` both default their options to `{}` and share the same `ISentryPluginOptions` type.
 
 ### Options
 
-| Option | Type     | Default     | Description                                                                  |
-| ------ | -------- | ----------- | ---------------------------------------------------------------------------- |
-| `dsn`  | `string` | `undefined` | URL path to intercept. Falls back to `sentry.options.dsn`, then `"/sentry"`. |
+| Option | Type     | Default     | Description                                        |
+| ------ | -------- | ----------- | --------------------------------------------------- |
+| `dsn`  | `string` | `undefined` | URL path to intercept. Falls back to `"/sentry"`.  |
 
 ### Behavior
 
-- Creates a `logs/` directory in `process.cwd()` and appends to a timestamped `sentry_YYYYMMDDHHMMSS.jsonl` file.
+- Only active for the dev server (`apply: "serve"`); `vite build` is untouched and never creates a `logs/` directory.
+- When the dev server starts (`configureServer`), creates a `logs/` directory in `process.cwd()` and appends to a timestamped `sentry_YYYYMMDDHHMMSS.jsonl` file.
 - Intercepts POST requests whose `req.url` equals the resolved dsn exactly.
 - Parses the request body with `JSON.parse` and enriches error records with original source positions resolved from the dev server's in-memory module graph source maps (see "Dev-Time Source Map Resolution").
 - Writes each enriched report batch as one JSON line. If parsing or enrichment throws, the raw body is written unmodified.
 - Always responds `200` with `{ code: 0, message: "success" }`.
-- Closes the log stream in the `closeBundle` hook.
+- Closes the log stream in the `closeBundle` hook when one was created.
 
 ## Webpack Dev-Server Plugin
 
@@ -1043,7 +1020,7 @@ The `@swifty.js/sentry/webpack` subpath provides the same mock report endpoint f
 | `sentryMiddleware`    | Connect/express-style middleware for manual mounting (no source map support). |
 | `SentryDevMiddleware` | Type of the middleware function.                                              |
 
-All accept `{ dsn?: string }` (`ISentryWebpackPluginOptions`). The dsn resolves like the Vite plugin: option value, else `sentry.options.dsn`, else `"/sentry"`.
+All accept `{ dsn?: string }` (`ISentryWebpackPluginOptions`). The dsn resolves like the Vite plugin: option value, else `"/sentry"`.
 
 ### Plugin Usage (recommended)
 
@@ -1165,7 +1142,7 @@ The SDK automatically generates and persists:
 ## Production Configuration Example
 
 ```ts
-import { init, enablePlugin, beforeSendData } from "@swifty.js/sentry";
+import { init, enablePlugin, beforeSend } from "@swifty.js/sentry";
 import {
   PerformancePlugin,
   ScreenRecordPlugin,
@@ -1187,7 +1164,7 @@ init({
 const exposure = new ExposurePlugin();
 enablePlugin(new PerformancePlugin(), new ScreenRecordPlugin(), exposure);
 
-beforeSendData((data) => {
+beforeSend((data) => {
   // Inspect or transform every report; return false to drop it
   return data;
 });
