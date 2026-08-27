@@ -21,13 +21,12 @@
  */
 
 import { EventType } from "../types";
-import { throttle, sentry, decorateProp, getBaseData } from "../utils";
+import { throttle, sentry, decorateProp, getBaseData, noop } from "../utils";
 import type { Cleanup } from "../utils/decorate-prop.js";
 import { pub } from "./bus.js";
 import { pubFetch, pubXhr } from "./decorate-http.js";
 import { pubHistory } from "./decorate-route.js";
-
-function noop(): void {}
+import { stopWhiteScreenCheck } from "./white-screen.js";
 
 function decoratePublish(type: EventType): Cleanup {
   switch (type) {
@@ -154,7 +153,7 @@ function pubWhiteScreen(): Cleanup {
     type: EventType.WhiteScreen,
     extra: "WhiteScreen",
   });
-  return noop;
+  return stopWhiteScreenCheck;
 }
 
 export default decoratePublish;

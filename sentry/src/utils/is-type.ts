@@ -21,17 +21,17 @@
  */
 
 import { z } from "zod";
-import type { IExtendedErrorEvent, TUnknownError } from "../types";
+import type { IExtendedErrorEvent } from "../types";
 
 function isHTMLElement(node: Node): node is HTMLElement {
   return node.nodeType === Node.ELEMENT_NODE;
 }
 
-function isError(err: TUnknownError): err is Error {
+function isError(err: unknown): err is Error {
   return err instanceof Error;
 }
 
-function isErrorEvent(err: TUnknownError): err is ErrorEvent {
+function isErrorEvent(err: unknown): err is ErrorEvent {
   return err instanceof ErrorEvent;
 }
 
@@ -50,7 +50,7 @@ const resourceTargetSchema = z.union([
  * `ErrorEvent`) of type "error" on the failed element. Code errors arrive as
  * `ErrorEvent` and are routed by `isErrorEvent` before this predicate runs.
  */
-function isIExtendedErrorEvent(err: TUnknownError): err is IExtendedErrorEvent {
+function isIExtendedErrorEvent(err: unknown): err is IExtendedErrorEvent {
   return (
     err instanceof Event &&
     err.type === "error" &&

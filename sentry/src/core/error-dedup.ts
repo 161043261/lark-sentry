@@ -20,38 +20,13 @@
  * SOFTWARE.
  */
 
-import { defineConfig } from "tsup";
+import { sentry } from "../utils";
 
-const external = [
-  "@fingerprintjs/fingerprintjs",
-  "@rrweb/record",
-  "pako",
-  "react",
-  "tslib",
-  "ua-parser-js",
-  "vite",
-  "vue",
-  "web-vitals",
-  "webpack",
-  "zod",
-];
-
-export default defineConfig({
-  entry: {
-    index: "./src/index.ts",
-    react: "./src/react.ts",
-    vue: "./src/vue.ts",
-    vite: "./src/vite.ts",
-    webpack: "./src/webpack.ts",
-    "plugins/index": "./src/plugins/index.ts",
-  },
-  format: ["esm", "cjs"],
-  outDir: "./dist",
-  tsconfig: "./tsconfig.build.json",
-  sourcemap: false,
-  dts: true,
-  clean: true,
-  minify: true,
-  splitting: false,
-  external,
-});
+/** Runs `report` once per unique error id unless `repeatCodeError` disables deduplication. */
+export function reportOncePerError(errorId: string, report: () => void): void {
+  if (!sentry.options.repeatCodeError && sentry.codeErrors.has(errorId)) {
+    return;
+  }
+  sentry.codeErrors.add(errorId);
+  report();
+}

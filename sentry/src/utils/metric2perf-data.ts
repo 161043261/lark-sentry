@@ -26,7 +26,7 @@ import getBaseData from "./get-base-data.js";
 
 import type { Metric } from "web-vitals";
 
-function metric2perfData(metric: Omit<Metric, "name"> & { name: string }): IPerformanceData {
+function metric2perfData(metric: Metric): IPerformanceData {
   const { id, name, value, rating } = metric;
   return {
     ...getBaseData(),

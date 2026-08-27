@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { EventType, HttpMethod, HttpStatusCode, type IHttpData, type WithSentry } from "../types";
+import { EventType, type IHttpData, type WithSentry } from "../types";
 import {
   decorateProp,
   getBaseData,
@@ -32,10 +32,15 @@ import {
 import type { Cleanup } from "../utils/decorate-prop.js";
 import { pub } from "./bus.js";
 
-type TXhrProtoOpen = (method: string, url: string, async?: boolean, ...rest: string[]) => void;
+type TXhrProtoOpen = (
+  method: string,
+  url: string | URL,
+  async?: boolean,
+  ...rest: (string | null)[]
+) => void;
 
-// Response bodies are only captured for failed requests and truncated so a
-// single error can never blow up report payloads.
+// Request/response bodies are only captured for failed requests and truncated
+// so a single error can never blow up report payloads.
 const MAX_BODY_LENGTH = 8 * 1024;
 
 function truncateBody(value: string): string {
@@ -52,18 +57,18 @@ export function pubXhr(): Cleanup {
     return function (
       this: WithSentry<XMLHttpRequest, IHttpData>,
       method: string,
-      url: string,
+      url: string | URL,
       async?: boolean,
-      ...rest: string[]
+      ...rest: (string | null)[]
     ) {
       this.__sentry__ = {
         ...getBaseData(),
         name: "XMLHttpRequest",
         type: EventType.Xhr,
         method: method.toUpperCase(),
-        api: url,
+        api: String(url),
         elapsedTime: 0,
-        statusCode: HttpStatusCode.OK,
+        statusCode: 200,
       };
       return oldPropVal.call(this, method, url, async, ...rest);
     };
@@ -87,7 +92,8 @@ export function pubXhr(): Cleanup {
             this.__sentry__.requestData = { body };
             this.__sentry__.responseData = {
               responseType: this.responseType,
-              response: typeof this.response === "string" ? truncateBody(this.response) : this.response,
+              response:
+                typeof this.response === "string" ? truncateBody(this.response) : this.response,
             };
           }
           this.__sentry__.serverTiming = parseServerTiming(this.getResponseHeader("server-timing"));
@@ -116,7 +122,7 @@ function getRequestMethod(input: RequestInfo | URL, options?: RequestInit): stri
   if (typeof Request !== "undefined" && input instanceof Request) {
     return input.method.toUpperCase();
   }
-  return HttpMethod.Get;
+  return "GET";
 }
 
 export function pubFetch(): Cleanup {
@@ -131,11 +137,10 @@ export function pubFetch(): Cleanup {
         ...getBaseData(),
         type: EventType.Fetch,
         method,
-        requestData: { body: options?.body },
         name: "Fetch",
         api,
         elapsedTime: 0,
-        statusCode: HttpStatusCode.OK,
+        statusCode: 200,
       };
       const startedAt = httpData.timestamp;
       return oldPropVal
@@ -145,6 +150,7 @@ export function pubFetch(): Cleanup {
           httpData.statusCode = res.status;
           httpData.serverTiming = getServerTimingFromHeaders(res.headers);
           if (isErrorStatusCode(res.status)) {
+            httpData.requestData = { body: options?.body };
             // Read the body from a clone in the background so the caller's
             // response stream is untouched and never delayed.
             res
@@ -165,6 +171,7 @@ export function pubFetch(): Cleanup {
         .catch((err: unknown) => {
           httpData.elapsedTime = Date.now() - startedAt;
           httpData.statusCode = 0;
+          httpData.requestData = { body: options?.body };
           httpData.message = err instanceof Error ? err.message : "Network error";
           pub(EventType.Fetch, httpData);
           throw err;
@@ -174,7 +181,5 @@ export function pubFetch(): Cleanup {
 }
 
 function shouldIgnoreRequest(method: string, api: string): boolean {
-  return (
-    (method.toUpperCase() === HttpMethod.Post && api === sentry.options.dsn) || isExcludedApi(api)
-  );
+  return (method.toUpperCase() === "POST" && api === sentry.options.dsn) || isExcludedApi(api);
 }

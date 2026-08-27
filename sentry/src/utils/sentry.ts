@@ -58,19 +58,7 @@ function collectDeviceInfo(): IDeviceInfo {
 }
 
 class Sentry implements ISentry {
-  static #instance: Sentry;
-
-  static get instance() {
-    if (!this.#instance) {
-      this.#instance = new Sentry();
-      globalThis.__sentry__ = this.#instance;
-    }
-    return this.#instance;
-  }
-
   codeErrors = new BoundedSet<string>(1000);
-
-  whiteScreenTimer: ReturnType<typeof setInterval> | null = null;
 
   options: IOptions = { ...DEFAULT_OPTIONS };
 
@@ -84,11 +72,14 @@ class Sentry implements ISentry {
   }
 
   setOptions(newOptions: Partial<IOptions>) {
-    Sentry.#instance.options = {
+    this.options = {
       ...this.options,
       ...newOptions,
     };
   }
 }
 
-export default Sentry.instance;
+const sentry = new Sentry();
+globalThis.__sentry__ = sentry;
+
+export default sentry;

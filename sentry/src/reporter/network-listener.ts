@@ -25,7 +25,6 @@ import type { Cleanup } from "../utils/decorate-prop.js";
 
 interface NetworkListenerCallbacks {
   readonly setOnline: (online: boolean) => void;
-  readonly loadOfflineCache: () => void;
   readonly flush: () => Promise<void>;
 }
 
@@ -34,7 +33,6 @@ export function initNetworkListener(callbacks: NetworkListenerCallbacks): Cleanu
   const onOnline = () => {
     callbacks.setOnline(true);
     sentryLogger.info("Network is back online, flushing cache");
-    callbacks.loadOfflineCache();
     void callbacks.flush();
   };
   const onOffline = () => {

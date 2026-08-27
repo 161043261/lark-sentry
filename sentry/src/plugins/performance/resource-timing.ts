@@ -26,7 +26,7 @@ import {
   type IPerformanceData,
   type IPerformanceResourceTiming,
 } from "../../types";
-import { getBaseData, sentry } from "../../utils";
+import { getBaseData, noop, sentry } from "../../utils";
 import type { Cleanup } from "../../utils/decorate-prop.js";
 import { supportsPerformanceEntryType } from "./performance-observer-support.js";
 
@@ -79,7 +79,7 @@ export function createResourceTimingData(resource: IPerformanceResourceTiming): 
 }
 
 function isFromCache(entry: PerformanceResourceTiming): boolean {
-  return entry.transferSize === 0 || (entry.transferSize !== 0 && entry.encodedBodySize === 0);
+  return entry.transferSize === 0 || entry.encodedBodySize === 0;
 }
 
 export function getResourceList(): readonly IPerformanceResourceTiming[] {
@@ -93,7 +93,7 @@ export function getResourceList(): readonly IPerformanceResourceTiming[] {
     .map(toResourceTiming);
 }
 
-export function getInitialResourceListData(): IPerformanceData | null {
+export function getInitialResourceListData(): IPerformanceData {
   return {
     ...getBaseData(),
     name: "ResourceList",
@@ -105,7 +105,7 @@ export function getInitialResourceListData(): IPerformanceData | null {
 
 export function observeResourceTimings(onReport: ResourceReporter): Cleanup {
   if (!supportsPerformanceEntryType("resource")) {
-    return () => {};
+    return noop;
   }
   const observer = new globalThis.PerformanceObserver((entryList) => {
     entryList

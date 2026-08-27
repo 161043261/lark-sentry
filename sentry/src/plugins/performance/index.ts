@@ -24,7 +24,7 @@ import { EventType, SentryPlugin, type IPerformanceData } from "../../types";
 
 import reporter from "../../reporter";
 
-import { getBaseData } from "../../utils";
+import { getBaseData, noop } from "../../utils";
 import type { Cleanup } from "../../utils/decorate-prop.js";
 
 import { getNavigationTimingData } from "./navigation-timing.js";
@@ -32,8 +32,6 @@ import { getWebVitals } from "./perf.js";
 import { supportsPerformanceEntryType } from "./performance-observer-support.js";
 import { observeResourceElementFallback } from "./resource-element-fallback.js";
 import { getInitialResourceListData, observeResourceTimings } from "./resource-timing.js";
-
-function noop(): void {}
 
 class PerformancePlugin extends SentryPlugin {
   private cleanups: Cleanup[] = [];
@@ -114,10 +112,7 @@ class PerformancePlugin extends SentryPlugin {
     if (navigationTimingData) {
       this.report(navigationTimingData);
     }
-    const resourceListData = getInitialResourceListData();
-    if (resourceListData) {
-      this.report(resourceListData);
-    }
+    this.report(getInitialResourceListData());
   }
 
   private async reportMemory(): Promise<void> {

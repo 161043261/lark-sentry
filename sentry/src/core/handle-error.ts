@@ -35,10 +35,10 @@ import {
   isIExtendedErrorEvent,
   isIgnoredError,
   sentryLogger,
-  sentry,
 } from "../utils";
 import reporter from "../reporter";
 import breadcrumb from "./breadcrumb.js";
+import { reportOncePerError } from "./error-dedup.js";
 import { handleCodeError } from "./handle-code-error.js";
 
 export const handleError: TEventHandler<IBaseDataWithEvent> = ({ extra: err, ...rest }) => {
@@ -80,11 +80,9 @@ function reportResourceError(
     ...resourceError,
     userAction: event2breadcrumb(EventType.Resource),
   });
-  const errorId = `${EventType.Resource}-${localName}-${src || href}`;
-  if (sentry.options.repeatCodeError || !sentry.codeErrors.has(errorId)) {
-    sentry.codeErrors.add(errorId);
+  reportOncePerError(`${EventType.Resource}-${localName}-${src || href}`, () => {
     reporter.send(resourceError);
-  }
+  });
 }
 
 function reportRuntimeError(err: Error, rest: Omit<IBaseDataWithEvent, "extra">): void {
@@ -117,9 +115,7 @@ function reportBaseError(data: IBaseDataWithEvent): void {
     ...payload,
     userAction: event2breadcrumb(EventType.Error),
   });
-  const errorId = `${EventType.Error}-${payload.name}-${payload.message}`;
-  if (sentry.options.repeatCodeError || !sentry.codeErrors.has(errorId)) {
-    sentry.codeErrors.add(errorId);
+  reportOncePerError(`${EventType.Error}-${payload.name}-${payload.message}`, () => {
     reporter.send(payload);
-  }
+  });
 }

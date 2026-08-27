@@ -51,9 +51,7 @@ init({
   userId: "anonymous",
 });
 
-enablePlugin(PerformancePlugin);
-enablePlugin(ScreenRecordPlugin);
-enablePlugin(ExposurePlugin);
+enablePlugin(new PerformancePlugin(), new ScreenRecordPlugin(), new ExposurePlugin());
 ```
 
 `dsn` must be a non-empty string. If `dsn` is empty, initialization is rejected.
@@ -556,7 +554,7 @@ Plugins extend the SDK without coupling optional capabilities to the core entry.
 import { enablePlugin } from "@swifty.js/sentry";
 import { PerformancePlugin } from "@swifty.js/sentry/plugins";
 
-const plugin = enablePlugin(PerformancePlugin);
+enablePlugin(new PerformancePlugin());
 ```
 
 Enabled plugins are stored in the plugin registry. `destroy()` calls each plugin's `destroy()` method when available.
@@ -567,7 +565,7 @@ Enabled plugins are stored in the plugin registry. `destroy()` calls each plugin
 import { enablePlugin } from "@swifty.js/sentry";
 import { PerformancePlugin } from "@swifty.js/sentry/plugins";
 
-enablePlugin(PerformancePlugin);
+enablePlugin(new PerformancePlugin());
 ```
 
 The plugin collects:
@@ -590,19 +588,18 @@ import {
   unzipScreenRecord,
 } from "@swifty.js/sentry/plugins";
 
-enablePlugin(ScreenRecordPlugin);
+enablePlugin(new ScreenRecordPlugin());
 
-enablePlugin(ScreenRecordPlugin, {
-  durationMs: 5000,
-});
+// With custom options
+enablePlugin(new ScreenRecordPlugin({ durationMs: 5000 }));
 ```
 
 Screen recording is based on rrweb. The plugin keeps a rolling record window. When selected error or network events occur, the recent record window is reported as a `ScreenRecord` event.
 
-Decode a record payload:
+Decode a record payload (async — pako is loaded on demand):
 
 ```ts
-const events = unzipScreenRecord(recordPayload);
+const events = await unzipScreenRecord(recordPayload);
 ```
 
 ## ExposurePlugin
@@ -611,7 +608,8 @@ const events = unzipScreenRecord(recordPayload);
 import { enablePlugin } from "@swifty.js/sentry";
 import { ExposurePlugin } from "@swifty.js/sentry/plugins";
 
-const exposure = enablePlugin(ExposurePlugin);
+const exposure = new ExposurePlugin();
+enablePlugin(exposure);
 ```
 
 Observe one element:
@@ -724,8 +722,8 @@ import { defineConfig } from "vite";
 import { sentryPlugin } from "@swifty.js/sentry/vite";
 
 export default defineConfig({
-  // `url` should equals to @swifty.js/sentry `init({ dsn: "/api/log" })` config `dsn`
-  plugins: [sentryPlugin({ url: "/api/log" })],
+  // `dsn` should match the @swifty.js/sentry `init({ dsn: "/api/log" })` dsn value
+  plugins: [sentryPlugin({ dsn: "/api/log" })],
 });
 ```
 
@@ -733,21 +731,20 @@ export default defineConfig({
 
 | Export          | Vite Version | Description                             |
 | --------------- | ------------ | --------------------------------------- |
-| `sentryPlugin`  | Vite 6/8     | Default export. For current Vite.       |
+| `sentryPlugin`  | Vite 8       | Default export. For current Vite.       |
 | `sentryPlugin7` | Vite 7       | For projects using Vite 7 specifically. |
 
 ### Options
 
 | Option | Type     | Default     | Description                              |
 | ------ | -------- | ----------- | ---------------------------------------- |
-| `url`  | `string` | `"/sentry"` | The URL path to intercept POST requests. |
+| `dsn`  | `string` | `"/sentry"` | The URL path to intercept POST requests. |
 
 The plugin creates a `logs/` directory in `process.cwd()`, writes a timestamped JSONL log file (`sentry_YYYYMMDDHHMMSS.jsonl`), parses each request body as JSON, and returns `{ code: 0, message: "success" }`.
 
 ## Browser Compatibility
 
-- `sendBeacon` is preferred for small batches.
-- Image and fetch transports are used as fallbacks.
+- `sendBeacon` is preferred for batches up to 60 KB; `fetch` POST is the fallback, using `keepalive` only for bodies up to 60 KB.
 - `PerformanceObserver` powers Web Vitals, long task, and resource timing when available.
 - `MutationObserver` is used as a fallback for dynamically inserted resources.
 - `IntersectionObserver` is required by `ExposurePlugin`.
@@ -770,7 +767,6 @@ Coverage thresholds are 70 for lines, functions, branches, and statements.
 
 ```bash
 pnpm build
-pnpm build:tsup
 python3 publish.py --dry-run
 ```
 

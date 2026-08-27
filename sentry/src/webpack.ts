@@ -22,14 +22,16 @@
 
 // pnpm add -D webpack webpack-dev-server
 
-import { Buffer } from "node:buffer";
-import { join } from "node:path";
-import { createWriteStream, existsSync, mkdirSync, type WriteStream } from "node:fs";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import type { Compiler, WebpackPluginInstance } from "webpack";
 import type DevServer from "webpack-dev-server";
-import { sentry, sentryLogger } from "./utils";
-import { createAssetMapStore, enrichReportData, type MapLoader } from "./source-map/webpack.js";
+import {
+  closeLogStream,
+  createLogStream,
+  createMockMiddleware,
+  DEFAULT_MOCK_DSN,
+} from "./node/dev-endpoint.js";
+import { createAssetMapStore, enrichReportData } from "./source-map/webpack.js";
 
 export type SentryDevMiddleware = (
   req: IncomingMessage,
@@ -37,75 +39,8 @@ export type SentryDevMiddleware = (
   next: DevServer.NextFunction,
 ) => void;
 
-interface ILogStreamHandle {
-  fileStream: WriteStream;
-  logFile: string;
-}
-
 export interface ISentryWebpackPluginOptions {
   dsn?: string;
-}
-
-function appendChunk(body: string, chunk: unknown): string {
-  if (typeof chunk === "string") {
-    return body + chunk;
-  }
-
-  if (Buffer.isBuffer(chunk)) {
-    return body + chunk.toString("utf8");
-  }
-
-  if (chunk instanceof Uint8Array) {
-    return body + Buffer.from(chunk).toString("utf8");
-  }
-
-  return body;
-}
-
-function parseSentryPayload(body: string): unknown {
-  return JSON.parse(body);
-}
-
-function createMiddleware(
-  url: string,
-  fileStream: WriteStream,
-  loadMap?: MapLoader,
-): SentryDevMiddleware {
-  return (req, res, next) => {
-    if (req.url === url && req.method === "POST") {
-      let body = "";
-      req.on("data", (chunk: unknown) => {
-        body = appendChunk(body, chunk);
-      });
-      req.on("end", async () => {
-        if (body) {
-          try {
-            const parsedBody = parseSentryPayload(body);
-            const enrichedBody = loadMap ? await enrichReportData(loadMap, parsedBody) : parsedBody;
-            fileStream.write(JSON.stringify(enrichedBody) + "\n");
-          } catch {
-            fileStream.write(body + "\n");
-          }
-        }
-        res.setHeader("Content-Type", "application/json");
-        res.statusCode = 200;
-        res.end(JSON.stringify({ code: 0, message: "success" }));
-      });
-    } else {
-      next();
-    }
-  };
-}
-
-function ensureLogStream(): ILogStreamHandle {
-  const logsDir = join(process.cwd(), "logs");
-  if (!existsSync(logsDir)) {
-    mkdirSync(logsDir, { recursive: true });
-  }
-  const timestamp = new Date().toISOString().replace(/[-:.]/g, "").slice(0, 14);
-  const logFile = join(logsDir, `sentry_${timestamp}.jsonl`);
-  const fileStream = createWriteStream(logFile, { flags: "a" });
-  return { fileStream, logFile };
 }
 
 /**
@@ -131,10 +66,9 @@ function ensureLogStream(): ILogStreamHandle {
  * ```
  */
 export function sentryMiddleware(options: ISentryWebpackPluginOptions = {}): SentryDevMiddleware {
-  const { fileStream, logFile } = ensureLogStream();
-  sentryLogger.info(`Sentry mock middleware initialized, logs will be written to ${logFile}`);
-  const url = options.dsn || sentry.options.dsn || "/sentry";
-  return createMiddleware(url, fileStream);
+  const { fileStream, logFile } = createLogStream();
+  console.log(`[@swifty.js/sentry] mock report endpoint active, logging to ${logFile}`);
+  return createMockMiddleware(options.dsn ?? DEFAULT_MOCK_DSN, fileStream);
 }
 
 /**
@@ -164,10 +98,11 @@ export class SentryWebpackPlugin implements WebpackPluginInstance {
 
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     const devServer = compiler.options.devServer as DevServer.Configuration;
-    const { fileStream, logFile } = ensureLogStream();
-    const url = this.dsn || sentry.options.dsn || "/sentry";
+    const { fileStream, logFile } = createLogStream();
     const mapStore = createAssetMapStore();
-    const middleware = createMiddleware(url, fileStream, mapStore.loadMap);
+    const middleware = createMockMiddleware(this.dsn ?? DEFAULT_MOCK_DSN, fileStream, (records) =>
+      enrichReportData(mapStore.loadMap, records),
+    );
 
     // Collect emitted `.map` assets (fires for the in-memory dev-server file
     // system too) so reported errors can be resolved back to original sources.
@@ -177,7 +112,7 @@ export class SentryWebpackPlugin implements WebpackPluginInstance {
       }
     });
 
-    sentryLogger.info(`Sentry mock plugin initialized, logs will be written to ${logFile}`);
+    console.log(`[@swifty.js/sentry] mock report endpoint active, logging to ${logFile}`);
 
     const userSetup = devServer.setupMiddlewares;
     devServer.setupMiddlewares = (middlewares, dev) => {
@@ -196,9 +131,7 @@ export class SentryWebpackPlugin implements WebpackPluginInstance {
     };
 
     compiler.hooks.shutdown.tap("SentryWebpackPlugin", () => {
-      if (fileStream && !fileStream.destroyed) {
-        fileStream.close();
-      }
+      closeLogStream(fileStream);
     });
   }
 }

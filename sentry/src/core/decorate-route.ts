@@ -28,7 +28,7 @@ import { pub } from "./bus.js";
 let latestHref = "";
 
 function getCurrentRouteUrl(): string {
-  return "document" in globalThis ? globalThis.document.location.href : "";
+  return globalThis.location?.href ?? "";
 }
 
 function normalizeRouteUrl(url: string | URL): string {

@@ -86,6 +86,13 @@ describe("init", () => {
     expect(setup).not.toHaveBeenCalled();
     expect(isInitialized()).toBe(false);
   });
+
+  it("ignores explicitly-undefined option values", () => {
+    init({ dsn: "/api/log", userId: undefined, maxBreadcrumbs: undefined });
+
+    expect(setup).toHaveBeenCalledTimes(1);
+    expect(isInitialized()).toBe(true);
+  });
 });
 
 describe("enablePlugin", () => {

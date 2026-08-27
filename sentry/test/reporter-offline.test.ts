@@ -78,13 +78,41 @@ describe("DataReporter offline and retry behavior", () => {
     expect(cache).not.toContain("payload-1");
   });
 
-  it("removes invalid offline cache when network recovers", () => {
+  it("removes invalid offline cache when it is loaded at startup", () => {
     sentry.setOptions({ ...DEFAULT_OPTIONS, dsn: "/api/log" });
     localStorage.setItem(DEFAULT_OPTIONS.offlineCacheKey, "{invalid");
+
     new DataReporter();
 
-    globalThis.dispatchEvent(new Event("online"));
+    expect(localStorage.getItem(DEFAULT_OPTIONS.offlineCacheKey)).toBeNull();
+  });
 
+  it("does not duplicate offline events after the network recovers", async () => {
+    const sendBeacon = vi.spyOn(navigator, "sendBeacon").mockReturnValue(true);
+    sentry.setOptions({ ...DEFAULT_OPTIONS, dsn: "/api/log" });
+    Object.defineProperty(navigator, "onLine", {
+      configurable: true,
+      value: false,
+    });
+    const reporter = new DataReporter();
+
+    await reporter.send(createPayload(1), true);
+    expect(localStorage.getItem(DEFAULT_OPTIONS.offlineCacheKey)).toContain("payload-1");
+
+    Object.defineProperty(navigator, "onLine", {
+      configurable: true,
+      value: true,
+    });
+    globalThis.dispatchEvent(new Event("online"));
+    await vi.waitFor(() => {
+      expect(sendBeacon).toHaveBeenCalled();
+    });
+
+    const bodies = sendBeacon.mock.calls
+      .map((call) => String(call[1]))
+      .filter((body) => body.includes("payload-1"));
+    expect(bodies).toHaveLength(1);
+    expect(bodies[0]?.split("payload-1")).toHaveLength(2); // exactly one occurrence
     expect(localStorage.getItem(DEFAULT_OPTIONS.offlineCacheKey)).toBeNull();
   });
 

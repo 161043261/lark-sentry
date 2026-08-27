@@ -20,14 +20,12 @@
  * SOFTWARE.
  */
 
-import { isHTMLElement } from "../../utils";
+import { isHTMLElement, noop } from "../../utils";
 import type { Cleanup } from "../../utils/decorate-prop.js";
 
 type Callback = (value: number) => void;
 
 const excludedElementNames = new Set(["link", "script", "style"]);
-
-function noop(): void {}
 
 function isInViewport(element: HTMLElement): boolean {
   const rect = element.getBoundingClientRect();

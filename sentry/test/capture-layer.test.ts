@@ -25,7 +25,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_OPTIONS } from "@/constants/index.js";
 import { handleHttp, handleUnhandledRejection } from "@/core/handlers.js";
 import { destroy, init } from "@/index.js";
-import { EventType, HttpMethod, HttpStatusCode, Status, type IHttpData } from "@/types/index.js";
+import { EventType, Status, type IHttpData } from "@/types/index.js";
 import { getBaseData, sentry } from "@/utils/index.js";
 import { findPayload, getPayloads } from "./report-payloads.js";
 
@@ -38,7 +38,7 @@ function createHttpData(statusCode: number, serverTiming: readonly string[] = []
     timestamp: 1,
     message: "",
     status: Status.OK,
-    method: HttpMethod.Get,
+    method: "GET",
     api: "/api/example",
     elapsedTime: 12,
     statusCode,
@@ -62,12 +62,12 @@ describe("capture layer parity", () => {
       enableHttpPerformance: true,
     });
 
-    handleHttp(createHttpData(HttpStatusCode.OK, ['cache;desc="hit"']));
+    handleHttp(createHttpData(200, ['cache;desc="hit"']));
     await Promise.resolve();
 
     expect(sendBeacon).toHaveBeenCalledTimes(1);
     const payloads = sendBeacon.mock.calls.flatMap(getPayloads);
-    const payload = findPayload(payloads, `HTTP ${HttpMethod.Get}`);
+    const payload = findPayload(payloads, "HTTP GET");
     expect(payload).toMatchObject({
       type: EventType.Performance,
       extra: {

@@ -23,14 +23,13 @@
 import { EventType, SentryPlugin } from "../../types";
 
 import { sentry } from "../../utils";
+import type { Cleanup } from "../../utils/decorate-prop.js";
 
 import reporter from "../../reporter";
 
 import { DEFAULT_OPTIONS } from "../../constants";
 
 import { recorder } from "./recorder.js";
-
-type Cleanup = () => void;
 
 export interface ScreenRecordPluginOptions {
   durationMs?: number;

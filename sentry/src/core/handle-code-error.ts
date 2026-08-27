@@ -28,10 +28,11 @@ import {
   type IReportPayload,
   type TReportPayload,
 } from "../types";
-import { event2breadcrumb, getBaseData, isIgnoredError, sentry } from "../utils";
+import { event2breadcrumb, getBaseData, isIgnoredError } from "../utils";
 import { UNKNOWN } from "../constants";
 import reporter from "../reporter";
 import breadcrumb from "./breadcrumb.js";
+import { reportOncePerError } from "./error-dedup.js";
 
 class BatchErrorManager {
   private cacheError: TReportPayload[] = [];
@@ -53,13 +54,18 @@ class BatchErrorManager {
 
   private flush(): void {
     if (this.cacheError.length === 0) return;
-    const groups: Record<string, TReportPayload[]> = {};
+    const groups = new Map<string, TReportPayload[]>();
     for (const err of this.cacheError) {
       const key = `${err.type}-${err.name}-${err.message}`;
-      groups[key] = [...(groups[key] ?? []), err];
+      const group = groups.get(key);
+      if (group) {
+        group.push(err);
+      } else {
+        groups.set(key, [err]);
+      }
     }
     this.cacheError = [];
-    for (const [, items] of Object.entries(groups)) {
+    for (const items of groups.values()) {
       this.reportGroup(items);
     }
   }
@@ -101,10 +107,12 @@ export function handleCodeError(err: ErrorEvent): void {
   const stack = error instanceof Error && error.stack ? error.stack : undefined;
   const codeError: ICodeError = { ...data, column, line, ...(stack ? { extra: stack } : {}) };
   breadcrumb.push({ ...data, userAction: event2breadcrumb(EventType.Error) });
-  const hasUnknownSource = !filename || filename === UNKNOWN;
-  const errorId = `${EventType.Error}-${message}-${filename}-${line}-${column}`;
-  if (hasUnknownSource || sentry.options.repeatCodeError || !sentry.codeErrors.has(errorId)) {
-    sentry.codeErrors.add(errorId);
+  // Errors without a source location cannot be deduplicated meaningfully.
+  if (!filename || filename === UNKNOWN) {
     batchErrorManager.push(codeError);
+    return;
   }
+  reportOncePerError(`${EventType.Error}-${message}-${filename}-${line}-${column}`, () => {
+    batchErrorManager.push(codeError);
+  });
 }

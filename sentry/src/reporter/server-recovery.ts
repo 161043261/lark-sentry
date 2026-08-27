@@ -26,7 +26,6 @@ import { unrefTimer } from "./timer.js";
 interface ServerRecoveryCallbacks {
   readonly setOnline: (online: boolean) => void;
   readonly setRetryTimer: (timer: ReturnType<typeof setTimeout>) => void;
-  readonly loadOfflineCache: () => void;
   readonly flush: () => Promise<void>;
 }
 
@@ -53,7 +52,6 @@ function testServerAvailable(callbacks: ServerRecoveryCallbacks): void {
       }
       callbacks.setOnline(true);
       sentryLogger.info("Server is back available, flushing cache");
-      callbacks.loadOfflineCache();
       void callbacks.flush();
     })
     .catch(() => {

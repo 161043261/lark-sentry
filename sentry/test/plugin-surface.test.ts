@@ -156,7 +156,7 @@ describe("plugin public surface", () => {
 
     const payload = findPayload(sendBeacon.mock.calls.flatMap(getPayloads), "ScreenRecord");
     expect(payload?.eventCount).toBe(2);
-    expect(unzipScreenRecord(String(payload?.event))).toMatchObject([
+    expect(await unzipScreenRecord(String(payload?.event))).toMatchObject([
       { timestamp: 50 },
       { timestamp: 150 },
     ]);

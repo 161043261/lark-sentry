@@ -44,7 +44,7 @@ const afterSendDataHookSchema = z.custom<IOptions["afterSendData"]>(
   "Expected an after-send hook function",
 );
 
-const excludedApiSchema = z.union([z.string(), z.instanceof(RegExp)]);
+const stringOrRegExpSchema = z.union([z.string(), z.instanceof(RegExp)]);
 
 export const optionsSchema = z.object({
   dsn: z.string(),
@@ -70,8 +70,8 @@ export const optionsSchema = z.object({
   maxBreadcrumbs: z.number().int().positive(),
   repeatCodeError: z.boolean(),
   enableHttpPerformance: z.boolean(),
-  ignoreErrors: z.array(excludedApiSchema),
-  excludeApis: z.array(excludedApiSchema),
+  ignoreErrors: z.array(stringOrRegExpSchema),
+  excludeApis: z.array(stringOrRegExpSchema),
   onBeforePushBreadcrumb: breadcrumbHookSchema.optional(),
   cacheMaxLength: z.number().int().positive(),
   cacheWaitingTime: z.number().nonnegative(),
@@ -86,4 +86,6 @@ export const optionsSchema = z.object({
 });
 
 type Options = z.input<typeof optionsSchema>;
-export type InitOptions = Partial<Options> & Pick<Options, "dsn">;
+// Explicitly-undefined values are accepted and stripped by init(), falling
+// back to the defaults; only dsn is required.
+export type InitOptions = { [K in keyof Options]?: Options[K] | undefined } & Pick<Options, "dsn">;

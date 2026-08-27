@@ -20,14 +20,13 @@
  * SOFTWARE.
  */
 
-import type { BreadcrumbType, EventType, HttpMethod, Status } from "./enums.js";
+import type { BreadcrumbType, EventType, Status } from "./enums.js";
 
 import type { Metric } from "web-vitals";
 import type { IOptions } from "./options.js";
 
 export interface ISentry {
   codeErrors: { has(value: string): boolean; add(value: string): void };
-  whiteScreenTimer: ReturnType<typeof setInterval> | null;
   options: IOptions;
   shouldScreenRecord: boolean;
   deviceInfo: IDeviceInfo;
@@ -63,7 +62,7 @@ export interface IReportPayload {
 }
 
 export interface IHttpData extends IReportPayload {
-  method: HttpMethod | string;
+  method: string;
   api: string;
   elapsedTime: number;
   statusCode: number;
@@ -146,7 +145,7 @@ export interface IRouteData extends IReportPayload {
 }
 
 export type IBaseDataWithEvent = IReportPayload & {
-  extra: "WhiteScreen" | unknown;
+  extra: unknown;
 };
 
 export type TReportPayload =
@@ -183,7 +182,7 @@ export interface IReportData<T extends TReportPayload = TReportPayload> extends 
 }
 
 export interface IDataReporter {
-  send(payload: TReportPayload): Promise<void>;
+  send(payload: TReportPayload, immediate?: boolean): Promise<void>;
   flushOfflineCache(): Promise<void>;
 }
 
@@ -200,5 +199,3 @@ export interface IExtendedErrorEvent extends Event {
     localName: string;
   };
 }
-
-export type TUnknownError = IExtendedErrorEvent | Error /** React */ | unknown;

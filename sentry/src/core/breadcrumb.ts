@@ -25,24 +25,12 @@ import type { IBreadcrumbItem } from "../types";
 import { BoundedList, sentry } from "../utils";
 
 class Breadcrumb extends BoundedList<IBreadcrumbItem> {
-  static #instance: Breadcrumb;
-
-  public static get instance() {
-    if (!Breadcrumb.#instance) {
-      Breadcrumb.#instance = new Breadcrumb();
-    }
-    return Breadcrumb.#instance;
-  }
-
-  override push(data: IBreadcrumbItem) {
+  override push(data: IBreadcrumbItem): void {
     const { onBeforePushBreadcrumb } = sentry.options;
-    if (onBeforePushBreadcrumb) {
-      data = onBeforePushBreadcrumb(data);
-    }
-    return super.push(data);
+    super.push(onBeforePushBreadcrumb ? onBeforePushBreadcrumb(data) : data);
   }
 }
 
-const breadcrumb = Breadcrumb.instance;
+const breadcrumb = new Breadcrumb();
 
 export default breadcrumb;

@@ -23,7 +23,7 @@
 import { describe, expect, it } from "vitest";
 
 import transformHttpData from "@/utils/transform-http-data.js";
-import { EventType, HttpMethod, HttpStatusCode, Status, type IHttpData } from "@/types/index.js";
+import { EventType, Status, type IHttpData } from "@/types/index.js";
 
 function createHttpData(statusCode: number): IHttpData {
   return {
@@ -34,7 +34,7 @@ function createHttpData(statusCode: number): IHttpData {
     timestamp: 1,
     message: "",
     status: Status.OK,
-    method: HttpMethod.Get,
+    method: "GET",
     api: "/api/example",
     elapsedTime: 10,
     statusCode,
@@ -43,14 +43,14 @@ function createHttpData(statusCode: number): IHttpData {
 
 describe("transformHttpData", () => {
   it("keeps 2xx responses as successful HTTP data", () => {
-    const data = transformHttpData(createHttpData(HttpStatusCode.OK));
+    const data = transformHttpData(createHttpData(200));
 
     expect(data.status).toBe(Status.OK);
     expect(data.message).toBe("Successful responses");
   });
 
   it("marks 5xx responses as error HTTP data", () => {
-    const data = transformHttpData(createHttpData(HttpStatusCode.InternalServerError));
+    const data = transformHttpData(createHttpData(500));
 
     expect(data.status).toBe(Status.Error);
     expect(data.message).toBe("Server error responses");

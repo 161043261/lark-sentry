@@ -22,20 +22,17 @@
 
 import { EventType, type IDataReporter, type IScreenRecordData } from "../../types";
 
-import { getBaseData, sentry, sentryLogger } from "../../utils";
+import { getBaseData, noop, sentry, sentryLogger } from "../../utils";
+import type { Cleanup } from "../../utils/decorate-prop.js";
 import { z } from "zod";
 
 let pakoInstance: typeof import("pako") | null = null;
-
-type Cleanup = () => void;
 
 const recordEventSchema = z.looseObject({
   timestamp: z.number(),
 });
 
 type RecordEvent = z.infer<typeof recordEventSchema>;
-
-function noop(): void {}
 
 function bytesToBase64(bytes: Uint8Array): string {
   const CHUNK_SIZE = 0x8000;
@@ -106,10 +103,11 @@ function zip(data: unknown): string {
   return bytesToBase64(gzippedArr);
 }
 
-export function unzipScreenRecord(data: string): unknown {
-  if (!data || !pakoInstance) {
+export async function unzipScreenRecord(data: string): Promise<unknown> {
+  if (!data) {
     return null;
   }
-  const inflated = pakoInstance.ungzip(base64ToBytes(data), { to: "string" });
+  const pako = pakoInstance ?? (await import("pako")).default;
+  const inflated = pako.ungzip(base64ToBytes(data), { to: "string" });
   return JSON.parse(inflated);
 }

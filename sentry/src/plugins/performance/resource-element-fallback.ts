@@ -21,7 +21,7 @@
  */
 
 import { type IPerformanceResourceTiming } from "../../types";
-import { sentry } from "../../utils";
+import { noop, sentry } from "../../utils";
 import type { Cleanup } from "../../utils/decorate-prop.js";
 import { createResourceTimingData, getResourceList } from "./resource-timing.js";
 import { supportsPerformanceEntryType } from "./performance-observer-support.js";
@@ -84,7 +84,7 @@ export function observeResourceElementFallback(onReport: PerformanceReporter): C
     !("MutationObserver" in globalThis) ||
     typeof globalThis.MutationObserver !== "function"
   ) {
-    return () => {};
+    return noop;
   }
 
   const listeners: ElementListener[] = [];

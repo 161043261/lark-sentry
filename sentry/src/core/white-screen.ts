@@ -30,8 +30,21 @@ import {
 } from "../types";
 
 import { sentry, getCssSelectors, getBaseData, sentryLogger } from "../utils";
+import type { Cleanup } from "../utils/decorate-prop.js";
 
-function checkWhiteScreen(onReport: TOnReportWhiteScreenData) {
+let sampleTimer: ReturnType<typeof setInterval> | null = null;
+let cancelPendingStart: Cleanup | null = null;
+
+export function stopWhiteScreenCheck(): void {
+  if (sampleTimer) {
+    clearInterval(sampleTimer);
+    sampleTimer = null;
+  }
+  cancelPendingStart?.();
+  cancelPendingStart = null;
+}
+
+function checkWhiteScreen(onReport: TOnReportWhiteScreenData): void {
   const { hasSkeleton, rootCssSelectors } = sentry.options;
   let sampleCount = 0;
   const initialSelectors = new Set<string>();
@@ -61,7 +74,7 @@ function checkWhiteScreen(onReport: TOnReportWhiteScreenData) {
     }
 
     if (sampleCount > MAX_WHITE_SCREEN_SAMPLE_COUNT) {
-      stopSample();
+      stopWhiteScreenCheck();
       return;
     }
 
@@ -86,7 +99,7 @@ function checkWhiteScreen(onReport: TOnReportWhiteScreenData) {
         report();
         return;
       }
-      stopSample();
+      stopWhiteScreenCheck();
     }
 
     // Page with a skeleton screen.
@@ -103,7 +116,7 @@ function checkWhiteScreen(onReport: TOnReportWhiteScreenData) {
         report();
         return; // sampling
       }
-      stopSample();
+      stopWhiteScreenCheck();
     }
   };
 
@@ -118,21 +131,14 @@ function checkWhiteScreen(onReport: TOnReportWhiteScreenData) {
     };
     sentryLogger.error("White screen detected", whiteScreenData);
     onReport(whiteScreenData);
-    stopSample();
-  };
-
-  const stopSample = () => {
-    if (sentry.whiteScreenTimer) {
-      clearInterval(sentry.whiteScreenTimer);
-      sentry.whiteScreenTimer = null;
-    }
+    stopWhiteScreenCheck();
   };
 
   const loopSample = () => {
-    if (sentry.whiteScreenTimer) {
+    if (sampleTimer) {
       return;
     }
-    sentry.whiteScreenTimer = globalThis.setInterval(() => {
+    sampleTimer = globalThis.setInterval(() => {
       if ("requestIdleCallback" in globalThis) {
         requestIdleCallback((deadline) => {
           if (deadline.timeRemaining() > 0 || deadline.didTimeout) {
@@ -145,16 +151,14 @@ function checkWhiteScreen(onReport: TOnReportWhiteScreenData) {
     }, WHITE_SCREEN_SAMPLE_INTERVAL);
   };
 
-  const startSample = () => {
-    if (document.readyState === "complete") {
-      loopSample();
-    } else {
-      globalThis.addEventListener("load", loopSample, { once: true });
-    }
+  if (document.readyState === "complete") {
+    loopSample();
+    return;
+  }
+  globalThis.addEventListener("load", loopSample, { once: true });
+  cancelPendingStart = () => {
+    globalThis.removeEventListener("load", loopSample);
   };
-
-  startSample();
-  return { stop: stopSample };
 }
 
 export default checkWhiteScreen;

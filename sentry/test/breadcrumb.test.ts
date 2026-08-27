@@ -26,7 +26,7 @@ import { DEFAULT_OPTIONS } from "@/constants/index.js";
 import breadcrumb from "@/core/breadcrumb.js";
 import { handleError, handleHttp } from "@/core/handlers.js";
 import { destroy, init } from "@/index.js";
-import { EventType, HttpMethod, Status, type IHttpData } from "@/types/index.js";
+import { EventType, Status, type IHttpData } from "@/types/index.js";
 import { sentry } from "@/utils/index.js";
 import { isRecord } from "./report-payloads.js";
 
@@ -39,7 +39,7 @@ function httpData(timestamp: number): IHttpData {
     timestamp,
     message: "",
     status: Status.OK,
-    method: HttpMethod.Get,
+    method: "GET",
     api: "/api/example",
     elapsedTime: 12,
     statusCode: 200,

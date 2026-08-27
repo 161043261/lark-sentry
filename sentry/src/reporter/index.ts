@@ -23,12 +23,11 @@
 import type { IDataReporter, IReportData, TReportPayload } from "../types";
 import { generateUUID, sentryLogger, sentry } from "../utils";
 import type { Cleanup } from "../utils/decorate-prop.js";
-import { applyBeforePushHook } from "./batch.js";
 import { scheduleFlush } from "./flush-scheduler.js";
 import { initNetworkListener } from "./network-listener.js";
-import { loadOfflineCache, saveOfflineCache } from "./offline-cache.js";
+import { clearOfflineCache, loadOfflineCache, saveOfflineCache } from "./offline-cache.js";
 import { isPromise } from "./promise.js";
-import { runBeforeReportHook } from "./report-data.js";
+import { applyBeforePushHook, runBeforeReportHook } from "./report-data.js";
 import { shouldQueuePayload } from "./send-preflight.js";
 import { scheduleServerRecovery } from "./server-recovery.js";
 import { getBodyByteLength, MAX_KEEPALIVE_BYTES, reportByFetch, sendBeacon } from "./transports.js";
@@ -40,36 +39,23 @@ export class DataReporter implements IDataReporter {
   private retryTimer?: ReturnType<typeof setTimeout>;
   private isOnline = true;
   private isFlushing = false;
+  // True while localStorage mirrors the queue (offline or after a failed send).
+  private hasPersistedCache = false;
   private removeNetworkListener: Cleanup;
-
-  static #instance: DataReporter | null = null;
 
   constructor() {
     this.removeNetworkListener = initNetworkListener({
       setOnline: (online) => {
         this.isOnline = online;
       },
-      loadOfflineCache: () => this.loadOfflineCache(),
       flush: () => this.flush(),
     });
+    // Recover events a previous session persisted but never managed to send.
+    this.loadOfflineCache();
   }
 
-  static get instance(): DataReporter {
-    if (!this.#instance) {
-      this.#instance = new DataReporter();
-    }
-    return this.#instance;
-  }
-
-  /** Reset the singleton: clear timers, listeners, events, and discard the instance. */
-  static reset(): void {
-    if (this.#instance) {
-      this.#instance.dispose();
-    }
-    this.#instance = null;
-  }
-
-  private dispose(): void {
+  /** Clear timers and listeners, and drop queued events. */
+  dispose(): void {
     if (this.timeoutID) clearTimeout(this.timeoutID);
     if (this.retryTimer) clearTimeout(this.retryTimer);
     this.removeNetworkListener();
@@ -84,6 +70,13 @@ export class DataReporter implements IDataReporter {
 
   private saveOfflineCache(): void {
     saveOfflineCache(this.events);
+    this.hasPersistedCache = true;
+  }
+
+  private clearPersistedCache(): void {
+    if (!this.hasPersistedCache) return;
+    clearOfflineCache();
+    this.hasPersistedCache = false;
   }
 
   private handleServerError(): void {
@@ -94,7 +87,6 @@ export class DataReporter implements IDataReporter {
       setRetryTimer: (timer) => {
         this.retryTimer = timer;
       },
-      loadOfflineCache: () => this.loadOfflineCache(),
       flush: () => this.flush(),
     });
   }
@@ -122,6 +114,9 @@ export class DataReporter implements IDataReporter {
         this.saveOfflineCache();
         return;
       }
+      // The persisted mirror only matters while sends fail; drop it so a
+      // later session cannot replay already-delivered events.
+      this.clearPersistedCache();
       void sentry.options.afterSendData?.(finalSendData);
       sentryLogger.success(
         "Batch report queued or sent",
@@ -180,23 +175,19 @@ export class DataReporter implements IDataReporter {
   }
 }
 
-let _reporter: DataReporter | null = null;
-function getReporter(): DataReporter {
-  if (!_reporter) _reporter = DataReporter.instance;
-  return _reporter;
-}
+let instance: DataReporter | null = null;
 
 export function resetReporter(): void {
-  if (_reporter) {
-    DataReporter.reset();
-    _reporter = null;
-  }
+  instance?.dispose();
+  instance = null;
 }
 
+// Defers singleton construction (and its listener/cache side effects) until
+// the first reporter access, after init() has applied the parsed options.
 // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
 export default new Proxy({} as DataReporter, {
   get(_target, prop) {
-    const instance = getReporter();
+    instance ??= new DataReporter();
     const value = Reflect.get(instance, prop, instance);
     return typeof value === "function" ? value.bind(instance) : value;
   },

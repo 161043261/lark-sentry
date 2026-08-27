@@ -79,3 +79,19 @@ export function runBeforeReportHook(
 function normalizeReportHookResult(hookResult: IReportData | false): IReportData | null {
   return hookResult === false ? null : hookResult;
 }
+
+export function applyBeforePushHook(
+  sendData: readonly IReportData[],
+): IReportData[] | Promise<IReportData[]> {
+  const hookResult = sentry.options.beforePushEventList
+    ? sentry.options.beforePushEventList(sendData)
+    : sendData;
+  if (isPromise(hookResult)) {
+    return hookResult.then(normalizeBatchHookResult);
+  }
+  return normalizeBatchHookResult(hookResult);
+}
+
+function normalizeBatchHookResult(hookResult: readonly IReportData[] | false): IReportData[] {
+  return hookResult === false ? [] : [...hookResult];
+}

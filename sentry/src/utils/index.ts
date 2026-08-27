@@ -44,6 +44,8 @@ export * from "./is-type.js";
 
 export { default as metric2perfData } from "./metric2perf-data.js";
 
+export * from "./noop.js";
+
 export { default as sentry } from "./sentry.js";
 
 export * from "./server-timing.js";

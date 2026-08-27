@@ -43,9 +43,7 @@ init({
   userId: "anonymous",
 });
 
-enablePlugin(PerformancePlugin);
-enablePlugin(ScreenRecordPlugin);
-enablePlugin(ExposurePlugin);
+enablePlugin(new PerformancePlugin(), new ScreenRecordPlugin(), new ExposurePlugin());
 ```
 
 `dsn` must be a non-empty string. If `dsn` is empty, initialization is rejected.
@@ -95,43 +93,43 @@ if (!isInitialized()) {
 
 `init` accepts partial options. Values not provided by the caller use SDK defaults.
 
-| Option                       | Type                   | Default                                             | Description                                            |
-| ---------------------------- | ---------------------- | --------------------------------------------------- | ------------------------------------------------------ |
-| `dsn`                        | `string`               | `""`                                                | Report endpoint. Required for initialization.          |
-| `projectId`                  | `string`               | `"unknown"`                                         | Frontend project identifier.                           |
-| `userId`                     | `string`               | `"unknown"`                                         | Current user identifier.                               |
-| `disabled`                   | `boolean`              | `false`                                             | Disable the SDK.                                       |
-| `enableXhr`                  | `boolean`              | `true`                                              | Capture XMLHttpRequest requests.                       |
-| `enableFetch`                | `boolean`              | `true`                                              | Capture fetch requests.                                |
-| `enableClick`                | `boolean`              | `true`                                              | Capture declarative click events.                      |
-| `enableError`                | `boolean`              | `true`                                              | Capture runtime and resource errors.                   |
-| `enableUnhandledRejection`   | `boolean`              | `true`                                              | Capture unhandled promise rejections.                  |
-| `enableHashChange`           | `boolean`              | `true`                                              | Capture hash navigation.                               |
-| `enableHistory`              | `boolean`              | `true`                                              | Capture history navigation.                            |
-| `enableWhiteScreen`          | `boolean`              | `true`                                              | Enable white-screen detection.                         |
-| `enableFingerprint`          | `boolean`              | `false`                                             | Enable FingerprintJS anonymous visitor identity.       |
-| `anonymousId`                | `string`               | `"unknown"`                                         | SDK-generated anonymous visitor id.                    |
-| `visitorId`                  | `string`               | `"unknown"`                                         | Backend-bound visitor id.                              |
-| `screenRecordDurationMs`     | `number`               | `3000`                                              | Rolling screen record window length.                   |
-| `screenRecordEventTypes`     | `EventType[]`          | `[Error, Xhr, Fetch, Resource, UnhandledRejection]` | Event types that trigger screen record reporting.      |
-| `hasSkeleton`                | `boolean`              | `false`                                             | Whether the page has a skeleton screen.                |
-| `rootCssSelectors`           | `string[]`             | `["html", "body", "#app", "#root"]`                 | Root selectors used by white-screen detection.         |
-| `clickThrottleDelay`         | `number`               | `0`                                                 | Click capture throttle delay in milliseconds.          |
-| `maxBreadcrumbs`             | `number`               | `30`                                                | Breadcrumb capacity.                                   |
-| `repeatCodeError`            | `boolean`              | `false`                                             | Report duplicate code errors.                          |
-| `enableHttpPerformance`      | `boolean`              | `false`                                             | Report successful HTTP requests as performance events. |
-| `ignoreErrors`               | `(string \| RegExp)[]` | `[]`                                                | Runtime error ignore rules.                            |
-| `excludeApis`                | `(string \| RegExp)[]` | `[]`                                                | HTTP request ignore rules.                             |
-| `cacheMaxLength`             | `number`               | `10`                                                | Maximum batch size.                                    |
-| `cacheWaitingTime`           | `number`               | `2000`                                              | Batch wait time in milliseconds.                       |
-| `maxQueueLength`             | `number`               | `200`                                               | Maximum queued events while offline or retrying.       |
-| `retryIntervalMilliseconds`  | `number`               | `60000`                                             | Server recovery probe interval.                        |
-| `offlineCacheKey`            | `string`               | `"swifty_sentry_offline_cache"`                     | localStorage key for offline cache.                    |
-| `tracesSampleRate`           | `number`               | `1`                                                 | Sampling rate from 0 to 1.                             |
-| `onBeforePushBreadcrumb`     | `function`             | `undefined`                                         | Hook before storing a breadcrumb.                      |
-| `onBeforeReportData`         | `function`             | `undefined`                                         | Hook before one event enters Reporter queue.           |
-| `beforePushEventList`        | `function`             | `undefined`                                         | Hook before a batch enters transport.                  |
-| `afterSendData`              | `function`             | `undefined`                                         | Hook after a batch enters transport successfully.      |
+| Option                      | Type                   | Default                                             | Description                                            |
+| --------------------------- | ---------------------- | --------------------------------------------------- | ------------------------------------------------------ |
+| `dsn`                       | `string`               | `""`                                                | Report endpoint. Required for initialization.          |
+| `projectId`                 | `string`               | `"unknown"`                                         | Frontend project identifier.                           |
+| `userId`                    | `string`               | `"unknown"`                                         | Current user identifier.                               |
+| `disabled`                  | `boolean`              | `false`                                             | Disable the SDK.                                       |
+| `enableXhr`                 | `boolean`              | `true`                                              | Capture XMLHttpRequest requests.                       |
+| `enableFetch`               | `boolean`              | `true`                                              | Capture fetch requests.                                |
+| `enableClick`               | `boolean`              | `true`                                              | Capture declarative click events.                      |
+| `enableError`               | `boolean`              | `true`                                              | Capture runtime and resource errors.                   |
+| `enableUnhandledRejection`  | `boolean`              | `true`                                              | Capture unhandled promise rejections.                  |
+| `enableHashChange`          | `boolean`              | `true`                                              | Capture hash navigation.                               |
+| `enableHistory`             | `boolean`              | `true`                                              | Capture history navigation.                            |
+| `enableWhiteScreen`         | `boolean`              | `true`                                              | Enable white-screen detection.                         |
+| `enableFingerprint`         | `boolean`              | `false`                                             | Enable FingerprintJS anonymous visitor identity.       |
+| `anonymousId`               | `string`               | `"unknown"`                                         | SDK-generated anonymous visitor id.                    |
+| `visitorId`                 | `string`               | `"unknown"`                                         | Backend-bound visitor id.                              |
+| `screenRecordDurationMs`    | `number`               | `3000`                                              | Rolling screen record window length.                   |
+| `screenRecordEventTypes`    | `EventType[]`          | `[Error, Xhr, Fetch, Resource, UnhandledRejection]` | Event types that trigger screen record reporting.      |
+| `hasSkeleton`               | `boolean`              | `false`                                             | Whether the page has a skeleton screen.                |
+| `rootCssSelectors`          | `string[]`             | `["html", "body", "#app", "#root"]`                 | Root selectors used by white-screen detection.         |
+| `clickThrottleDelay`        | `number`               | `0`                                                 | Click capture throttle delay in milliseconds.          |
+| `maxBreadcrumbs`            | `number`               | `30`                                                | Breadcrumb capacity.                                   |
+| `repeatCodeError`           | `boolean`              | `false`                                             | Report duplicate code errors.                          |
+| `enableHttpPerformance`     | `boolean`              | `false`                                             | Report successful HTTP requests as performance events. |
+| `ignoreErrors`              | `(string \| RegExp)[]` | `[]`                                                | Runtime error ignore rules.                            |
+| `excludeApis`               | `(string \| RegExp)[]` | `[]`                                                | HTTP request ignore rules.                             |
+| `cacheMaxLength`            | `number`               | `10`                                                | Maximum batch size.                                    |
+| `cacheWaitingTime`          | `number`               | `2000`                                              | Batch wait time in milliseconds.                       |
+| `maxQueueLength`            | `number`               | `200`                                               | Maximum queued events while offline or retrying.       |
+| `retryIntervalMilliseconds` | `number`               | `60000`                                             | Server recovery probe interval.                        |
+| `offlineCacheKey`           | `string`               | `"swifty_sentry_offline_cache"`                     | localStorage key for offline cache.                    |
+| `tracesSampleRate`          | `number`               | `1`                                                 | Sampling rate from 0 to 1.                             |
+| `onBeforePushBreadcrumb`    | `function`             | `undefined`                                         | Hook before storing a breadcrumb.                      |
+| `onBeforeReportData`        | `function`             | `undefined`                                         | Hook before one event enters Reporter queue.           |
+| `beforePushEventList`       | `function`             | `undefined`                                         | Hook before a batch enters transport.                  |
+| `afterSendData`             | `function`             | `undefined`                                         | Hook after a batch enters transport successfully.      |
 
 Example production configuration:
 
@@ -154,23 +152,23 @@ init({
 
 Reporter sends `IReportData` objects to the configured `dsn`.
 
-| Field        | Description                                |
-| ------------ | ------------------------------------------ |
-| `id`         | Reporter instance id.                      |
-| `type`       | Event type.                                |
-| `name`       | Event name.                                |
-| `message`    | Event message.                             |
-| `status`     | `OK` or `Error`.                           |
-| `time`       | Formatted time.                            |
-| `timestamp`  | Numeric timestamp.                         |
-| `url`        | Current page URL.                          |
-| `userId`     | User identifier.                           |
-| `anonymousId` | FingerprintJS anonymous visitor id.       |
-| `visitorId`  | Backend-bound visitor id.                  |
-| `projectId`  | Project identifier.                        |
-| `sdkVersion` | SDK version.                               |
-| `deviceInfo` | Device, browser, OS, and screen data.      |
-| `payload`    | Original event payload.                    |
+| Field         | Description                           |
+| ------------- | ------------------------------------- |
+| `id`          | Reporter instance id.                 |
+| `type`        | Event type.                           |
+| `name`        | Event name.                           |
+| `message`     | Event message.                        |
+| `status`      | `OK` or `Error`.                      |
+| `time`        | Formatted time.                       |
+| `timestamp`   | Numeric timestamp.                    |
+| `url`         | Current page URL.                     |
+| `userId`      | User identifier.                      |
+| `anonymousId` | FingerprintJS anonymous visitor id.   |
+| `visitorId`   | Backend-bound visitor id.             |
+| `projectId`   | Project identifier.                   |
+| `sdkVersion`  | SDK version.                          |
+| `deviceInfo`  | Device, browser, OS, and screen data. |
+| `payload`     | Original event payload.               |
 
 ## Event Types
 
@@ -530,7 +528,7 @@ Plugins extend the SDK without coupling optional capabilities to the core entry.
 import { enablePlugin } from "@swifty.js/sentry";
 import { PerformancePlugin } from "@swifty.js/sentry/plugins";
 
-const plugin = enablePlugin(PerformancePlugin);
+enablePlugin(new PerformancePlugin());
 ```
 
 Enabled plugins are stored in the plugin registry. `destroy()` calls each plugin's `destroy()` method when available.
@@ -541,7 +539,7 @@ Enabled plugins are stored in the plugin registry. `destroy()` calls each plugin
 import { enablePlugin } from "@swifty.js/sentry";
 import { PerformancePlugin } from "@swifty.js/sentry/plugins";
 
-enablePlugin(PerformancePlugin);
+enablePlugin(new PerformancePlugin());
 ```
 
 The plugin collects:
@@ -561,19 +559,18 @@ Unsupported browser capabilities are skipped safely.
 import { enablePlugin } from "@swifty.js/sentry";
 import { ScreenRecordPlugin, unzipScreenRecord } from "@swifty.js/sentry/plugins";
 
-enablePlugin(ScreenRecordPlugin);
+enablePlugin(new ScreenRecordPlugin());
 
-enablePlugin(ScreenRecordPlugin, {
-  durationMs: 5000,
-});
+// With custom options
+enablePlugin(new ScreenRecordPlugin({ durationMs: 5000 }));
 ```
 
 Screen recording is based on rrweb. The plugin keeps a rolling record window. When selected error or network events occur, the recent record window is reported as a `ScreenRecord` event.
 
-Decode a record payload:
+Decode a record payload (async — pako is loaded on demand):
 
 ```ts
-const events = unzipScreenRecord(recordPayload);
+const events = await unzipScreenRecord(recordPayload);
 ```
 
 ## ExposurePlugin
@@ -582,7 +579,8 @@ const events = unzipScreenRecord(recordPayload);
 import { enablePlugin } from "@swifty.js/sentry";
 import { ExposurePlugin } from "@swifty.js/sentry/plugins";
 
-const exposure = enablePlugin(ExposurePlugin);
+const exposure = new ExposurePlugin();
+enablePlugin(exposure);
 ```
 
 Observe one element:
@@ -695,8 +693,8 @@ import { defineConfig } from "vite";
 import { sentryPlugin } from "@swifty.js/sentry/vite";
 
 export default defineConfig({
-  // `url` should equals to @swifty.js/sentry `init({ dsn: "/api/log" })` config `dsn`
-  plugins: [sentryPlugin({ url: "/api/log" })],
+  // `dsn` should match the @swifty.js/sentry `init({ dsn: "/api/log" })` dsn value
+  plugins: [sentryPlugin({ dsn: "/api/log" })],
 });
 ```
 
@@ -704,21 +702,44 @@ export default defineConfig({
 
 | Export          | Vite Version | Description                             |
 | --------------- | ------------ | --------------------------------------- |
-| `sentryPlugin`  | Vite 6/8     | Default export. For current Vite.       |
+| `sentryPlugin`  | Vite 8       | Default export. For current Vite.       |
 | `sentryPlugin7` | Vite 7       | For projects using Vite 7 specifically. |
+
+Both factories take an optional options object.
 
 ### Options
 
 | Option | Type     | Default     | Description                              |
 | ------ | -------- | ----------- | ---------------------------------------- |
-| `url`  | `string` | `"/sentry"` | The URL path to intercept POST requests. |
+| `dsn`  | `string` | `"/sentry"` | The URL path to intercept POST requests. |
 
-The plugin creates a `logs/` directory in `process.cwd()`, writes a timestamped JSONL log file (`sentry_YYYYMMDDHHMMSS.jsonl`), parses each request body as JSON, and returns `{ code: 0, message: "success" }`.
+The plugin creates a `logs/` directory in `process.cwd()`, writes a timestamped JSONL log file (`sentry_YYYYMMDDHHMMSS.jsonl`), enriches error records with original source positions resolved from the dev server's module graph source maps, and returns `{ code: 0, message: "success" }`.
+
+## Webpack Dev-Server Plugin
+
+The `@swifty.js/sentry/webpack` subpath provides the same mock report endpoint for webpack-dev-server, plus source map resolution based on emitted `.map` assets.
+
+```ts
+// webpack.config.mjs
+import { sentryPlugin } from "@swifty.js/sentry/webpack";
+
+export default {
+  plugins: [sentryPlugin({ dsn: "/api/log" })],
+  devServer: {
+    // ...
+  },
+};
+```
+
+| Export                | Description                                                                   |
+| --------------------- | ----------------------------------------------------------------------------- |
+| `sentryPlugin`        | Factory returning a `SentryWebpackPlugin` instance. Default export.           |
+| `SentryWebpackPlugin` | Webpack plugin class. No-op unless `compiler.options.devServer` exists.       |
+| `sentryMiddleware`    | Connect/express-style middleware for manual mounting (no source map support). |
 
 ## Browser Compatibility
 
-- `sendBeacon` is preferred for small batches.
-- Image and fetch transports are used as fallbacks.
+- `sendBeacon` is preferred for batches up to 60 KB; `fetch` POST is the fallback, using `keepalive` only for bodies up to 60 KB.
 - `PerformanceObserver` powers Web Vitals, long task, and resource timing when available.
 - `MutationObserver` is used as a fallback for dynamically inserted resources.
 - `IntersectionObserver` is required by `ExposurePlugin`.

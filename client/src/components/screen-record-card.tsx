@@ -23,9 +23,8 @@
 /**
  * Screen recording replay: lists ScreenRecord reports (rrweb events gzipped
  * and base64-encoded by the SDK) and replays a selected one with the raw
- * rrweb Replayer, scaled to fit the card. Decoding uses the SDK's
- * unzipScreenRecord, which relies on pako being loaded by the enabled
- * ScreenRecordPlugin.
+ * rrweb Replayer, scaled to fit the card. Decoding uses the SDK's async
+ * unzipScreenRecord, which loads pako on demand.
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -124,19 +123,47 @@ export function ScreenRecordCard({ events }: { events: ReportEvent[] }) {
   // and the player is not torn down on every auto-refresh.
   const selectedRaw = selected ? (rawRecordOf(selected) ?? null) : null;
 
-  const replayEvents = useMemo<ReplayEvents | null>(() => {
-    if (selectedRaw === null) return null;
-    let decoded: unknown = null;
-    try {
-      decoded = unzipScreenRecord(selectedRaw);
-    } catch {
-      return null;
-    }
-    return isReplayEvents(decoded) ? decoded : null;
+  interface DecodeState {
+    readonly raw: string | null;
+    readonly events: ReplayEvents | null;
+    readonly failed: boolean;
+  }
+
+  const [decodeState, setDecodeState] = useState<DecodeState>({
+    raw: null,
+    events: null,
+    failed: false,
+  });
+  // Reset derived decode state when the selection changes (React's documented
+  // adjust-state-during-render pattern), so stale replays never flash.
+  if (decodeState.raw !== selectedRaw) {
+    setDecodeState({ raw: selectedRaw, events: null, failed: false });
+  }
+
+  // Decodes the selected recording; unzipScreenRecord is async because it
+  // loads pako on demand.
+  useEffect(() => {
+    if (selectedRaw === null) return;
+    let cancelled = false;
+    unzipScreenRecord(selectedRaw)
+      .then((decoded) => {
+        if (cancelled) return;
+        const events = isReplayEvents(decoded) ? decoded : null;
+        setDecodeState({ raw: selectedRaw, events, failed: events === null });
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setDecodeState({ raw: selectedRaw, events: null, failed: true });
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [selectedRaw]);
 
+  const replayEvents = decodeState.events;
   const decodeError =
-    selectedKey !== null && replayEvents === null
+    selectedKey !== null && decodeState.failed
       ? "Unable to decode this recording (needs at least 2 rrweb events)"
       : null;
 

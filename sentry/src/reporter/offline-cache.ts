@@ -49,3 +49,11 @@ export function saveOfflineCache(events: readonly IReportData[]): void {
     sentryLogger.error("Failed to save offline cache");
   }
 }
+
+export function clearOfflineCache(): void {
+  try {
+    localStorage.removeItem(sentry.options.offlineCacheKey);
+  } catch {
+    sentryLogger.error("Failed to clear offline cache");
+  }
+}

@@ -66,9 +66,47 @@ const sentryStyles: SentryStyles = {
 // re-enters the error capture pipeline.
 const nativeConsoleError = console.error.bind(console);
 
+const DEFAULT_PREFIX = "@swifty.js/sentry";
+
+type LogLevel = keyof SentryStyles;
+
+function isEnabled(): boolean {
+  return globalThis.__sentry__?.options.debug ?? false;
+}
+
+function printGroup(level: LogLevel, prefix: string, message: string, body: () => void): void {
+  if (!isEnabled()) return;
+  console.groupCollapsed(
+    `%c ${prefix} %c ${message} `,
+    sentryStyles[level].prefix,
+    sentryStyles[level].message,
+  );
+  body();
+  console.groupEnd();
+}
+
+function logData(data: unknown, tableColumns?: string[]): void {
+  if (data === undefined) return;
+  if (Array.isArray(data)) {
+    if (tableColumns) {
+      console.table(data, tableColumns);
+    } else {
+      console.table(data);
+    }
+    return;
+  }
+  if (typeof data === "object" && data !== null) {
+    console.group("Details");
+    console.log(data);
+    console.groupEnd();
+    return;
+  }
+  console.log(data);
+}
+
 export const sentryLogger = {
   get isEnabled() {
-    return globalThis.__sentry__?.options.debug ?? false;
+    return isEnabled();
   },
 
   info(
@@ -80,30 +118,11 @@ export const sentryLogger = {
      * Ignored for non-array `data`.
      */
     tableColumns?: string[],
-    prefix = "@swifty.js/sentry",
+    prefix = DEFAULT_PREFIX,
   ) {
-    if (!this.isEnabled) return;
-    console.groupCollapsed(
-      `%c ${prefix} %c ${message} `,
-      sentryStyles.info.prefix,
-      sentryStyles.info.message,
-    );
-    if (data !== undefined) {
-      if (Array.isArray(data)) {
-        if (tableColumns) {
-          console.table(data, tableColumns);
-        } else {
-          console.table(data);
-        }
-      } else if (typeof data === "object" && data !== null) {
-        console.group("Details");
-        console.log(data);
-        console.groupEnd();
-      } else {
-        console.log(data);
-      }
-    }
-    console.groupEnd();
+    printGroup("info", prefix, message, () => {
+      logData(data, tableColumns);
+    });
   },
 
   success(
@@ -115,68 +134,33 @@ export const sentryLogger = {
      * the group — typically used to measure batch-report flush latency.
      */
     duration?: number,
-    prefix = "@swifty.js/sentry",
+    prefix = DEFAULT_PREFIX,
   ) {
-    if (!this.isEnabled) return;
-    console.groupCollapsed(
-      `%c ${prefix} %c ${message} `,
-      sentryStyles.success.prefix,
-      sentryStyles.success.message,
-    );
-    if (duration !== undefined) {
-      console.log(
-        `%c Time cost %c ${duration}ms`,
-        sentryStyles.success.prefix,
-        sentryStyles.success.message,
-      );
-    }
-    if (data !== undefined) {
-      if (Array.isArray(data)) {
-        console.table(data);
-      } else if (typeof data === "object" && data !== null) {
-        console.group("Response Data");
-        console.log(data);
-        console.groupEnd();
-      } else {
-        console.log(data);
+    printGroup("success", prefix, message, () => {
+      if (duration !== undefined) {
+        console.log(
+          `%c Time cost %c ${duration}ms`,
+          sentryStyles.success.prefix,
+          sentryStyles.success.message,
+        );
       }
-    }
-    console.groupEnd();
+      logData(data);
+    });
   },
 
-  warn(message: string, data?: unknown, prefix = "@swifty.js/sentry") {
-    if (!this.isEnabled) return;
-    console.groupCollapsed(
-      `%c ${prefix} %c ${message} `,
-      sentryStyles.warn.prefix,
-      sentryStyles.warn.message,
-    );
-    if (data !== undefined) {
-      if (Array.isArray(data)) {
-        console.table(data);
-      } else if (typeof data === "object" && data !== null) {
-        console.group("Warning Details");
-        console.log(data);
-        console.groupEnd();
-      } else {
-        console.log(data);
-      }
-    }
-    console.groupEnd();
+  warn(message: string, data?: unknown, prefix = DEFAULT_PREFIX) {
+    printGroup("warn", prefix, message, () => {
+      logData(data);
+    });
   },
 
-  error(message: string, error?: unknown, prefix = "@swifty.js/sentry") {
-    if (!this.isEnabled) return;
-    console.groupCollapsed(
-      `%c ${prefix} %c ${message} `,
-      sentryStyles.error.prefix,
-      sentryStyles.error.message,
-    );
-    if (error !== undefined) {
-      console.group("Error Details");
-      nativeConsoleError(error);
-      console.groupEnd();
-    }
-    console.groupEnd();
+  error(message: string, error?: unknown, prefix = DEFAULT_PREFIX) {
+    printGroup("error", prefix, message, () => {
+      if (error !== undefined) {
+        console.group("Details");
+        nativeConsoleError(error);
+        console.groupEnd();
+      }
+    });
   },
 };

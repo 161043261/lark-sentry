@@ -38,11 +38,11 @@ interface MinimalModuleGraph {
 }
 
 /** Structural subset of ViteDevServer, compatible with both vite and vite7. */
-interface MinimalDevServer {
+export interface ViteDevServerLike {
   moduleGraph: MinimalModuleGraph;
 }
 
-function createModuleGraphLoader(server: MinimalDevServer): MapLoader {
+function createModuleGraphLoader(server: ViteDevServerLike): MapLoader {
   return async (url) => {
     const { pathname, search } = splitScriptUrl(url);
     const mod =
@@ -53,7 +53,7 @@ function createModuleGraphLoader(server: MinimalDevServer): MapLoader {
 }
 
 export async function enrichReportData(
-  server: MinimalDevServer,
+  server: ViteDevServerLike,
   records: unknown,
 ): Promise<unknown> {
   return enrichWithLoader(createModuleGraphLoader(server), records);

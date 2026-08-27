@@ -35,12 +35,11 @@ export class BoundedList<T> {
     return this.items.length;
   }
 
-  push(item: T): boolean {
+  push(item: T): void {
     this.items.push(item);
     if (this.items.length > this.capacity) {
       this.items.splice(0, this.items.length - this.capacity);
     }
-    return true;
   }
 
   dump(): T[] {
