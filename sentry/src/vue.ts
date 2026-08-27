@@ -41,7 +41,7 @@ export const vuePlugin: Plugin = (app, options: InitOptions) => {
         info,
       },
     });
-    handler?.call(null, err, vueInstance, info);
+    handler?.(err, vueInstance, info);
   };
   init(options);
 };

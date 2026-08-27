@@ -47,9 +47,9 @@ describe("DataReporter", () => {
     vi.useRealTimers();
     sentry.setOptions({
       ...DEFAULT_OPTIONS,
-      afterSendData: undefined,
-      beforePushEventList: undefined,
-      onBeforeReportData: undefined,
+      afterSend: undefined,
+      beforeSendBatch: undefined,
+      beforeSend: undefined,
     });
   });
 
@@ -97,12 +97,12 @@ describe("DataReporter", () => {
     );
   });
 
-  it("drops data when onBeforeReportData returns false", async () => {
+  it("drops data when beforeSend returns false", async () => {
     const sendBeacon = vi.spyOn(navigator, "sendBeacon").mockReturnValue(true);
     sentry.setOptions({
       ...DEFAULT_OPTIONS,
       dsn: "/api/log",
-      onBeforeReportData: () => false,
+      beforeSend: () => false,
     });
 
     const reporter = new DataReporter();
@@ -111,12 +111,12 @@ describe("DataReporter", () => {
     expect(sendBeacon).not.toHaveBeenCalled();
   });
 
-  it("drops a batch when beforePushEventList returns false", async () => {
+  it("drops a batch when beforeSendBatch returns false", async () => {
     const sendBeacon = vi.spyOn(navigator, "sendBeacon").mockReturnValue(true);
     sentry.setOptions({
       ...DEFAULT_OPTIONS,
       dsn: "/api/log",
-      beforePushEventList: () => false,
+      beforeSendBatch: () => false,
     });
 
     const reporter = new DataReporter();
@@ -125,15 +125,15 @@ describe("DataReporter", () => {
     expect(sendBeacon).not.toHaveBeenCalled();
   });
 
-  it("calls afterSendData with the final batch", async () => {
-    const afterSendData = vi.fn();
+  it("calls afterSend with the final batch", async () => {
+    const afterSend = vi.fn();
     vi.spyOn(navigator, "sendBeacon").mockReturnValue(true);
-    sentry.setOptions({ ...DEFAULT_OPTIONS, dsn: "/api/log", afterSendData });
+    sentry.setOptions({ ...DEFAULT_OPTIONS, dsn: "/api/log", afterSend });
 
     const reporter = new DataReporter();
     await reporter.send(createPayload(), true);
 
-    expect(afterSendData).toHaveBeenCalledTimes(1);
-    expect(afterSendData.mock.calls[0]?.[0]).toHaveLength(1);
+    expect(afterSend).toHaveBeenCalledTimes(1);
+    expect(afterSend.mock.calls[0]?.[0]).toHaveLength(1);
   });
 });

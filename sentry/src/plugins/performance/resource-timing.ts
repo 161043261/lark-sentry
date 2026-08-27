@@ -44,12 +44,12 @@ function isResourceTiming(entry: PerformanceEntry): entry is PerformanceResource
   return entry.entryType === "resource" && "initiatorType" in entry;
 }
 
-function isSdkReportResource(entry: PerformanceResourceTiming): boolean {
-  return sentry.options.dsn !== "" && entry.name.includes(sentry.options.dsn);
+export function isSdkReportUrl(url: string): boolean {
+  return sentry.options.dsn !== "" && url.includes(sentry.options.dsn);
 }
 
 function shouldReportResource(entry: PerformanceResourceTiming): boolean {
-  return !excludedInitiatorTypes.has(entry.initiatorType) && !isSdkReportResource(entry);
+  return !excludedInitiatorTypes.has(entry.initiatorType) && !isSdkReportUrl(entry.name);
 }
 
 function toResourceTiming(entry: PerformanceResourceTiming): IPerformanceResourceTiming {

@@ -44,6 +44,9 @@ export function destroy(): void {
   cleanupSetup = null;
   destroyBatchErrorManager();
   resetReporter();
+  breadcrumb.clear();
+  sentry.codeErrors.clear();
+  sentry.shouldScreenRecord = false;
 }
 
 export function init(options: InitOptions): void {

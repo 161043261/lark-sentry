@@ -24,19 +24,18 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { DEFAULT_OPTIONS } from "@/constants/index.js";
 import {
-  afterSendData,
-  beforePushEventList,
-  beforeSendData,
-  getBaseInfo,
-  getUserId,
-  sendLocal,
+  afterSend,
+  beforeSend,
+  beforeSendBatch,
+  flushOfflineCache,
+  getIdentity,
   setUserId,
   traceCustomEvent,
   tracePageView,
   tracePerformance,
 } from "@/index.js";
 import { EventType } from "@/types/index.js";
-import { sentry } from "@/utils/index.js";
+import { getBaseData, sentry } from "@/utils/index.js";
 
 describe("manual public APIs", () => {
   afterEach(() => {
@@ -45,17 +44,10 @@ describe("manual public APIs", () => {
     sentry.setOptions(DEFAULT_OPTIONS);
   });
 
-  it("exposes current user id", () => {
+  it("exposes current user id through identity", () => {
     setUserId("user-1");
 
-    expect(getUserId()).toBe("user-1");
-  });
-
-  it("returns base report context", () => {
-    expect(getBaseInfo()).toMatchObject({
-      type: EventType.Custom,
-      status: "OK",
-    });
+    expect(getIdentity()).toMatchObject({ userId: "user-1" });
   });
 
   it("reports manual custom, page view, and performance events", async () => {
@@ -74,7 +66,7 @@ describe("manual public APIs", () => {
   });
 
   it("registers runtime report hooks", async () => {
-    const afterSend = vi.fn();
+    const afterSendHook = vi.fn();
     const sendBeacon = vi.spyOn(navigator, "sendBeacon").mockReturnValue(true);
     sentry.setOptions({
       ...DEFAULT_OPTIONS,
@@ -82,20 +74,20 @@ describe("manual public APIs", () => {
       cacheMaxLength: 1,
     });
 
-    beforeSendData((data) => ({ ...data, name: "renamed" }));
-    beforePushEventList((events) => events.slice(0, 1));
-    afterSendData(afterSend);
+    beforeSend((data) => ({ ...data, name: "renamed" }));
+    beforeSendBatch((events) => events.slice(0, 1));
+    afterSend(afterSendHook);
     traceCustomEvent({ name: "custom", message: "custom message" });
 
     expect(sendBeacon.mock.calls[0]?.[1]).toContain("renamed");
-    expect(afterSend).toHaveBeenCalledTimes(1);
+    expect(afterSendHook).toHaveBeenCalledTimes(1);
   });
 
-  it("flushes stored offline reports through sendLocal", async () => {
+  it("flushes stored offline reports through flushOfflineCache", async () => {
     const sendBeacon = vi.spyOn(navigator, "sendBeacon").mockReturnValue(true);
     sentry.setOptions({ ...DEFAULT_OPTIONS, dsn: "/api/log" });
     const payload = {
-      ...getBaseInfo(),
+      ...getBaseData(),
       type: EventType.Custom,
       name: "offline",
       message: "offline",
@@ -117,7 +109,7 @@ describe("manual public APIs", () => {
       ]),
     );
 
-    await sendLocal();
+    await flushOfflineCache();
 
     expect(sendBeacon).toHaveBeenCalledTimes(1);
     expect(localStorage.getItem(DEFAULT_OPTIONS.offlineCacheKey)).toBeNull();

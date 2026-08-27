@@ -315,7 +315,7 @@ export default function ErrorsPage() {
       </Tabs>
 
       <div className="grid gap-6 xl:grid-cols-5">
-        <Card className="flex h-[580px] flex-col overflow-hidden xl:col-span-3">
+        <Card className="flex h-145 flex-col overflow-hidden xl:col-span-3">
           <CardHeader>
             <CardTitle>Error List</CardTitle>
             <CardDescription>
@@ -368,7 +368,7 @@ export default function ErrorsPage() {
           </CardContent>
         </Card>
 
-        <Card className="flex h-[580px] flex-col overflow-hidden xl:col-span-2">
+        <Card className="flex h-145 flex-col overflow-hidden xl:col-span-2">
           <CardHeader>
             <CardTitle>Error Details</CardTitle>
           </CardHeader>

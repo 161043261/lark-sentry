@@ -117,7 +117,7 @@ export class DataReporter implements IDataReporter {
       // The persisted mirror only matters while sends fail; drop it so a
       // later session cannot replay already-delivered events.
       this.clearPersistedCache();
-      void sentry.options.afterSendData?.(finalSendData);
+      void sentry.options.afterSend?.(finalSendData);
       sentryLogger.success(
         "Batch report queued or sent",
         { count: finalSendData.length },

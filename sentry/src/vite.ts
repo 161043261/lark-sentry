@@ -31,6 +31,7 @@ import {
   createLogStream,
   createMockMiddleware,
   DEFAULT_MOCK_DSN,
+  type LogStreamHandle,
   type MockMiddleware,
 } from "./node/dev-endpoint.js";
 import { enrichReportData, type ViteDevServerLike } from "./source-map/vite.js";
@@ -44,18 +45,24 @@ interface SentryViteServer extends ViteDevServerLike {
 }
 
 function buildPlugin({ dsn }: ISentryPluginOptions) {
-  const { fileStream, logFile } = createLogStream();
-  console.log(`[@swifty.js/sentry] mock report endpoint active, logging to ${logFile}`);
   const url = dsn ?? DEFAULT_MOCK_DSN;
+  let logStream: LogStreamHandle | null = null;
   return {
     name: "vite-plugin-sentry",
+    apply: "serve" as const,
     configureServer(server: SentryViteServer) {
+      logStream = createLogStream();
+      console.log(
+        `[@swifty.js/sentry] mock report endpoint active, logging to ${logStream.logFile}`,
+      );
       server.middlewares.use(
-        createMockMiddleware(url, fileStream, (records) => enrichReportData(server, records)),
+        createMockMiddleware(url, logStream.fileStream, (records) =>
+          enrichReportData(server, records),
+        ),
       );
     },
     closeBundle() {
-      closeLogStream(fileStream);
+      if (logStream) closeLogStream(logStream.fileStream);
     },
   };
 }

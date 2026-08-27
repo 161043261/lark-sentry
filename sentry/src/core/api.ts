@@ -21,7 +21,7 @@
  */
 
 import { Status, EventType } from "../types/index.js";
-import type { AfterSendDataHook, ReportBatchHook, ReportDataHook } from "../types/index.js";
+import type { AfterSendHook, BeforeSendBatchHook, BeforeSendHook } from "../types/index.js";
 import { getBaseData, sentry } from "../utils/index.js";
 import { handleError } from "./handlers.js";
 import reporter from "../reporter/index.js";
@@ -83,26 +83,18 @@ export function tracePageView(
   });
 }
 
-export function getUserId(): string {
-  return sentry.options.userId;
+export function beforeSend(hook: BeforeSendHook): void {
+  sentry.setOptions({ beforeSend: hook });
 }
 
-export function getBaseInfo() {
-  return getBaseData();
+export function beforeSendBatch(hook: BeforeSendBatchHook): void {
+  sentry.setOptions({ beforeSendBatch: hook });
 }
 
-export function beforeSendData(hook: ReportDataHook): void {
-  sentry.setOptions({ onBeforeReportData: hook });
+export function afterSend(hook: AfterSendHook): void {
+  sentry.setOptions({ afterSend: hook });
 }
 
-export function beforePushEventList(hook: ReportBatchHook): void {
-  sentry.setOptions({ beforePushEventList: hook });
-}
-
-export function afterSendData(hook: AfterSendDataHook): void {
-  sentry.setOptions({ afterSendData: hook });
-}
-
-export async function sendLocal(): Promise<void> {
+export async function flushOfflineCache(): Promise<void> {
   await reporter.flushOfflineCache();
 }

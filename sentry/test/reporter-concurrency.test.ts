@@ -55,9 +55,9 @@ describe("DataReporter concurrent flush behavior", () => {
     vi.useRealTimers();
     sentry.setOptions({
       ...DEFAULT_OPTIONS,
-      afterSendData: undefined,
-      beforePushEventList: undefined,
-      onBeforeReportData: undefined,
+      afterSend: undefined,
+      beforeSendBatch: undefined,
+      beforeSend: undefined,
     });
   });
 
@@ -131,9 +131,9 @@ describe("DataReporter concurrent flush behavior", () => {
     expect(cache).toContain("payload-2");
   });
 
-  it("does not call afterSendData for failed requeued batches", async () => {
+  it("does not call afterSend for failed requeued batches", async () => {
     vi.useFakeTimers();
-    const afterSendData = vi.fn();
+    const afterSend = vi.fn();
     vi.spyOn(navigator, "sendBeacon").mockReturnValue(false);
     vi.stubGlobal(
       "fetch",
@@ -142,13 +142,13 @@ describe("DataReporter concurrent flush behavior", () => {
     sentry.setOptions({
       ...DEFAULT_OPTIONS,
       dsn: "/api/log",
-      afterSendData,
+      afterSend,
       retryIntervalMilliseconds: 1000,
     });
 
     const reporter = new DataReporter();
     await reporter.send(createPayload(1), true);
 
-    expect(afterSendData).not.toHaveBeenCalled();
+    expect(afterSend).not.toHaveBeenCalled();
   });
 });

@@ -36,10 +36,6 @@ import { getInitialResourceListData, observeResourceTimings } from "./resource-t
 class PerformancePlugin extends SentryPlugin {
   private cleanups: Cleanup[] = [];
 
-  constructor() {
-    super(EventType.Performance);
-  }
-
   init(): void {
     this.cleanups.push(this.startWebVitals());
     this.cleanups.push(this.observeLongTasks());

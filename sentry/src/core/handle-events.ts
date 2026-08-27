@@ -24,7 +24,6 @@ import { EventType, Status, type IBaseDataWithEvent, type TEventHandler } from "
 import { event2breadcrumb, getDeclarativeClickData, isErrorEvent, sentryLogger } from "../utils";
 import reporter from "../reporter";
 import breadcrumb from "./breadcrumb.js";
-import checkWhiteScreen from "./white-screen.js";
 import { handleCodeError } from "./handle-code-error.js";
 import { handleError } from "./handle-error.js";
 
@@ -48,12 +47,6 @@ export const handleUnhandledRejection: TEventHandler<IBaseDataWithEvent> = (
     return;
   }
   handleError({ ...data, extra: reason });
-};
-
-export const handleWhiteScreen: TEventHandler<IBaseDataWithEvent> = (data: IBaseDataWithEvent) => {
-  checkWhiteScreen(() => {
-    reporter.send(data);
-  });
 };
 
 export const handleClick: TEventHandler<IBaseDataWithEvent> = ({

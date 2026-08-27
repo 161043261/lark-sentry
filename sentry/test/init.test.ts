@@ -32,7 +32,7 @@ import {
   setVisitorId,
 } from "@/index.js";
 import setup from "@/core/setup.js";
-import { EventType, SentryPlugin } from "@/types/index.js";
+import { SentryPlugin } from "@/types/index.js";
 
 const fingerprintGet = vi.hoisted(() => vi.fn(() => Promise.resolve({ visitorId: "anonymous-1" })));
 const fingerprintLoad = vi.hoisted(() => vi.fn(() => Promise.resolve({ get: fingerprintGet })));
@@ -100,10 +100,6 @@ describe("enablePlugin", () => {
     const initPlugin = vi.fn();
 
     class TestPlugin extends SentryPlugin {
-      constructor() {
-        super(EventType.Custom);
-      }
-
       init(): void {
         initPlugin();
       }

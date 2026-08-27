@@ -22,24 +22,24 @@
 
 import { z } from "zod";
 
-import { EventType, type IOptions, type ReportDataHook } from "../types";
+import { EventType, type BeforeSendHook, type IOptions } from "../types";
 
-const reportDataHookSchema = z.custom<ReportDataHook>(
+const beforeSendHookSchema = z.custom<BeforeSendHook>(
   (value: unknown) => typeof value === "function",
-  "Expected a report data hook function",
+  "Expected a before-send hook function",
 );
 
-const breadcrumbHookSchema = z.custom<IOptions["onBeforePushBreadcrumb"]>(
+const beforeBreadcrumbHookSchema = z.custom<IOptions["beforeBreadcrumb"]>(
   (value: unknown) => typeof value === "function",
   "Expected a breadcrumb hook function",
 );
 
-const reportBatchHookSchema = z.custom<IOptions["beforePushEventList"]>(
+const beforeSendBatchHookSchema = z.custom<IOptions["beforeSendBatch"]>(
   (value: unknown) => typeof value === "function",
-  "Expected a report batch hook function",
+  "Expected a before-send-batch hook function",
 );
 
-const afterSendDataHookSchema = z.custom<IOptions["afterSendData"]>(
+const afterSendHookSchema = z.custom<IOptions["afterSend"]>(
   (value: unknown) => typeof value === "function",
   "Expected an after-send hook function",
 );
@@ -72,14 +72,14 @@ export const optionsSchema = z.object({
   enableHttpPerformance: z.boolean(),
   ignoreErrors: z.array(stringOrRegExpSchema),
   excludeApis: z.array(stringOrRegExpSchema),
-  onBeforePushBreadcrumb: breadcrumbHookSchema.optional(),
+  beforeBreadcrumb: beforeBreadcrumbHookSchema.optional(),
   cacheMaxLength: z.number().int().positive(),
   cacheWaitingTime: z.number().nonnegative(),
   maxQueueLength: z.number().int().positive(),
   retryIntervalMilliseconds: z.number().nonnegative(),
-  onBeforeReportData: reportDataHookSchema.optional(),
-  beforePushEventList: reportBatchHookSchema.optional(),
-  afterSendData: afterSendDataHookSchema.optional(),
+  beforeSend: beforeSendHookSchema.optional(),
+  beforeSendBatch: beforeSendBatchHookSchema.optional(),
+  afterSend: afterSendHookSchema.optional(),
   offlineCacheKey: z.string(),
   tracesSampleRate: z.number().min(0).max(1),
   debug: z.boolean(),

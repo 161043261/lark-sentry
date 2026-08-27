@@ -98,8 +98,6 @@ export function getFirstScreenPaint(callback: Callback): Cleanup {
   observer.observe(document, {
     childList: true,
     subtree: true,
-    characterData: true,
-    attributes: true,
   });
   waitForPageReady();
 

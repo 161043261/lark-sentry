@@ -23,7 +23,6 @@
 const themeColors = {
   info: "#74d4ff",
   success: "#bbf450",
-  warn: "#ffb869",
   error: "#ffa2a2",
   text: "#62748e",
   timestamp: "#dab2ff",
@@ -36,7 +35,7 @@ const getPrefixStyle = (color: string) =>
   `color: ${themeColors.text}; background: ${color}; border-radius: 4px; ${fontFamily}`;
 
 type SentryStyles = Record<
-  "info" | "success" | "warn" | "error",
+  "info" | "success" | "error",
   {
     message: string;
     prefix: string;
@@ -51,10 +50,6 @@ const sentryStyles: SentryStyles = {
   success: {
     message: getMessageStyle(themeColors.success),
     prefix: getPrefixStyle(themeColors.success),
-  },
-  warn: {
-    message: getMessageStyle(themeColors.warn),
-    prefix: getPrefixStyle(themeColors.warn),
   },
   error: {
     message: getMessageStyle(themeColors.error),
@@ -144,12 +139,6 @@ export const sentryLogger = {
           sentryStyles.success.message,
         );
       }
-      logData(data);
-    });
-  },
-
-  warn(message: string, data?: unknown, prefix = DEFAULT_PREFIX) {
-    printGroup("warn", prefix, message, () => {
       logData(data);
     });
   },

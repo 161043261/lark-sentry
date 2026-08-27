@@ -26,7 +26,6 @@ import type { Cleanup } from "../utils/decorate-prop.js";
 import { pub } from "./bus.js";
 import { pubFetch, pubXhr } from "./decorate-http.js";
 import { pubHistory } from "./decorate-route.js";
-import { stopWhiteScreenCheck } from "./white-screen.js";
 
 function decoratePublish(type: EventType): Cleanup {
   switch (type) {
@@ -50,9 +49,6 @@ function decoratePublish(type: EventType): Cleanup {
     }
     case EventType.HashChange: {
       return pubHashChange();
-    }
-    case EventType.WhiteScreen: {
-      return pubWhiteScreen();
     }
     default: {
       return noop;
@@ -145,15 +141,6 @@ function pubHashChange(): Cleanup {
   return () => {
     globalThis.removeEventListener("hashchange", listener);
   };
-}
-
-function pubWhiteScreen(): Cleanup {
-  pub(EventType.WhiteScreen, {
-    ...getBaseData(),
-    type: EventType.WhiteScreen,
-    extra: "WhiteScreen",
-  });
-  return stopWhiteScreenCheck;
 }
 
 export default decoratePublish;

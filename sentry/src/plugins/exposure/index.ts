@@ -46,10 +46,6 @@ class ExposurePlugin extends SentryPlugin {
   private ioMap = new Map<number, IntersectionObserver>();
   private targetMap = new Map<Element, ExposureState>();
 
-  constructor() {
-    super(EventType.Exposure);
-  }
-
   init() {
     sentryLogger.info("Exposure plugin initialized");
   }

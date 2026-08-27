@@ -31,10 +31,6 @@ export class BoundedList<T> {
     this.capacity = capacity;
   }
 
-  get size(): number {
-    return this.items.length;
-  }
-
   push(item: T): void {
     this.items.push(item);
     if (this.items.length > this.capacity) {
@@ -73,5 +69,9 @@ export class BoundedSet<T> {
       const oldest = this.map.keys().next().value;
       if (oldest !== undefined) this.map.delete(oldest);
     }
+  }
+
+  clear(): void {
+    this.map.clear();
   }
 }

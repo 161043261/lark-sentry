@@ -42,7 +42,7 @@ class ScreenRecordPlugin extends SentryPlugin {
   private cleanup: Cleanup | null = null;
 
   constructor(options: ScreenRecordPluginOptions = {}) {
-    super(EventType.ScreenRecord);
+    super();
     this.durationMs = options.durationMs ?? DEFAULT_OPTIONS.screenRecordDurationMs;
     this.eventTypes = [...(options.eventTypes ?? DEFAULT_OPTIONS.screenRecordEventTypes)];
   }

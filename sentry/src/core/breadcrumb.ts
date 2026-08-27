@@ -26,8 +26,8 @@ import { BoundedList, sentry } from "../utils";
 
 class Breadcrumb extends BoundedList<IBreadcrumbItem> {
   override push(data: IBreadcrumbItem): void {
-    const { onBeforePushBreadcrumb } = sentry.options;
-    super.push(onBeforePushBreadcrumb ? onBeforePushBreadcrumb(data) : data);
+    const { beforeBreadcrumb } = sentry.options;
+    super.push(beforeBreadcrumb ? beforeBreadcrumb(data) : data);
   }
 }
 

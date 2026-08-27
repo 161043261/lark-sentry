@@ -69,7 +69,7 @@ init({
 
 ### destroy
 
-`destroy()` cleans plugin instances, event subscriptions, browser listeners, and decorated global methods.
+`destroy()` cleans plugin instances, event subscriptions, browser listeners, and decorated global methods, and resets per-session state (breadcrumbs, error deduplication, queued reports).
 
 ```ts
 import { destroy } from "@swifty.js/sentry";
@@ -126,10 +126,10 @@ if (!isInitialized()) {
 | `retryIntervalMilliseconds` | `number`               | `60000`                                             | Server recovery probe interval.                        |
 | `offlineCacheKey`           | `string`               | `"swifty_sentry_offline_cache"`                     | localStorage key for offline cache.                    |
 | `tracesSampleRate`          | `number`               | `1`                                                 | Sampling rate from 0 to 1.                             |
-| `onBeforePushBreadcrumb`    | `function`             | `undefined`                                         | Hook before storing a breadcrumb.                      |
-| `onBeforeReportData`        | `function`             | `undefined`                                         | Hook before one event enters Reporter queue.           |
-| `beforePushEventList`       | `function`             | `undefined`                                         | Hook before a batch enters transport.                  |
-| `afterSendData`             | `function`             | `undefined`                                         | Hook after a batch enters transport successfully.      |
+| `beforeBreadcrumb`          | `function`             | `undefined`                                         | Hook before storing a breadcrumb.                      |
+| `beforeSend`                | `function`             | `undefined`                                         | Hook before one event enters Reporter queue.           |
+| `beforeSendBatch`           | `function`             | `undefined`                                         | Hook before a batch enters transport.                  |
+| `afterSend`                 | `function`             | `undefined`                                         | Hook after a batch enters transport successfully.      |
 
 Example production configuration:
 
@@ -325,7 +325,7 @@ The reported click payload (`DeclarativeClickData`) includes:
 
 ## White-Screen Detection
 
-White-screen detection samples viewport points after the page is ready and checks whether those points still resolve to configured root elements.
+White-screen detection samples viewport points every second after the page is ready and checks whether those points still resolve to configured root elements. Sampling stops as soon as real content is observed; a white screen is reported only when the page stays blank for 10 consecutive samples. In skeleton mode the first sample records a baseline of on-screen selectors, and a report is sent only when the skeleton never transitions to different content within the sampling window.
 
 Default root selectors:
 
@@ -415,9 +415,9 @@ Transport priority:
 Flush offline cache manually:
 
 ```ts
-import { sendLocal } from "@swifty.js/sentry";
+import { flushOfflineCache } from "@swifty.js/sentry";
 
-await sendLocal();
+await flushOfflineCache();
 ```
 
 ## Reporter Hooks
@@ -425,20 +425,20 @@ await sendLocal();
 Register hooks after initialization or provide equivalent hooks in `init` options.
 
 ```ts
-import { afterSendData, beforePushEventList, beforeSendData } from "@swifty.js/sentry";
+import { afterSend, beforeSend, beforeSendBatch } from "@swifty.js/sentry";
 
-beforeSendData((data) => {
+beforeSend((data) => {
   if (data.type === "Click") {
     return false;
   }
   return data;
 });
 
-beforePushEventList((eventList) => {
+beforeSendBatch((eventList) => {
   return eventList.filter((item) => item.status !== "OK");
 });
 
-afterSendData((eventList) => {
+afterSend((eventList) => {
   console.log("reported", eventList.length);
 });
 ```
@@ -448,13 +448,13 @@ Equivalent initialization form:
 ```ts
 init({
   dsn: "/api/log",
-  onBeforeReportData(data) {
+  beforeSend(data) {
     return data;
   },
-  beforePushEventList(eventList) {
+  beforeSendBatch(eventList) {
     return eventList;
   },
-  afterSendData(eventList) {
+  afterSend(eventList) {
     console.log(eventList.length);
   },
 });
@@ -509,15 +509,6 @@ tracePageView({
   name: "ManualPageView",
   message: location.href,
 });
-```
-
-### getBaseInfo and getUserId
-
-```ts
-import { getBaseInfo, getUserId } from "@swifty.js/sentry";
-
-const baseInfo = getBaseInfo();
-const userId = getUserId();
 ```
 
 ## Plugin System
@@ -713,7 +704,7 @@ Both factories take an optional options object.
 | ------ | -------- | ----------- | ---------------------------------------- |
 | `dsn`  | `string` | `"/sentry"` | The URL path to intercept POST requests. |
 
-The plugin creates a `logs/` directory in `process.cwd()`, writes a timestamped JSONL log file (`sentry_YYYYMMDDHHMMSS.jsonl`), enriches error records with original source positions resolved from the dev server's module graph source maps, and returns `{ code: 0, message: "success" }`.
+The plugin only activates for the dev server (`apply: "serve"`), creates a `logs/` directory in `process.cwd()`, writes a timestamped JSONL log file (`sentry_YYYYMMDDHHMMSS.jsonl`), enriches error records with original source positions resolved from the dev server's module graph source maps, and returns `{ code: 0, message: "success" }`.
 
 ## Webpack Dev-Server Plugin
 

@@ -65,10 +65,6 @@ describe("plugin public surface", () => {
     const destroyPlugin = vi.fn();
 
     class TestPlugin extends SentryPlugin {
-      constructor() {
-        super(EventType.Custom);
-      }
-
       init(): void {}
 
       override destroy(): void {

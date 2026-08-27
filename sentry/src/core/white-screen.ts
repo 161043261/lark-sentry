@@ -44,7 +44,13 @@ export function stopWhiteScreenCheck(): void {
   cancelPendingStart = null;
 }
 
-function checkWhiteScreen(onReport: TOnReportWhiteScreenData): void {
+/**
+ * Samples viewport points every second after page load. Sampling stops as
+ * soon as real content is observed; a white screen is reported only once the
+ * page stayed blank (or the skeleton never transitioned) for
+ * `MAX_WHITE_SCREEN_SAMPLE_COUNT` consecutive samples.
+ */
+export function startWhiteScreenCheck(onReport: TOnReportWhiteScreenData): void {
   const { hasSkeleton, rootCssSelectors } = sentry.options;
   let sampleCount = 0;
   const initialSelectors = new Set<string>();
@@ -54,11 +60,8 @@ function checkWhiteScreen(onReport: TOnReportWhiteScreenData): void {
     const selectors = getCssSelectors(elem);
     const [idSelector, classSelector, elementSelector] = selectors;
     if (hasSkeleton) {
-      if (sampleCount === 1) {
-        selectors.forEach((selector) => initialSelectors.add(selector));
-      } else {
-        selectors.forEach((selector) => currentSelectors.add(selector));
-      }
+      const bucket = sampleCount === 1 ? initialSelectors : currentSelectors;
+      selectors.forEach((selector) => bucket.add(selector));
     }
     return (
       rootCssSelectors.includes(idSelector) ||
@@ -67,17 +70,7 @@ function checkWhiteScreen(onReport: TOnReportWhiteScreenData): void {
     );
   };
 
-  const sample = () => {
-    sampleCount++;
-    if (hasSkeleton) {
-      currentSelectors.clear();
-    }
-
-    if (sampleCount > MAX_WHITE_SCREEN_SAMPLE_COUNT) {
-      stopWhiteScreenCheck();
-      return;
-    }
-
+  const countEmptyPoints = (): number => {
     const { innerWidth, innerHeight } = globalThis;
     let emptyPoints = 0;
     for (let i = 1; i <= 9; i++) {
@@ -90,33 +83,32 @@ function checkWhiteScreen(onReport: TOnReportWhiteScreenData): void {
         emptyPoints++;
       }
     }
+    return emptyPoints;
+  };
 
-    const isWhiteScreen = emptyPoints >= 18;
+  const selectorsMatchBaseline = () =>
+    Array.from(currentSelectors).sort().join(",") === Array.from(initialSelectors).sort().join(",");
 
-    // Page without a skeleton screen.
-    if (!hasSkeleton) {
-      if (isWhiteScreen) {
-        report();
+  const sample = () => {
+    sampleCount++;
+    currentSelectors.clear();
+    const isWhiteScreen = countEmptyPoints() >= 18;
+
+    if (hasSkeleton) {
+      // The baseline sample records which skeleton selectors are on screen.
+      if (sampleCount === 1) return;
+      // A selector change means the skeleton transitioned to real content.
+      if (!selectorsMatchBaseline()) {
+        stopWhiteScreenCheck();
         return;
       }
+    } else if (!isWhiteScreen) {
       stopWhiteScreenCheck();
+      return;
     }
 
-    // Page with a skeleton screen.
-    if (hasSkeleton) {
-      // First sample.
-      if (sampleCount === 1) {
-        return; // sampling
-      }
-      // Subsequent samples.
-      if (
-        Array.from(currentSelectors).sort().join(",") ===
-        Array.from(initialSelectors).sort().join(",")
-      ) {
-        report();
-        return; // sampling
-      }
-      stopWhiteScreenCheck();
+    if (sampleCount >= MAX_WHITE_SCREEN_SAMPLE_COUNT) {
+      report();
     }
   };
 
@@ -127,7 +119,7 @@ function checkWhiteScreen(onReport: TOnReportWhiteScreenData): void {
       status: Status.Error,
       name: "WhiteScreen",
       message: `sample count ${sampleCount}`,
-      extra: "WhiteScreen",
+      extra: { sampleCount },
     };
     sentryLogger.error("White screen detected", whiteScreenData);
     onReport(whiteScreenData);
@@ -140,11 +132,14 @@ function checkWhiteScreen(onReport: TOnReportWhiteScreenData): void {
     }
     sampleTimer = globalThis.setInterval(() => {
       if ("requestIdleCallback" in globalThis) {
-        requestIdleCallback((deadline) => {
-          if (deadline.timeRemaining() > 0 || deadline.didTimeout) {
-            sample();
-          }
-        });
+        requestIdleCallback(
+          (deadline) => {
+            if (deadline.timeRemaining() > 0 || deadline.didTimeout) {
+              sample();
+            }
+          },
+          { timeout: WHITE_SCREEN_SAMPLE_INTERVAL },
+        );
       } else {
         sample();
       }
@@ -160,5 +155,3 @@ function checkWhiteScreen(onReport: TOnReportWhiteScreenData): void {
     globalThis.removeEventListener("load", loopSample);
   };
 }
-
-export default checkWhiteScreen;

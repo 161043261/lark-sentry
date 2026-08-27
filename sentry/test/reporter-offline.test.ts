@@ -51,9 +51,9 @@ describe("DataReporter offline and retry behavior", () => {
     });
     sentry.setOptions({
       ...DEFAULT_OPTIONS,
-      afterSendData: undefined,
-      beforePushEventList: undefined,
-      onBeforeReportData: undefined,
+      afterSend: undefined,
+      beforeSendBatch: undefined,
+      beforeSend: undefined,
     });
   });
 

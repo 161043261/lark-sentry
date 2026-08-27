@@ -165,7 +165,7 @@ export interface IBatchErrorData extends IReportPayload {
   batchErrorLastHappenTime: number;
 }
 
-export type TOnReportWhiteScreenData = (data: IReportPayload) => void;
+export type TOnReportWhiteScreenData = (data: IBaseDataWithEvent) => void;
 
 export type TOnReportPerformanceData = (data: IPerformanceData) => void;
 

@@ -21,9 +21,9 @@
  */
 
 import { type IPerformanceResourceTiming } from "../../types";
-import { noop, sentry } from "../../utils";
+import { noop } from "../../utils";
 import type { Cleanup } from "../../utils/decorate-prop.js";
-import { createResourceTimingData, getResourceList } from "./resource-timing.js";
+import { createResourceTimingData, getResourceList, isSdkReportUrl } from "./resource-timing.js";
 import { supportsPerformanceEntryType } from "./performance-observer-support.js";
 
 type ResourceElement = HTMLImageElement | HTMLScriptElement | HTMLLinkElement;
@@ -92,7 +92,7 @@ export function observeResourceElementFallback(onReport: PerformanceReporter): C
 
   const reportElement = (element: ResourceElement): void => {
     const url = getElementUrl(element);
-    if (!url || reportedUrls.has(url) || url.includes(sentry.options.dsn)) {
+    if (!url || reportedUrls.has(url) || isSdkReportUrl(url)) {
       return;
     }
     reportedUrls.add(url);

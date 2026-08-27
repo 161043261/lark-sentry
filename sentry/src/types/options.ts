@@ -24,15 +24,17 @@ import type { IBreadcrumbItem, IReportData } from "./common.js";
 
 import type { EventType } from "./enums.js";
 
-export type ReportDataHook = (
+export type BeforeSendHook = (
   data: IReportData,
 ) => Promise<IReportData | false> | IReportData | false;
 
-export type ReportBatchHook = (
+export type BeforeSendBatchHook = (
   data: readonly IReportData[],
 ) => Promise<readonly IReportData[] | false> | readonly IReportData[] | false;
 
-export type AfterSendDataHook = (data: readonly IReportData[]) => Promise<void> | void;
+export type AfterSendHook = (data: readonly IReportData[]) => Promise<void> | void;
+
+export type BeforeBreadcrumbHook = (data: IBreadcrumbItem) => IBreadcrumbItem;
 
 export interface IOptions {
   // Report endpoint.
@@ -83,8 +85,8 @@ export interface IOptions {
   ignoreErrors: (string | RegExp)[];
   // Excluded APIs.
   excludeApis: (string | RegExp)[];
-  // Hook before pushing a breadcrumb.
-  onBeforePushBreadcrumb?: ((data: IBreadcrumbItem) => IBreadcrumbItem) | undefined;
+  // Hook before storing a breadcrumb.
+  beforeBreadcrumb?: BeforeBreadcrumbHook | undefined;
   // Offline cache maximum length.
   cacheMaxLength: number;
   // Batch waiting time in milliseconds.
@@ -93,12 +95,12 @@ export interface IOptions {
   maxQueueLength: number;
   // Server recovery probe interval.
   retryIntervalMilliseconds: number;
-  // Hook before reporting one event.
-  onBeforeReportData?: ReportDataHook | undefined;
-  // Hook before pushing a batch to transport.
-  beforePushEventList?: ReportBatchHook | undefined;
-  // Hook after a batch enters transport successfully.
-  afterSendData?: AfterSendDataHook | undefined;
+  // Hook before one event enters the report queue.
+  beforeSend?: BeforeSendHook | undefined;
+  // Hook before a batch enters transport.
+  beforeSendBatch?: BeforeSendBatchHook | undefined;
+  // Hook after a batch is sent successfully.
+  afterSend?: AfterSendHook | undefined;
   // Offline cache localStorage key.
   offlineCacheKey: string;
   // Sampling rate between 0 and 1.

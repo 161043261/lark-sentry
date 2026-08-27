@@ -26,6 +26,8 @@ import type { Cleanup } from "../utils/decorate-prop.js";
 
 import { clearSubscriptions, sub } from "./bus.js";
 import { flushCurrentPageDwell, initPageView, resetPageView } from "./pv-lifecycle.js";
+import { startWhiteScreenCheck, stopWhiteScreenCheck } from "./white-screen.js";
+import reporter from "../reporter/index.js";
 
 import {
   handleClick,
@@ -34,7 +36,6 @@ import {
   handleHistory,
   handleHttp,
   handleUnhandledRejection,
-  handleWhiteScreen,
 } from "./handlers.js";
 
 import decoratePublish from "./decorates.js";
@@ -85,12 +86,6 @@ function setup(): Cleanup {
       subscribe: () => sub(EventType.Click, handleClick),
       name: "Click",
     },
-    {
-      enabled: sentry.options.enableWhiteScreen,
-      type: EventType.WhiteScreen,
-      subscribe: () => sub(EventType.WhiteScreen, handleWhiteScreen),
-      name: "WhiteScreen",
-    },
   ].filter(({ enabled }) => enabled);
 
   const cleanups: Cleanup[] = [];
@@ -98,6 +93,11 @@ function setup(): Cleanup {
     cleanups.push(subscribe());
     cleanups.push(decoratePublish(type));
   });
+
+  if (sentry.options.enableWhiteScreen) {
+    startWhiteScreenCheck((data) => void reporter.send(data));
+    cleanups.push(stopWhiteScreenCheck);
+  }
 
   initPageView();
 
