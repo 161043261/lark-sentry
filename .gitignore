@@ -193,3 +193,5 @@ dist-webpack
 
 # 自动生成的路由文件
 **/src/generated/
+
+sentry/skills

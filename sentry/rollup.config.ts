@@ -20,14 +20,15 @@
  * SOFTWARE.
  */
 
-import { defineConfig } from "rollup";
+import { defineConfig, type Plugin } from "rollup";
 import commonjs from "@rollup/plugin-commonjs";
 import json from "@rollup/plugin-json";
 import nodeResolve from "@rollup/plugin-node-resolve";
 import terser from "@rollup/plugin-terser";
 import typescript from "@rollup/plugin-typescript";
-import { rmSync } from "node:fs";
+import { cpSync, rmSync } from "node:fs";
 import dts from "rollup-plugin-dts";
+import { fileURLToPath } from "node:url";
 
 const external = [
   /^node:/,
@@ -44,11 +45,26 @@ const external = [
   "zod",
 ];
 
-function cleanDist() {
+const distDir = fileURLToPath(new URL("dist", import.meta.url));
+const srcSkill = fileURLToPath(
+  new URL("../.agents/skills/swifty-sentry", import.meta.url),
+);
+const destSkill = fileURLToPath(
+  new URL("skills/swifty-anti-copy", import.meta.url),
+);
+
+function cleanThenInstall(): Plugin {
   return {
-    name: "clean-dist",
+    name: "clean-then-install",
     buildStart() {
-      rmSync("./dist", { recursive: true, force: true });
+      rmSync(distDir, { recursive: true, force: true });
+    },
+    buildEnd() {
+      cpSync(srcSkill, destSkill, {
+        recursive: true,
+        force: true,
+        errorOnExist: false,
+      });
     },
   };
 }
@@ -83,7 +99,7 @@ export default defineConfig([
       },
     ],
     plugins: [
-      cleanDist(),
+      cleanThenInstall(),
       nodeResolve({
         extensions: [".js", ".json"],
       }),
