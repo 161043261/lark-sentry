@@ -1,6 +1,6 @@
 {
   "name": "@swifty.js/sentry",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Framework-agnostic sentry sdk with first-class support for react and vue3+",
   "keywords": [
     "error-tracking",
