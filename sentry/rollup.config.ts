@@ -50,7 +50,7 @@ const srcSkill = fileURLToPath(
   new URL("../.agents/skills/swifty-sentry", import.meta.url),
 );
 const destSkill = fileURLToPath(
-  new URL("skills/swifty-anti-copy", import.meta.url),
+  new URL("skills/swifty-sentry", import.meta.url),
 );
 
 function cleanThenInstall(): Plugin {
