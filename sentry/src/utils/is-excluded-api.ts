@@ -23,7 +23,7 @@
 import sentry from "./sentry.js";
 
 function isExcludedApi(api: string) {
-  for (const excludedApi of sentry.options.excludeApis) {
+  for (const excludedApi of sentry.options.excludeAPIs) {
     if (typeof excludedApi === "string") {
       if (api === excludedApi) {
         return true;

@@ -84,7 +84,7 @@ export interface IOptions {
   // Ignored errors.
   ignoreErrors: (string | RegExp)[];
   // Excluded APIs.
-  excludeApis: (string | RegExp)[];
+  excludeAPIs: (string | RegExp)[];
   // Hook before storing a breadcrumb.
   beforeBreadcrumb?: BeforeBreadcrumbHook | undefined;
   // Offline cache maximum length.

@@ -67,7 +67,7 @@ export const DEFAULT_OPTIONS: IOptions = {
   repeatCodeError: false,
   enableHttpPerformance: false,
   ignoreErrors: [],
-  excludeApis: [],
+  excludeAPIs: [],
   cacheMaxLength: 10,
   cacheWaitingTime: 2000,
   maxQueueLength: 200,

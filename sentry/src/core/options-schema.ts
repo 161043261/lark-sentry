@@ -71,7 +71,7 @@ export const optionsSchema = z.object({
   repeatCodeError: z.boolean(),
   enableHttpPerformance: z.boolean(),
   ignoreErrors: z.array(stringOrRegExpSchema),
-  excludeApis: z.array(stringOrRegExpSchema),
+  excludeAPIs: z.array(stringOrRegExpSchema),
   beforeBreadcrumb: beforeBreadcrumbHookSchema.optional(),
   cacheMaxLength: z.number().int().positive(),
   cacheWaitingTime: z.number().nonnegative(),
@@ -88,4 +88,6 @@ export const optionsSchema = z.object({
 type Options = z.input<typeof optionsSchema>;
 // Explicitly-undefined values are accepted and stripped by init(), falling
 // back to the defaults; only dsn is required.
-export type InitOptions = { [K in keyof Options]?: Options[K] | undefined } & Pick<Options, "dsn">;
+export type InitOptions = {
+  [K in keyof Options]?: Options[K] | undefined;
+} & Pick<Options, "dsn">;

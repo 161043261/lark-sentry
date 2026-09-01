@@ -46,7 +46,7 @@ init({
   enableHttpPerformance: true,
   // Don't monitor the dashboard's own log polling: self-reported polls would
   // grow the log on every refresh and defeat the events endpoint's ETag/304.
-  excludeApis: [/\/api\/logs\//],
+  excludeAPIs: [/\/api\/logs\//],
 });
 enablePlugin(new PerformancePlugin(), new ScreenRecordPlugin(), exposurePlugin);
 

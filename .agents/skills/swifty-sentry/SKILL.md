@@ -26,14 +26,14 @@ This skill teaches how to integrate, configure, and use `@swifty.js/sentry` (npm
 
 The package exposes six entry points:
 
-| Subpath                     | Purpose                                                                                 |
-| --------------------------- | --------------------------------------------------------------------------------------- |
-| `@swifty.js/sentry`         | Core SDK, all types, enums, and the `SentryPlugin` base class                            |
-| `@swifty.js/sentry/plugins` | Plugins: PerformancePlugin, ScreenRecordPlugin, ExposurePlugin, unzipScreenRecord        |
-| `@swifty.js/sentry/react`   | ReactErrorBoundary component                                                             |
-| `@swifty.js/sentry/vue`     | Vue 3 plugin (vuePlugin)                                                                 |
-| `@swifty.js/sentry/vite`    | Vite dev-server mock plugin with source map resolution (sentryPlugin / sentryPlugin7)    |
-| `@swifty.js/sentry/webpack` | Webpack dev-server mock plugin (sentryPlugin / SentryWebpackPlugin / sentryMiddleware)   |
+| Subpath                     | Purpose                                                                                |
+| --------------------------- | -------------------------------------------------------------------------------------- |
+| `@swifty.js/sentry`         | Core SDK, all types, enums, and the `SentryPlugin` base class                          |
+| `@swifty.js/sentry/plugins` | Plugins: PerformancePlugin, ScreenRecordPlugin, ExposurePlugin, unzipScreenRecord      |
+| `@swifty.js/sentry/react`   | ReactErrorBoundary component                                                           |
+| `@swifty.js/sentry/vue`     | Vue 3 plugin (vuePlugin)                                                               |
+| `@swifty.js/sentry/vite`    | Vite dev-server mock plugin with source map resolution (sentryPlugin / sentryPlugin7)  |
+| `@swifty.js/sentry/webpack` | Webpack dev-server mock plugin (sentryPlugin / SentryWebpackPlugin / sentryMiddleware) |
 
 Each public export provides ESM, CJS, and TypeScript declaration files.
 
@@ -132,7 +132,10 @@ enablePlugin(...plugins: SentryPlugin[]): void
 
 ```ts
 import { enablePlugin } from "@swifty.js/sentry";
-import { PerformancePlugin, ScreenRecordPlugin } from "@swifty.js/sentry/plugins";
+import {
+  PerformancePlugin,
+  ScreenRecordPlugin,
+} from "@swifty.js/sentry/plugins";
 
 // Single plugin
 enablePlugin(new PerformancePlugin());
@@ -166,44 +169,44 @@ Call `enablePlugin` after `init`, so plugin initialization sees the parsed optio
 
 ### Feature Toggle Options
 
-| Option                     | Type      | Default     | Description                                                    |
-| -------------------------- | --------- | ----------- | -------------------------------------------------------------- |
-| `projectId`                | `string`  | `"unknown"` | Frontend project identifier.                                   |
-| `userId`                   | `string`  | `"unknown"` | Current user identifier.                                       |
-| `disabled`                 | `boolean` | `false`     | Disable the SDK entirely.                                      |
-| `enableXhr`                | `boolean` | `true`      | Capture XMLHttpRequest requests.                               |
-| `enableFetch`              | `boolean` | `true`      | Capture fetch requests.                                        |
-| `enableClick`              | `boolean` | `true`      | Capture declarative click events.                              |
-| `enableError`              | `boolean` | `true`      | Capture runtime, `console.error`, and resource errors.         |
-| `enableUnhandledRejection` | `boolean` | `true`      | Capture unhandled promise rejections.                          |
-| `enableHashChange`         | `boolean` | `true`      | Capture hash navigation.                                       |
-| `enableHistory`            | `boolean` | `true`      | Capture history (pushState/replaceState/popstate) navigation.  |
-| `enableWhiteScreen`        | `boolean` | `true`      | Enable white-screen detection.                                 |
-| `enableFingerprint`        | `boolean` | `false`     | Enable FingerprintJS anonymous visitor identity.               |
-| `enableHttpPerformance`    | `boolean` | `false`     | Report successful HTTP requests as performance events.         |
-| `repeatCodeError`          | `boolean` | `false`     | Report duplicate errors (deduplication is on by default).      |
-| `debug`                    | `boolean` | `false`     | Enable SDK debug logging in the browser console.               |
+| Option                     | Type      | Default     | Description                                                   |
+| -------------------------- | --------- | ----------- | ------------------------------------------------------------- |
+| `projectId`                | `string`  | `"unknown"` | Frontend project identifier.                                  |
+| `userId`                   | `string`  | `"unknown"` | Current user identifier.                                      |
+| `disabled`                 | `boolean` | `false`     | Disable the SDK entirely.                                     |
+| `enableXhr`                | `boolean` | `true`      | Capture XMLHttpRequest requests.                              |
+| `enableFetch`              | `boolean` | `true`      | Capture fetch requests.                                       |
+| `enableClick`              | `boolean` | `true`      | Capture declarative click events.                             |
+| `enableError`              | `boolean` | `true`      | Capture runtime, `console.error`, and resource errors.        |
+| `enableUnhandledRejection` | `boolean` | `true`      | Capture unhandled promise rejections.                         |
+| `enableHashChange`         | `boolean` | `true`      | Capture hash navigation.                                      |
+| `enableHistory`            | `boolean` | `true`      | Capture history (pushState/replaceState/popstate) navigation. |
+| `enableWhiteScreen`        | `boolean` | `true`      | Enable white-screen detection.                                |
+| `enableFingerprint`        | `boolean` | `false`     | Enable FingerprintJS anonymous visitor identity.              |
+| `enableHttpPerformance`    | `boolean` | `false`     | Report successful HTTP requests as performance events.        |
+| `repeatCodeError`          | `boolean` | `false`     | Report duplicate errors (deduplication is on by default).     |
+| `debug`                    | `boolean` | `false`     | Enable SDK debug logging in the browser console.              |
 
 ### Tuning Options
 
-| Option                       | Type                   | Default                                             | Description                                           |
-| ---------------------------- | ---------------------- | --------------------------------------------------- | ----------------------------------------------------- |
-| `anonymousId`                | `string`               | `"unknown"`                                         | SDK-generated anonymous visitor id.                   |
-| `visitorId`                  | `string`               | `"unknown"`                                         | Backend-bound visitor id.                             |
-| `screenRecordDurationMs`     | `number`               | `3000`                                              | Rolling screen record window length in ms.            |
-| `screenRecordEventTypes`     | `EventType[]`          | `[Error, Xhr, Fetch, Resource, UnhandledRejection]` | Event types that trigger screen record reporting.     |
-| `hasSkeleton`                | `boolean`              | `false`                                             | Whether the page has a skeleton screen.               |
-| `rootCssSelectors`           | `string[]`             | `["html", "body", "#app", "#root"]`                 | Root selectors used by white-screen detection.        |
-| `clickThrottleDelay`         | `number`               | `0`                                                 | Click capture throttle delay in milliseconds.         |
-| `maxBreadcrumbs`             | `number`               | `30`                                                | Breadcrumb capacity (FIFO buffer of the newest items). |
-| `ignoreErrors`               | `(string \| RegExp)[]` | `[]`                                                | Runtime error ignore rules.                           |
-| `excludeApis`                | `(string \| RegExp)[]` | `[]`                                                | HTTP request ignore rules.                            |
-| `cacheMaxLength`             | `number`               | `10`                                                | Maximum batch size before flush.                      |
-| `cacheWaitingTime`           | `number`               | `2000`                                              | Batch wait time in milliseconds.                      |
-| `maxQueueLength`             | `number`               | `200`                                               | Maximum queued events while offline or retrying.      |
-| `retryIntervalMilliseconds`  | `number`               | `60000`                                             | Server recovery probe interval.                       |
-| `offlineCacheKey`            | `string`               | `"swifty_sentry_offline_cache"`                     | localStorage key for offline cache.                   |
-| `tracesSampleRate`           | `number`               | `1`                                                 | Sampling rate from 0 to 1.                            |
+| Option                      | Type                   | Default                                             | Description                                            |
+| --------------------------- | ---------------------- | --------------------------------------------------- | ------------------------------------------------------ |
+| `anonymousId`               | `string`               | `"unknown"`                                         | SDK-generated anonymous visitor id.                    |
+| `visitorId`                 | `string`               | `"unknown"`                                         | Backend-bound visitor id.                              |
+| `screenRecordDurationMs`    | `number`               | `3000`                                              | Rolling screen record window length in ms.             |
+| `screenRecordEventTypes`    | `EventType[]`          | `[Error, Xhr, Fetch, Resource, UnhandledRejection]` | Event types that trigger screen record reporting.      |
+| `hasSkeleton`               | `boolean`              | `false`                                             | Whether the page has a skeleton screen.                |
+| `rootCssSelectors`          | `string[]`             | `["html", "body", "#app", "#root"]`                 | Root selectors used by white-screen detection.         |
+| `clickThrottleDelay`        | `number`               | `0`                                                 | Click capture throttle delay in milliseconds.          |
+| `maxBreadcrumbs`            | `number`               | `30`                                                | Breadcrumb capacity (FIFO buffer of the newest items). |
+| `ignoreErrors`              | `(string \| RegExp)[]` | `[]`                                                | Runtime error ignore rules.                            |
+| `excludeAPIs`               | `(string \| RegExp)[]` | `[]`                                                | HTTP request ignore rules.                             |
+| `cacheMaxLength`            | `number`               | `10`                                                | Maximum batch size before flush.                       |
+| `cacheWaitingTime`          | `number`               | `2000`                                              | Batch wait time in milliseconds.                       |
+| `maxQueueLength`            | `number`               | `200`                                               | Maximum queued events while offline or retrying.       |
+| `retryIntervalMilliseconds` | `number`               | `60000`                                             | Server recovery probe interval.                        |
+| `offlineCacheKey`           | `string`               | `"swifty_sentry_offline_cache"`                     | localStorage key for offline cache.                    |
+| `tracesSampleRate`          | `number`               | `1`                                                 | Sampling rate from 0 to 1.                             |
 
 Schema constraints enforced by zod: `maxBreadcrumbs`, `cacheMaxLength`, and `maxQueueLength` must be positive integers; `screenRecordDurationMs`, `clickThrottleDelay`, `cacheWaitingTime`, and `retryIntervalMilliseconds` must be non-negative; `tracesSampleRate` must be between 0 and 1.
 
@@ -220,25 +223,25 @@ Schema constraints enforced by zod: `maxBreadcrumbs`, `cacheMaxLength`, and `max
 
 The SDK reports events with the following `EventType` enum values:
 
-| Enum Value                     | String Value                 | Description                     |
-| ------------------------------ | ---------------------------- | ------------------------------- |
-| `EventType.Xhr`                | `"XMLHttpRequest"`           | XHR request.                    |
-| `EventType.Fetch`              | `"fetch"`                    | fetch request.                  |
-| `EventType.Click`              | `"Click"`                    | Declarative click.              |
-| `EventType.HashChange`         | `"Event hashchange"`         | Hash navigation.                |
-| `EventType.History`            | `"History"`                  | History navigation.             |
-| `EventType.Resource`           | `"Resource"`                 | Static resource load failure.   |
-| `EventType.UnhandledRejection` | `"Event unhandledrejection"` | Unhandled promise rejection.    |
-| `EventType.Error`              | `"Error"`                    | JavaScript runtime error.       |
-| `EventType.Vue`                | `"Vue"`                      | Vue error.                      |
-| `EventType.React`              | `"React"`                    | React error.                    |
+| Enum Value                     | String Value                 | Description                                         |
+| ------------------------------ | ---------------------------- | --------------------------------------------------- |
+| `EventType.Xhr`                | `"XMLHttpRequest"`           | XHR request.                                        |
+| `EventType.Fetch`              | `"fetch"`                    | fetch request.                                      |
+| `EventType.Click`              | `"Click"`                    | Declarative click.                                  |
+| `EventType.HashChange`         | `"Event hashchange"`         | Hash navigation.                                    |
+| `EventType.History`            | `"History"`                  | History navigation.                                 |
+| `EventType.Resource`           | `"Resource"`                 | Static resource load failure.                       |
+| `EventType.UnhandledRejection` | `"Event unhandledrejection"` | Unhandled promise rejection.                        |
+| `EventType.Error`              | `"Error"`                    | JavaScript runtime error.                           |
+| `EventType.Vue`                | `"Vue"`                      | Vue error.                                          |
+| `EventType.React`              | `"React"`                    | React error.                                        |
 | `EventType.OtherFrameworks`    | `"OtherFrameworks"`          | Other framework error (via `reportFrameworkError`). |
-| `EventType.Performance`        | `"Performance"`              | Performance metric.             |
-| `EventType.ScreenRecord`       | `"ScreenRecord"`             | Screen record payload.          |
-| `EventType.Exposure`           | `"Exposure"`                 | Exposure duration event.        |
-| `EventType.WhiteScreen`        | `"WhiteScreen"`              | White-screen event.             |
-| `EventType.Custom`             | `"Custom"`                   | Custom business event.          |
-| `EventType.PV`                 | `"PV"`                       | Page view and dwell-time event. |
+| `EventType.Performance`        | `"Performance"`              | Performance metric.                                 |
+| `EventType.ScreenRecord`       | `"ScreenRecord"`             | Screen record payload.                              |
+| `EventType.Exposure`           | `"Exposure"`                 | Exposure duration event.                            |
+| `EventType.WhiteScreen`        | `"WhiteScreen"`              | White-screen event.                                 |
+| `EventType.Custom`             | `"Custom"`                   | Custom business event.                              |
+| `EventType.PV`                 | `"PV"`                       | Page view and dwell-time event.                     |
 
 ## Error Capture
 
@@ -260,22 +263,22 @@ The SDK captures errors from multiple sources, all routed through the `handleErr
 
 `handleError` dispatches on the payload's `extra` value:
 
-| `extra` is                            | Path                | Reported type          |
-| ------------------------------------- | ------------------- | ---------------------- |
-| `ErrorEvent`                          | `handleCodeError`   | `Error` (with line/column; `extra` = the underlying `Error`'s stack when present) |
-| Plain `Event` with resource-like target | `reportResourceError` | `Resource`           |
-| `Error`                               | `reportRuntimeError` | `Error` (`extra` = `stack \|\| error`) |
-| Anything else                         | `reportUnknownError` | `Error` with `name: "Unknown Error"` |
+| `extra` is                              | Path                  | Reported type                                                                     |
+| --------------------------------------- | --------------------- | --------------------------------------------------------------------------------- |
+| `ErrorEvent`                            | `handleCodeError`     | `Error` (with line/column; `extra` = the underlying `Error`'s stack when present) |
+| Plain `Event` with resource-like target | `reportResourceError` | `Resource`                                                                        |
+| `Error`                                 | `reportRuntimeError`  | `Error` (`extra` = `stack \|\| error`)                                            |
+| Anything else                           | `reportUnknownError`  | `Error` with `name: "Unknown Error"`                                              |
 
 ### Error Deduplication
 
 All three error paths deduplicate by default using a raw string key stored in a `BoundedSet<string>` (LRU-style, capacity 1000) on the `sentry` singleton, preventing unbounded memory growth in long-running SPAs:
 
-| Path            | Dedup key                                             |
-| --------------- | ----------------------------------------------------- |
-| Code error      | `Error-<message>-<filename>-<line>-<column>`          |
-| Resource error  | `Resource-<localName>-<src\|href>`                    |
-| Runtime/unknown | `Error-<name>-<message>`                              |
+| Path            | Dedup key                                    |
+| --------------- | -------------------------------------------- |
+| Code error      | `Error-<message>-<filename>-<line>-<column>` |
+| Resource error  | `Resource-<localName>-<src\|href>`           |
+| Runtime/unknown | `Error-<name>-<message>`                     |
 
 Code errors whose source filename is empty or `"unknown"` bypass deduplication and are always reported. Set `repeatCodeError: true` to disable deduplication entirely.
 
@@ -316,15 +319,15 @@ The SDK decorates `XMLHttpRequest.prototype.open`, `XMLHttpRequest.prototype.sen
 
 `transformHttpData` returns a **new** object with derived `status` and `message` rather than mutating the input:
 
-| Status Code Range | SDK Status     | Derived message              |
-| ----------------- | -------------- | ---------------------------- |
+| Status Code Range | SDK Status     | Derived message                                        |
+| ----------------- | -------------- | ------------------------------------------------------ |
 | 0                 | `Status.Error` | Original network-error message, else `"Network error"` |
-| 100 - 199         | `Status.OK`    | `"Informational response"`   |
-| 200 - 299         | `Status.OK`    | `"Successful responses"`     |
-| 300 - 399         | `Status.OK`    | `"Redirection messages"`     |
-| 400 - 499         | `Status.Error` | `"Client error responses"`   |
-| 500 - 599         | `Status.Error` | `"Server error responses"`   |
-| Other values      | `Status.Error` | `"Invalid status code"`      |
+| 100 - 199         | `Status.OK`    | `"Informational response"`                             |
+| 200 - 299         | `Status.OK`    | `"Successful responses"`                               |
+| 300 - 399         | `Status.OK`    | `"Redirection messages"`                               |
+| 400 - 499         | `Status.Error` | `"Client error responses"`                             |
+| 500 - 599         | `Status.Error` | `"Server error responses"`                             |
+| Other values      | `Status.Error` | `"Invalid status code"`                                |
 
 Only requests with `Status.Error` are reported by default.
 
@@ -334,12 +337,12 @@ Set `enableHttpPerformance: true` to also report successful requests. `handleHtt
 
 ### Request Filtering
 
-`shouldIgnoreRequest` skips a request when it is a `POST` to the exact configured `dsn`, or when `isExcludedApi` matches. `excludeApis` uses **exact string equality** for string entries and `pattern.test(api)` for RegExp entries -- note this differs from `ignoreErrors`, which uses substring matching.
+`shouldIgnoreRequest` skips a request when it is a `POST` to the exact configured `dsn`, or when `isExcludedApi` matches. `excludeAPIs` uses **exact string equality** for string entries and `pattern.test(api)` for RegExp entries -- note this differs from `ignoreErrors`, which uses substring matching.
 
 ```ts
 init({
   dsn: "/api/log",
-  excludeApis: ["/api/log", /\/health$/],
+  excludeAPIs: ["/api/log", /\/health$/],
 });
 ```
 
@@ -677,24 +680,24 @@ await flushOfflineCache();
 
 Each reported event is an `IReportData` object:
 
-| Field         | Type                | Description                                              |
-| ------------- | ------------------- | -------------------------------------------------------- |
+| Field         | Type                | Description                                                                                            |
+| ------------- | ------------------- | ------------------------------------------------------------------------------------------------------ |
 | `id`          | `string`            | Reporter instance id (`generateUUID()`, secure-context safe), shared by every event from one reporter. |
-| `type`        | `EventType`         | Event type enum value.                                   |
-| `name`        | `string`            | Event name.                                              |
-| `message`     | `string`            | Event message.                                           |
-| `status`      | `Status`            | `"OK"` or `"Error"`.                                     |
-| `time`        | `string`            | ISO 8601 formatted time.                                 |
-| `timestamp`   | `number`            | Numeric timestamp (`Date.now()`).                        |
-| `url`         | `string`            | Current page URL (`location.href`).                      |
-| `userId`      | `string`            | User identifier.                                         |
-| `anonymousId` | `string`            | FingerprintJS anonymous visitor id (`"unknown"` when disabled). |
-| `visitorId`   | `string`            | Backend-bound visitor id (`"unknown"` until `setVisitorId`). |
-| `projectId`   | `string`            | Project identifier.                                      |
-| `sdkVersion`  | `string`            | SDK version from package.json.                           |
-| `breadcrumbs` | `IBreadcrumbItem[]` | Present **only** for error-class types (see below).      |
-| `deviceInfo`  | `IDeviceInfo`       | Device, browser, OS, language, and screen data (lazily collected on first report). |
-| `payload`     | `TReportPayload`    | Original event payload, including its own `id`.           |
+| `type`        | `EventType`         | Event type enum value.                                                                                 |
+| `name`        | `string`            | Event name.                                                                                            |
+| `message`     | `string`            | Event message.                                                                                         |
+| `status`      | `Status`            | `"OK"` or `"Error"`.                                                                                   |
+| `time`        | `string`            | ISO 8601 formatted time.                                                                               |
+| `timestamp`   | `number`            | Numeric timestamp (`Date.now()`).                                                                      |
+| `url`         | `string`            | Current page URL (`location.href`).                                                                    |
+| `userId`      | `string`            | User identifier.                                                                                       |
+| `anonymousId` | `string`            | FingerprintJS anonymous visitor id (`"unknown"` when disabled).                                        |
+| `visitorId`   | `string`            | Backend-bound visitor id (`"unknown"` until `setVisitorId`).                                           |
+| `projectId`   | `string`            | Project identifier.                                                                                    |
+| `sdkVersion`  | `string`            | SDK version from package.json.                                                                         |
+| `breadcrumbs` | `IBreadcrumbItem[]` | Present **only** for error-class types (see below).                                                    |
+| `deviceInfo`  | `IDeviceInfo`       | Device, browser, OS, language, and screen data (lazily collected on first report).                     |
+| `payload`     | `TReportPayload`    | Original event payload, including its own `id`.                                                        |
 
 Breadcrumbs are the trail leading up to a failure, so they are attached only to `Error`, `UnhandledRejection`, `Resource`, `Vue`, `React`, and `OtherFrameworks` events. Attaching them to every batched event would multiply payload size for no diagnostic value.
 
@@ -745,15 +748,15 @@ enablePlugin(new PerformancePlugin());
 
 Takes no constructor options. Every metric is reported as an `EventType.Performance` event; the `name` field identifies the metric:
 
-| Reported `name`               | Source                                                                                   |
-| ----------------------------- | ---------------------------------------------------------------------------------------- |
-| `LCP`, `FCP`, `CLS`, `INP`, `TTFB` | Web Vitals via the `web-vitals` library, carrying `value` and `rating`. The metric's own `id` overwrites the payload `id`. |
-| `FSP`                         | First Screen Paint -- a `MutationObserver` tracks the latest in-viewport DOM mutation timestamp (excluding `link`/`script`/`style`), resolved via a `requestAnimationFrame` loop once `document.readyState === "complete"`; a pending observation is cancelled by `destroy()`. |
-| `NavigationTiming`            | Page-load metrics in `extra`: paintTime, domInteractive, domContentLoaded, loadEvent, firstByte, dnsLookup, tcpConnection, tlsHandshake, timeToFirstByte, contentTransfer, domProcessing, resourceLoad, redirect, unloadTime, triggerPageUrl. Reported on page ready. |
-| `ResourceList`                | Snapshot of all buffered `resource` entries at page ready, in `resourceList`.             |
-| `ResourceTiming`              | One event per live `resource` entry from `PerformanceObserver`, with `value` = duration and `extra.resource`. |
-| `LongTask`                    | `PerformanceObserver` for `longtask`, entries in `longTasks`.                             |
-| `Memory`                      | `performance.measureUserAgentSpecificMemory()` result in `memory`, when supported.        |
+| Reported `name`                    | Source                                                                                                                                                                                                                                                                         |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `LCP`, `FCP`, `CLS`, `INP`, `TTFB` | Web Vitals via the `web-vitals` library, carrying `value` and `rating`. The metric's own `id` overwrites the payload `id`.                                                                                                                                                     |
+| `FSP`                              | First Screen Paint -- a `MutationObserver` tracks the latest in-viewport DOM mutation timestamp (excluding `link`/`script`/`style`), resolved via a `requestAnimationFrame` loop once `document.readyState === "complete"`; a pending observation is cancelled by `destroy()`. |
+| `NavigationTiming`                 | Page-load metrics in `extra`: paintTime, domInteractive, domContentLoaded, loadEvent, firstByte, dnsLookup, tcpConnection, tlsHandshake, timeToFirstByte, contentTransfer, domProcessing, resourceLoad, redirect, unloadTime, triggerPageUrl. Reported on page ready.          |
+| `ResourceList`                     | Snapshot of all buffered `resource` entries at page ready, in `resourceList`.                                                                                                                                                                                                  |
+| `ResourceTiming`                   | One event per live `resource` entry from `PerformanceObserver`, with `value` = duration and `extra.resource`.                                                                                                                                                                  |
+| `LongTask`                         | `PerformanceObserver` for `longtask`, entries in `longTasks`.                                                                                                                                                                                                                  |
+| `Memory`                           | `performance.measureUserAgentSpecificMemory()` result in `memory`, when supported.                                                                                                                                                                                             |
 
 Resource collection excludes `fetch`, `xmlhttprequest`, and `beacon` initiator types, and any URL containing the SDK `dsn`. `fromCache` is derived from `transferSize === 0` or an empty `encodedBodySize`.
 
@@ -925,9 +928,9 @@ export function App() {
 
 ### ReactErrorBoundaryProps
 
-| Prop       | Type                                                                | Description                                  |
-| ---------- | ------------------------------------------------------------------- | -------------------------------------------- |
-| `children` | `ReactNode` (optional)                                              | Child components to render.                  |
+| Prop       | Type                                                                           | Description                                  |
+| ---------- | ------------------------------------------------------------------------------ | -------------------------------------------- |
+| `children` | `ReactNode` (optional)                                                         | Child components to render.                  |
 | `fallback` | `ReactNode \| ((error: Error, errorInfo?: ErrorInfo) => ReactNode)` (optional) | Error UI to display when an error is caught. |
 
 ### Behavior
@@ -993,9 +996,9 @@ export default defineConfig({
 
 ### Options
 
-| Option | Type     | Default     | Description                                        |
-| ------ | -------- | ----------- | --------------------------------------------------- |
-| `dsn`  | `string` | `undefined` | URL path to intercept. Falls back to `"/sentry"`.  |
+| Option | Type     | Default     | Description                                       |
+| ------ | -------- | ----------- | ------------------------------------------------- |
+| `dsn`  | `string` | `undefined` | URL path to intercept. Falls back to `"/sentry"`. |
 
 ### Behavior
 
@@ -1013,10 +1016,10 @@ The `@swifty.js/sentry/webpack` subpath provides the same mock report endpoint f
 
 ### Available Exports
 
-| Export                | Description                                                                  |
+| Export                | Description                                                                   |
 | --------------------- | ----------------------------------------------------------------------------- |
 | `sentryPlugin`        | Factory returning a `SentryWebpackPlugin` instance. Default export.           |
-| `SentryWebpackPlugin` | Webpack plugin class (`WebpackPluginInstance`).                                |
+| `SentryWebpackPlugin` | Webpack plugin class (`WebpackPluginInstance`).                               |
 | `sentryMiddleware`    | Connect/express-style middleware for manual mounting (no source map support). |
 | `SentryDevMiddleware` | Type of the middleware function.                                              |
 
@@ -1080,11 +1083,11 @@ Records that produce at least one frame gain a `sourcemap: { frames: ResolvedFra
 
 ### ResolvedFrame Fields
 
-| Field                                              | Description                                                             |
-| -------------------------------------------------- | ------------------------------------------------------------------------ |
-| `resolved`                                         | `false` when no source map matched (raw frame passthrough).              |
-| `url`, `line`, `column`, `func`                    | Raw frame parsed from the stack (Chrome and Firefox stack formats).      |
-| `source`, `originalLine`, `originalColumn`, `name` | Original position resolved from the source map.                          |
+| Field                                              | Description                                                                                                                                                                  |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `resolved`                                         | `false` when no source map matched (raw frame passthrough).                                                                                                                  |
+| `url`, `line`, `column`, `func`                    | Raw frame parsed from the stack (Chrome and Firefox stack formats).                                                                                                          |
+| `source`, `originalLine`, `originalColumn`, `name` | Original position resolved from the source map.                                                                                                                              |
 | `snippet`                                          | `SnippetLine[]` -- original source lines, the error line plus 3 lines of context on each side, with `highlight: true` on the error line, when `sourcesContent` is available. |
 
 ### Map Loading
@@ -1157,7 +1160,7 @@ init({
   enableHttpPerformance: true,
   tracesSampleRate: 1,
   debug: false, // set true for dev troubleshooting
-  excludeApis: ["https://example.com/api/log"],
+  excludeAPIs: ["https://example.com/api/log"],
   ignoreErrors: [/ResizeObserver loop limit exceeded/],
 });
 

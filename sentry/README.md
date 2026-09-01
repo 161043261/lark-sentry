@@ -119,7 +119,7 @@ if (!isInitialized()) {
 | `repeatCodeError`           | `boolean`              | `false`                                             | Report duplicate code errors.                          |
 | `enableHttpPerformance`     | `boolean`              | `false`                                             | Report successful HTTP requests as performance events. |
 | `ignoreErrors`              | `(string \| RegExp)[]` | `[]`                                                | Runtime error ignore rules.                            |
-| `excludeApis`               | `(string \| RegExp)[]` | `[]`                                                | HTTP request ignore rules.                             |
+| `excludeAPIs`               | `(string \| RegExp)[]` | `[]`                                                | HTTP request ignore rules.                             |
 | `cacheMaxLength`            | `number`               | `10`                                                | Maximum batch size.                                    |
 | `cacheWaitingTime`          | `number`               | `2000`                                              | Batch wait time in milliseconds.                       |
 | `maxQueueLength`            | `number`               | `200`                                               | Maximum queued events while offline or retrying.       |
@@ -143,7 +143,7 @@ init({
   enableFingerprint: true,
   enableHttpPerformance: true,
   tracesSampleRate: 1,
-  excludeApis: ["https://example.com/api/log"],
+  excludeAPIs: ["https://example.com/api/log"],
   ignoreErrors: [/ResizeObserver loop limit exceeded/],
 });
 ```
@@ -239,7 +239,7 @@ Exclude report endpoints or health checks:
 ```ts
 init({
   dsn: "/api/log",
-  excludeApis: ["/api/log", /\/health$/],
+  excludeAPIs: ["/api/log", /\/health$/],
 });
 ```
 
