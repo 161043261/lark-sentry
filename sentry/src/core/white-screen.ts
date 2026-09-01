@@ -32,6 +32,10 @@ import {
 import { sentry, getCssSelectors, getBaseData, sentryLogger } from "../utils";
 import type { Cleanup } from "../utils/decorate-prop.js";
 
+const SAMPLE_X_RATIOS = [0.1, 0.5, 0.9] as const;
+const SAMPLE_Y_RATIOS = [0.1, 0.26, 0.42, 0.58, 0.74, 0.9] as const;
+const SAMPLE_POINT_COUNT = SAMPLE_X_RATIOS.length * SAMPLE_Y_RATIOS.length;
+
 let sampleTimer: ReturnType<typeof setInterval> | null = null;
 let cancelPendingStart: Cleanup | null = null;
 
@@ -73,14 +77,12 @@ export function startWhiteScreenCheck(onReport: TOnReportWhiteScreenData): void 
   const countEmptyPoints = (): number => {
     const { innerWidth, innerHeight } = globalThis;
     let emptyPoints = 0;
-    for (let i = 1; i <= 9; i++) {
-      const rowElem = document.elementFromPoint((innerWidth * i) / 10, innerHeight / 2);
-      const colElem = document.elementFromPoint(innerWidth / 2, (innerHeight * i) / 10);
-      if (!rowElem || isRoot(rowElem)) {
-        emptyPoints++;
-      }
-      if (!colElem || isRoot(colElem)) {
-        emptyPoints++;
+    for (const yRatio of SAMPLE_Y_RATIOS) {
+      for (const xRatio of SAMPLE_X_RATIOS) {
+        const elem = document.elementFromPoint(innerWidth * xRatio, innerHeight * yRatio);
+        if (!elem || isRoot(elem)) {
+          emptyPoints++;
+        }
       }
     }
     return emptyPoints;
@@ -92,7 +94,7 @@ export function startWhiteScreenCheck(onReport: TOnReportWhiteScreenData): void 
   const sample = () => {
     sampleCount++;
     currentSelectors.clear();
-    const isWhiteScreen = countEmptyPoints() >= 18;
+    const isWhiteScreen = countEmptyPoints() === SAMPLE_POINT_COUNT;
 
     if (hasSkeleton) {
       // The baseline sample records which skeleton selectors are on screen.
