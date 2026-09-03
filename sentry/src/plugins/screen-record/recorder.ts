@@ -22,7 +22,7 @@
 
 import { EventType, type IDataReporter, type IScreenRecordData } from "../../types";
 
-import { getBaseData, noop, sentry, sentryLogger } from "../../utils";
+import { dom2str, getBaseData, noop, sentry, sentryLogger } from "../../utils";
 import type { Cleanup } from "../../utils/decorate-prop.js";
 import { z } from "zod";
 
@@ -86,7 +86,29 @@ export async function recorder(reporter: IDataReporter): Promise<Cleanup> {
           sentry.shouldScreenRecord = false;
         }
       },
+      maskAllInputs: false,
+      maskInputOptions: new Proxy(
+        {},
+        {
+          get() {
+            return false;
+          },
+          set(target, prop, value) {
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-expect-error
+            target[prop] = value;
+            return true;
+          },
+        },
+      ),
+      maskInputFn: (input, elem) => {
+        return input + (elem ? `#${dom2str(elem)}` : "");
+      },
+      maskTextFn: (text, elem) => {
+        return text + (elem ? `#${dom2str(elem)}` : "");
+      },
       recordCanvas: true,
+      inlineImages: true,
       checkoutEveryNms: sentry.options.screenRecordDurationMs,
     });
     return typeof stopRecord === "function" ? stopRecord : noop;
