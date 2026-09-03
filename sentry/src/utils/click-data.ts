@@ -28,9 +28,9 @@ const reservedKeys = new Set(["view", "msg", "ev"]);
 interface DeclarativeClickData {
   readonly ev: string; // swifty-sentry-ev
   readonly msg: string; // swifty-sentry-msg
-  readonly triggerPageUrl: string; // swifty-sentry-el
-  readonly x: number; // swifty-sentry-el
-  readonly y: number; // swifty-sentry-el
+  readonly triggerPageUrl: string; // swifty-sentry-elem
+  readonly x: number; // swifty-sentry-elem
+  readonly y: number; // swifty-sentry-elem
   readonly params: Readonly<Record<string, string | null>>;
   readonly elementPath: string;
   readonly triggerTime: number;
@@ -55,7 +55,7 @@ function getComposedElementPath(event: MouseEvent): HTMLElement[] {
 
 function hasTrackingAttribute(element: HTMLElement): boolean {
   return (
-    element.hasAttribute("swifty-sentry-el") ||
+    element.hasAttribute("swifty-sentry-elem") ||
     element.hasAttribute("swifty-sentry-ev") ||
     element.hasAttribute("swifty-sentry-msg")
   );
@@ -96,7 +96,7 @@ function getEventId(path: readonly HTMLElement[]): string {
   if (title) {
     return title;
   }
-  const container = findAttribute(path, "swifty-sentry-el");
+  const container = findAttribute(path, "swifty-sentry-elem");
   if (container) {
     return container;
   }

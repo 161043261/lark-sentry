@@ -379,15 +379,15 @@ tracePageView({
 
 ## Declarative Click Tracking
 
-Declarative click tracking uses `swifty-sentry-*` HTML attributes. Plain clicks are **not** reported: `getDeclarativeClickData` walks the composed path (falling back to a `parentElement` walk when `composedPath()` yields no `HTMLElement`) and returns `null` unless some element carries `swifty-sentry-el`, `swifty-sentry-ev`, or `swifty-sentry-msg`.
+Declarative click tracking uses `swifty-sentry-*` HTML attributes. Plain clicks are **not** reported: `getDeclarativeClickData` walks the composed path (falling back to a `parentElement` walk when `composedPath()` yields no `HTMLElement`) and returns `null` unless some element carries `swifty-sentry-elem`, `swifty-sentry-ev`, or `swifty-sentry-msg`.
 
 ### Reserved Attributes
 
-| Attribute           | Description                                                               |
-| ------------------- | ------------------------------------------------------------------------- |
-| `swifty-sentry-ev`  | Explicit event ID. First priority for event identification.               |
-| `swifty-sentry-msg` | Human-readable message. Highest priority for the reported `msg` field.    |
-| `swifty-sentry-el`  | View/container ID. Fallback for event ID if `swifty-sentry-ev` is absent. |
+| Attribute            | Description                                                               |
+| -------------------- | ------------------------------------------------------------------------- |
+| `swifty-sentry-ev`   | Explicit event ID. First priority for event identification.               |
+| `swifty-sentry-msg`  | Human-readable message. Highest priority for the reported `msg` field.    |
+| `swifty-sentry-elem` | View/container ID. Fallback for event ID if `swifty-sentry-ev` is absent. |
 
 ### Custom Attributes
 
@@ -412,7 +412,7 @@ The event ID (`ev`) is resolved by searching the path in this order:
 
 1. `swifty-sentry-ev` attribute on any element in the path.
 2. `title` attribute on any element in the path.
-3. `swifty-sentry-el` attribute on any element in the path.
+3. `swifty-sentry-elem` attribute on any element in the path.
 4. The nearest element's tag name (lowercased), else `"unknown"`.
 
 ### Message Resolution
@@ -1263,7 +1263,7 @@ document.querySelectorAll(".product-card").forEach((card) => {
 ### Declarative Click Tracking in Templates
 
 ```html
-<nav swifty-sentry-el="main-nav">
+<nav swifty-sentry-elem="main-nav">
   <a swifty-sentry-ev="nav-home" swifty-sentry-msg="Go to homepage" href="/"
     >Home</a
   >
@@ -1282,7 +1282,7 @@ document.querySelectorAll(".product-card").forEach((card) => {
   </button>
 </nav>
 
-<section swifty-sentry-el="product-list" swifty-sentry-category="electronics">
+<section swifty-sentry-elem="product-list" swifty-sentry-category="electronics">
   <article
     swifty-sentry-ev="product-click"
     swifty-sentry-msg="View product"
