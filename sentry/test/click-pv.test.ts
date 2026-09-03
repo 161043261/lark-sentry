@@ -44,7 +44,7 @@ describe("declarative click and page view dwell tracking", () => {
   it("reports @swifty.js/sentry declarative click metadata", async () => {
     const sendBeacon = vi.spyOn(navigator, "sendBeacon").mockReturnValue(true);
     document.body.innerHTML = `
-      <section swifty-sentry-elem="profile-card" swifty-sentry-src="home">
+      <section swifty-sentry-view="profile-card" swifty-sentry-src="home">
         <button swifty-sentry-ev="save-profile" swifty-sentry-msg="Save profile">
           Save
         </button>
@@ -65,7 +65,9 @@ describe("declarative click and page view dwell tracking", () => {
 
     document
       .querySelector("button")
-      ?.dispatchEvent(new MouseEvent("click", { bubbles: true, composed: true }));
+      ?.dispatchEvent(
+        new MouseEvent("click", { bubbles: true, composed: true }),
+      );
     await Promise.resolve();
 
     const payload = getSentPayload(sendBeacon.mock.calls[0] ?? []);
@@ -84,7 +86,7 @@ describe("declarative click and page view dwell tracking", () => {
   it("reports container params when the clicked child has no track attrs", async () => {
     const sendBeacon = vi.spyOn(navigator, "sendBeacon").mockReturnValue(true);
     document.body.innerHTML = `
-      <section swifty-sentry-elem="card" swifty-sentry-area="hero">
+      <section swifty-sentry-view="card" swifty-sentry-area="hero">
         <span>Open</span>
       </section>
     `;
@@ -103,7 +105,9 @@ describe("declarative click and page view dwell tracking", () => {
 
     document
       .querySelector("span")
-      ?.dispatchEvent(new MouseEvent("click", { bubbles: true, composed: true }));
+      ?.dispatchEvent(
+        new MouseEvent("click", { bubbles: true, composed: true }),
+      );
     await Promise.resolve();
 
     const payload = getSentPayload(sendBeacon.mock.calls[0] ?? []);

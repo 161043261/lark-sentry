@@ -299,7 +299,7 @@ tracePageView({
 Declarative click tracking uses `swifty-sentry-*` attributes. Plain clicks are not reported unless the clicked element or one of its composed path ancestors has a tracking attribute.
 
 ```html
-<section swifty-sentry-elem="profile-card" swifty-sentry-src="home">
+<section swifty-sentry-view="profile-card" swifty-sentry-src="home">
   <button swifty-sentry-ev="save-profile" swifty-sentry-msg="Save">Save</button>
 </section>
 ```
@@ -310,7 +310,7 @@ Reserved attributes:
 | -------------------- | ------------------------------ |
 | `swifty-sentry-ev`   | Explicit event ID.             |
 | `swifty-sentry-msg`  | Human-readable message.        |
-| `swifty-sentry-elem` | View ID and event ID fallback. |
+| `swifty-sentry-view` | View ID and event ID fallback. |
 
 Custom `swifty-sentry-*` attributes become `params`.
 
@@ -329,7 +329,7 @@ The reported click payload (`DeclarativeClickData`) includes:
 
 | Field            | Type                                       | Description                                                                      |
 | ---------------- | ------------------------------------------ | -------------------------------------------------------------------------------- |
-| `ev`             | `string`                                   | Event ID (from `swifty-sentry-ev`, `title`, `swifty-sentry-elem`, or tag).       |
+| `ev`             | `string`                                   | Event ID (from `swifty-sentry-ev`, `title`, `swifty-sentry-view`, or tag).       |
 | `msg`            | `string`                                   | Human-readable message (from `swifty-sentry-msg`, text, `aria-label`, or tag).   |
 | `triggerPageUrl` | `string`                                   | Current page URL (`location.href`).                                              |
 | `x`              | `number`                                   | Click X coordinate (element offset + scroll offset).                             |

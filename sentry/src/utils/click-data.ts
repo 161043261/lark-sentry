@@ -23,14 +23,14 @@
 import dom2str from "./dom2str.js";
 
 const trackPrefix = "swifty-sentry-";
-const reservedKeys = new Set(["view", "msg", "ev"]);
+const reservedKeys = new Set(["msg", "ev", "view"]);
 
 interface DeclarativeClickData {
   readonly ev: string; // swifty-sentry-ev
   readonly msg: string; // swifty-sentry-msg
-  readonly triggerPageUrl: string; // swifty-sentry-elem
-  readonly x: number; // swifty-sentry-elem
-  readonly y: number; // swifty-sentry-elem
+  readonly triggerPageUrl: string; // swifty-sentry-view
+  readonly x: number; // swifty-sentry-view
+  readonly y: number; // swifty-sentry-view
   readonly params: Readonly<Record<string, string | null>>;
   readonly elementPath: string;
   readonly triggerTime: number;
@@ -50,12 +50,14 @@ function getElementPath(target: EventTarget | null): HTMLElement[] {
 }
 
 function getComposedElementPath(event: MouseEvent): HTMLElement[] {
-  return event.composedPath().filter((node): node is HTMLElement => node instanceof HTMLElement);
+  return event
+    .composedPath()
+    .filter((node): node is HTMLElement => node instanceof HTMLElement);
 }
 
 function hasTrackingAttribute(element: HTMLElement): boolean {
   return (
-    element.hasAttribute("swifty-sentry-elem") ||
+    element.hasAttribute("swifty-sentry-view") ||
     element.hasAttribute("swifty-sentry-ev") ||
     element.hasAttribute("swifty-sentry-msg")
   );
@@ -74,10 +76,15 @@ function getMessage(target: HTMLElement): string {
     return selfTitle;
   }
   const text = target.textContent?.trim();
-  return text || target.getAttribute("aria-label") || target.tagName.toLowerCase();
+  return (
+    text || target.getAttribute("aria-label") || target.tagName.toLowerCase()
+  );
 }
 
-function findAttribute(path: readonly HTMLElement[], attrName: string): string | null {
+function findAttribute(
+  path: readonly HTMLElement[],
+  attrName: string,
+): string | null {
   for (const element of path) {
     const value = element.getAttribute(attrName);
     if (value) {
@@ -96,40 +103,50 @@ function getEventId(path: readonly HTMLElement[]): string {
   if (title) {
     return title;
   }
-  const container = findAttribute(path, "swifty-sentry-elem");
+  const container = findAttribute(path, "swifty-sentry-view");
   if (container) {
     return container;
   }
   return path[0]?.tagName.toLowerCase() ?? "unknown";
 }
 
-function getParams(path: readonly HTMLElement[]): Readonly<Record<string, string | null>> {
+function getParams(
+  path: readonly HTMLElement[],
+): Readonly<Record<string, string | null>> {
   const source = path.find((element) =>
-    Array.from(element.attributes).some((attr) => attr.name.startsWith(trackPrefix)),
+    Array.from(element.attributes).some((attr) =>
+      attr.name.startsWith(trackPrefix),
+    ),
   );
   if (!source) {
     return {};
   }
-  return Array.from(source.attributes).reduce<Record<string, string | null>>((params, attr) => {
-    if (!attr.name.startsWith(trackPrefix)) {
+  return Array.from(source.attributes).reduce<Record<string, string | null>>(
+    (params, attr) => {
+      if (!attr.name.startsWith(trackPrefix)) {
+        return params;
+      }
+      const key = attr.name.replace(trackPrefix, "");
+      if (!reservedKeys.has(key)) {
+        params[key] = attr.value || null;
+      }
       return params;
-    }
-    const key = attr.name.replace(trackPrefix, "");
-    if (!reservedKeys.has(key)) {
-      params[key] = attr.value || null;
-    }
-    return params;
-  }, {});
+    },
+    {},
+  );
 }
 
-export function getDeclarativeClickData(event: MouseEvent): DeclarativeClickData | null {
+export function getDeclarativeClickData(
+  event: MouseEvent,
+): DeclarativeClickData | null {
   const path = getComposedElementPath(event);
   const fallbackPath = path.length > 0 ? path : getElementPath(event.target);
   const trackingTarget = fallbackPath.find(hasTrackingAttribute);
   if (!trackingTarget) {
     return null;
   }
-  const clickedElement = event.target instanceof HTMLElement ? event.target : trackingTarget;
+  const clickedElement =
+    event.target instanceof HTMLElement ? event.target : trackingTarget;
   const { top, left } = clickedElement.getBoundingClientRect();
   const { scrollTop, scrollLeft } = document.documentElement;
   return {

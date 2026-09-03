@@ -24,7 +24,11 @@ npm install vue
 
 ```ts
 import { init, destroy, isInitialized, enablePlugin } from "@swifty.js/sentry";
-import { PerformancePlugin, ScreenRecordPlugin, ExposurePlugin } from "@swifty.js/sentry/plugins";
+import {
+  PerformancePlugin,
+  ScreenRecordPlugin,
+  ExposurePlugin,
+} from "@swifty.js/sentry/plugins";
 import { ReactErrorBoundary } from "@swifty.js/sentry/react";
 import { vuePlugin } from "@swifty.js/sentry/vue";
 ```
@@ -35,7 +39,11 @@ Each public export provides ESM, CJS, and TypeScript declaration files.
 
 ```ts
 import { init, enablePlugin } from "@swifty.js/sentry";
-import { PerformancePlugin, ScreenRecordPlugin, ExposurePlugin } from "@swifty.js/sentry/plugins";
+import {
+  PerformancePlugin,
+  ScreenRecordPlugin,
+  ExposurePlugin,
+} from "@swifty.js/sentry/plugins";
 
 init({
   dsn: "/api/log",
@@ -43,7 +51,11 @@ init({
   userId: "anonymous",
 });
 
-enablePlugin(new PerformancePlugin(), new ScreenRecordPlugin(), new ExposurePlugin());
+enablePlugin(
+  new PerformancePlugin(),
+  new ScreenRecordPlugin(),
+  new ExposurePlugin(),
+);
 ```
 
 `dsn` must be a non-empty string. If `dsn` is empty, initialization is rejected.
@@ -284,7 +296,7 @@ tracePageView({
 Declarative click tracking uses `swifty-sentry-*` attributes. Plain clicks are not reported unless the clicked element or one of its composed path ancestors has a tracking attribute.
 
 ```html
-<section swifty-sentry-elem="profile-card" swifty-sentry-src="home">
+<section swifty-sentry-view="profile-card" swifty-sentry-src="home">
   <button swifty-sentry-ev="save-profile" swifty-sentry-msg="Save">Save</button>
 </section>
 ```
@@ -295,7 +307,7 @@ Reserved attributes:
 | -------------------- | ------------------------------ |
 | `swifty-sentry-ev`   | Explicit event ID.             |
 | `swifty-sentry-msg`  | Human-readable message.        |
-| `swifty-sentry-elem` | View ID and event ID fallback. |
+| `swifty-sentry-view` | View ID and event ID fallback. |
 
 Custom `swifty-sentry-*` attributes become `params`.
 
@@ -314,7 +326,7 @@ The reported click payload (`DeclarativeClickData`) includes:
 
 | Field            | Type                                       | Description                                                                      |
 | ---------------- | ------------------------------------------ | -------------------------------------------------------------------------------- |
-| `ev`             | `string`                                   | Event ID (from `swifty-sentry-ev`, `title`, `swifty-sentry-elem`, or tag).       |
+| `ev`             | `string`                                   | Event ID (from `swifty-sentry-ev`, `title`, `swifty-sentry-view`, or tag).       |
 | `msg`            | `string`                                   | Human-readable message (from `swifty-sentry-msg`, text, `aria-label`, or tag).   |
 | `triggerPageUrl` | `string`                                   | Current page URL (`location.href`).                                              |
 | `x`              | `number`                                   | Click X coordinate (element offset + scroll offset).                             |
@@ -548,7 +560,10 @@ Unsupported browser capabilities are skipped safely.
 
 ```ts
 import { enablePlugin } from "@swifty.js/sentry";
-import { ScreenRecordPlugin, unzipScreenRecord } from "@swifty.js/sentry/plugins";
+import {
+  ScreenRecordPlugin,
+  unzipScreenRecord,
+} from "@swifty.js/sentry/plugins";
 
 enablePlugin(new ScreenRecordPlugin());
 
