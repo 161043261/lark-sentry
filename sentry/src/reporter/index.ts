@@ -29,7 +29,7 @@ import { clearOfflineCache, loadOfflineCache, saveOfflineCache } from "./offline
 import { isPromise } from "./promise.js";
 import { applyBeforePushHook, runBeforeReportHook } from "./report-data.js";
 import { shouldQueuePayload } from "./send-preflight.js";
-import { scheduleServerRecovery } from "./server-recovery.js";
+import { resetServerRecovery, scheduleServerRecovery } from "./server-recovery.js";
 import { getBodyByteLength, MAX_KEEPALIVE_BYTES, reportByFetch, sendBeacon } from "./transports.js";
 
 export class DataReporter implements IDataReporter {
@@ -180,6 +180,7 @@ let instance: DataReporter | null = null;
 export function resetReporter(): void {
   instance?.dispose();
   instance = null;
+  resetServerRecovery();
 }
 
 // Defers singleton construction (and its listener/cache side effects) until

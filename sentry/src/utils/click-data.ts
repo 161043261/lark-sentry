@@ -50,9 +50,7 @@ function getElementPath(target: EventTarget | null): HTMLElement[] {
 }
 
 function getComposedElementPath(event: MouseEvent): HTMLElement[] {
-  return event
-    .composedPath()
-    .filter((node): node is HTMLElement => node instanceof HTMLElement);
+  return event.composedPath().filter((node): node is HTMLElement => node instanceof HTMLElement);
 }
 
 function hasTrackingAttribute(element: HTMLElement): boolean {
@@ -76,15 +74,10 @@ function getMessage(target: HTMLElement): string {
     return selfTitle;
   }
   const text = target.textContent?.trim();
-  return (
-    text || target.getAttribute("aria-label") || target.tagName.toLowerCase()
-  );
+  return text || target.getAttribute("aria-label") || target.tagName.toLowerCase();
 }
 
-function findAttribute(
-  path: readonly HTMLElement[],
-  attrName: string,
-): string | null {
+function findAttribute(path: readonly HTMLElement[], attrName: string): string | null {
   for (const element of path) {
     const value = element.getAttribute(attrName);
     if (value) {
@@ -110,43 +103,33 @@ function getEventId(path: readonly HTMLElement[]): string {
   return path[0]?.tagName.toLowerCase() ?? "unknown";
 }
 
-function getParams(
-  path: readonly HTMLElement[],
-): Readonly<Record<string, string | null>> {
+function getParams(path: readonly HTMLElement[]): Readonly<Record<string, string | null>> {
   const source = path.find((element) =>
-    Array.from(element.attributes).some((attr) =>
-      attr.name.startsWith(trackPrefix),
-    ),
+    Array.from(element.attributes).some((attr) => attr.name.startsWith(trackPrefix)),
   );
   if (!source) {
     return {};
   }
-  return Array.from(source.attributes).reduce<Record<string, string | null>>(
-    (params, attr) => {
-      if (!attr.name.startsWith(trackPrefix)) {
-        return params;
-      }
-      const key = attr.name.replace(trackPrefix, "");
-      if (!reservedKeys.has(key)) {
-        params[key] = attr.value || null;
-      }
+  return Array.from(source.attributes).reduce<Record<string, string | null>>((params, attr) => {
+    if (!attr.name.startsWith(trackPrefix)) {
       return params;
-    },
-    {},
-  );
+    }
+    const key = attr.name.replace(trackPrefix, "");
+    if (!reservedKeys.has(key)) {
+      params[key] = attr.value || null;
+    }
+    return params;
+  }, {});
 }
 
-export function getDeclarativeClickData(
-  event: MouseEvent,
-): DeclarativeClickData | null {
+export function getDeclarativeClickData(event: MouseEvent): DeclarativeClickData | null {
   const path = getComposedElementPath(event);
   const fallbackPath = path.length > 0 ? path : getElementPath(event.target);
   const trackingTarget = fallbackPath.find(hasTrackingAttribute);
   if (!trackingTarget) {
     return null;
   }
-  const clickedElement =
-    event.target instanceof HTMLElement ? event.target : trackingTarget;
+  const clickedElement = event.target instanceof HTMLElement ? event.target : trackingTarget;
   const { top, left } = clickedElement.getBoundingClientRect();
   const { scrollTop, scrollLeft } = document.documentElement;
   return {

@@ -139,7 +139,7 @@ if (!isInitialized()) {
 | `cacheMaxLength`             | `number`               | `10`                                                | Maximum batch size.                                    |
 | `cacheWaitingTime`           | `number`               | `2000`                                              | Batch wait time in milliseconds.                       |
 | `maxQueueLength`             | `number`               | `200`                                               | Maximum queued events while offline or retrying.       |
-| `retryIntervalMilliseconds`  | `number`               | `60000`                                             | Server recovery probe interval.                        |
+| `retryIntervalMilliseconds`  | `number`               | `60000`                                             | Maximum probe interval; exponential backoff from 1s.   |
 | `offlineCacheKey`            | `string`               | `"swifty_sentry_offline_cache"`                     | localStorage key for offline cache.                    |
 | `tracesSampleRate`           | `number`               | `1`                                                 | Sampling rate from 0 to 1.                             |
 | `onBeforePushBreadcrumb`     | `function`             | `undefined`                                         | Hook before storing a breadcrumb.                      |

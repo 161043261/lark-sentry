@@ -23,7 +23,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { DEFAULT_OPTIONS } from "@/constants/index.js";
-import { DataReporter } from "@/reporter/index.js";
+import { DataReporter, resetReporter } from "@/reporter/index.js";
 import { EventType, Status, type TReportPayload } from "@/types/index.js";
 import { sentry } from "@/utils/index.js";
 
@@ -42,6 +42,7 @@ function createPayload(index: number): TReportPayload {
 
 describe("DataReporter offline and retry behavior", () => {
   afterEach(() => {
+    resetReporter();
     localStorage.clear();
     vi.restoreAllMocks();
     vi.useRealTimers();
@@ -133,5 +134,32 @@ describe("DataReporter offline and retry behavior", () => {
     await vi.advanceTimersByTimeAsync(50);
 
     expect(fetch).toHaveBeenCalledWith("/api/log", expect.objectContaining({ method: "HEAD" }));
+  });
+
+  it("backs off exponentially between server recovery probes", async () => {
+    vi.useFakeTimers();
+    vi.spyOn(navigator, "sendBeacon").mockReturnValue(false);
+    const fetch = vi.fn<[RequestInfo | URL, RequestInit?], Promise<Response>>(() =>
+      Promise.resolve(new Response(null, { status: 500 })),
+    );
+    vi.stubGlobal("fetch", fetch);
+    sentry.setOptions({ ...DEFAULT_OPTIONS, dsn: "/api/log" });
+
+    const reporter = new DataReporter();
+    await reporter.send(createPayload(1), true);
+    await Promise.resolve();
+
+    const headProbes = () => fetch.mock.calls.filter(([, init]) => init?.method === "HEAD").length;
+
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(headProbes()).toBe(1);
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(headProbes()).toBe(2);
+    await vi.advanceTimersByTimeAsync(4000 + 8000 + 16000 + 32000);
+    expect(headProbes()).toBe(6);
+    await vi.advanceTimersByTimeAsync(60000);
+    expect(headProbes()).toBe(7);
+    await vi.advanceTimersByTimeAsync(60000);
+    expect(headProbes()).toBe(8);
   });
 });

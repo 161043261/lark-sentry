@@ -112,14 +112,20 @@ function buildSnippet(content: string, line: number): SnippetLine[] {
 }
 
 /** Splits a reported script URL into pathname and search, tolerating non-URL inputs. */
-export function splitScriptUrl(url: string): { pathname: string; search: string } {
+export function splitScriptUrl(url: string): {
+  pathname: string;
+  search: string;
+} {
   try {
     const parsed = new URL(url);
     return { pathname: parsed.pathname, search: parsed.search };
   } catch {
     const queryIndex = url.search(/[?#]/);
     if (queryIndex !== -1) {
-      return { pathname: url.slice(0, queryIndex), search: url.slice(queryIndex) };
+      return {
+        pathname: url.slice(0, queryIndex),
+        search: url.slice(queryIndex),
+      };
     }
     return { pathname: url, search: "" };
   }
@@ -145,10 +151,10 @@ export async function resolveFrame(loadMap: MapLoader, frame: RawFrame): Promise
         resolved: true,
         source: pos.source,
         originalLine: pos.line,
+        ...(pos.name !== null ? { name: pos.name } : {}),
+        ...(pos.column !== null ? { originalColumn: pos.column } : {}),
+        ...(content ? { snippet: buildSnippet(content, pos.line) } : {}),
       };
-      if (pos.column !== null) resolvedFrame.originalColumn = pos.column;
-      if (pos.name !== null) resolvedFrame.name = pos.name;
-      if (content) resolvedFrame.snippet = buildSnippet(content, pos.line);
       return resolvedFrame;
     });
   } catch {
@@ -195,7 +201,11 @@ async function enrichRecord(loadMap: MapLoader, record: unknown): Promise<unknow
     typeof payload.column === "number"
   ) {
     frames.push(
-      await resolveFrame(loadMap, { url: rec.name, line: payload.line, column: payload.column }),
+      await resolveFrame(loadMap, {
+        url: rec.name,
+        line: payload.line,
+        column: payload.column,
+      }),
     );
   } else if (typeof payload.extra === "string" && isStackLike(payload.extra)) {
     frames.push(...(await resolveStack(loadMap, payload.extra)));

@@ -24,11 +24,7 @@ npm install vue
 
 ```ts
 import { init, destroy, isInitialized, enablePlugin } from "@swifty.js/sentry";
-import {
-  PerformancePlugin,
-  ScreenRecordPlugin,
-  ExposurePlugin,
-} from "@swifty.js/sentry/plugins";
+import { PerformancePlugin, ScreenRecordPlugin, ExposurePlugin } from "@swifty.js/sentry/plugins";
 import { ReactErrorBoundary } from "@swifty.js/sentry/react";
 import { vuePlugin } from "@swifty.js/sentry/vue";
 ```
@@ -39,11 +35,7 @@ Each public export provides ESM, CJS, and TypeScript declaration files.
 
 ```ts
 import { init, enablePlugin } from "@swifty.js/sentry";
-import {
-  PerformancePlugin,
-  ScreenRecordPlugin,
-  ExposurePlugin,
-} from "@swifty.js/sentry/plugins";
+import { PerformancePlugin, ScreenRecordPlugin, ExposurePlugin } from "@swifty.js/sentry/plugins";
 
 init({
   dsn: "/api/log",
@@ -51,11 +43,7 @@ init({
   userId: "anonymous",
 });
 
-enablePlugin(
-  new PerformancePlugin(),
-  new ScreenRecordPlugin(),
-  new ExposurePlugin(),
-);
+enablePlugin(new PerformancePlugin(), new ScreenRecordPlugin(), new ExposurePlugin());
 ```
 
 `dsn` must be a non-empty string. If `dsn` is empty, initialization is rejected.
@@ -560,10 +548,7 @@ Unsupported browser capabilities are skipped safely.
 
 ```ts
 import { enablePlugin } from "@swifty.js/sentry";
-import {
-  ScreenRecordPlugin,
-  unzipScreenRecord,
-} from "@swifty.js/sentry/plugins";
+import { ScreenRecordPlugin, unzipScreenRecord } from "@swifty.js/sentry/plugins";
 
 enablePlugin(new ScreenRecordPlugin());
 
