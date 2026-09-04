@@ -37,7 +37,7 @@ function isInViewport(element: HTMLElement): boolean {
   );
 }
 
-function hasInViewportAddition(mutationList: MutationRecord[]): boolean {
+function hasInViewportAddition(mutationList: readonly MutationRecord[]): boolean {
   for (const mutation of mutationList) {
     if (!isHTMLElement(mutation.target)) {
       continue;
@@ -45,7 +45,7 @@ function hasInViewportAddition(mutationList: MutationRecord[]): boolean {
     if (!mutation.addedNodes.length || !isInViewport(mutation.target)) {
       continue;
     }
-    for (const node of Array.from(mutation.addedNodes)) {
+    for (const node of mutation.addedNodes) {
       if (
         isHTMLElement(node) &&
         !excludedElementNames.has(node.tagName.toLowerCase()) &&
@@ -59,12 +59,12 @@ function hasInViewportAddition(mutationList: MutationRecord[]): boolean {
 }
 
 /**
- * Tracks the timestamp of the latest in-viewport DOM mutation and resolves it
+ * Tracks the timestamp of the latest in-viewport DOM addition and resolves it
  * as the First Screen Paint once the document is complete. Returns a cleanup
  * that cancels observation if the plugin is destroyed before resolution.
  */
 export function getFirstScreenPaint(callback: Callback): Cleanup {
-  if (!("MutationObserver" in globalThis) || typeof globalThis.MutationObserver !== "function") {
+  if (typeof globalThis.MutationObserver !== "function") {
     callback(0);
     return noop;
   }
@@ -72,30 +72,77 @@ export function getFirstScreenPaint(callback: Callback): Cleanup {
   let latestRenderTime = 0;
   let requestId = 0;
   let done = false;
+  let hasObservedTarget = false;
+  let intersectionObserver: IntersectionObserver | null = null;
 
-  const observer = new globalThis.MutationObserver((mutationList) => {
-    if (hasInViewportAddition(mutationList)) {
-      latestRenderTime = globalThis.performance.now();
+  const processIntersectionEntries = (entries: readonly IntersectionObserverEntry[]) => {
+    if (done || !intersectionObserver) return;
+    for (const entry of entries) {
+      intersectionObserver.unobserve(entry.target);
+      if (entry.isIntersecting) {
+        latestRenderTime = Math.max(latestRenderTime, entry.time);
+      }
     }
-  });
+  };
+
+  if (typeof globalThis.IntersectionObserver === "function") {
+    intersectionObserver = new globalThis.IntersectionObserver(processIntersectionEntries);
+  }
+
+  const processMutations = (mutationList: readonly MutationRecord[]) => {
+    if (done) return;
+    if (!intersectionObserver) {
+      if (hasInViewportAddition(mutationList)) {
+        latestRenderTime = globalThis.performance.now();
+      }
+      return;
+    }
+    for (const mutation of mutationList) {
+      for (const node of mutation.addedNodes) {
+        if (isHTMLElement(node) && !excludedElementNames.has(node.tagName.toLowerCase())) {
+          hasObservedTarget = true;
+          intersectionObserver.observe(node);
+        }
+      }
+    }
+  };
+
+  const mutationObserver = new globalThis.MutationObserver(processMutations);
 
   const finish = () => {
     if (done) return;
+    if (intersectionObserver) {
+      processIntersectionEntries(intersectionObserver.takeRecords());
+    }
     done = true;
-    observer.disconnect();
+    mutationObserver.disconnect();
+    intersectionObserver?.disconnect();
     cancelAnimationFrame(requestId);
     callback(latestRenderTime);
   };
 
+  const beginFinish = () => {
+    processMutations(mutationObserver.takeRecords());
+    mutationObserver.disconnect();
+    if (intersectionObserver && hasObservedTarget) {
+      // Intersection records are computed after animation-frame callbacks, so
+      // finalize on the following frame and drain records before disconnecting.
+      requestId = requestAnimationFrame(finish);
+      return;
+    }
+    finish();
+  };
+
   const waitForPageReady = () => {
+    if (done) return;
     if (document.readyState === "complete") {
-      finish();
+      beginFinish();
       return;
     }
     requestId = requestAnimationFrame(waitForPageReady);
   };
 
-  observer.observe(document, {
+  mutationObserver.observe(document, {
     childList: true,
     subtree: true,
   });
@@ -104,7 +151,8 @@ export function getFirstScreenPaint(callback: Callback): Cleanup {
   return () => {
     if (done) return;
     done = true;
-    observer.disconnect();
+    mutationObserver.disconnect();
+    intersectionObserver?.disconnect();
     cancelAnimationFrame(requestId);
   };
 }

@@ -41,6 +41,7 @@ export class FakeIntersectionObserver implements IntersectionObserver {
   readonly observe = vi.fn();
   readonly unobserve = vi.fn();
   readonly disconnect = vi.fn();
+  private records: IntersectionObserverEntry[] = [];
 
   constructor(
     private readonly callback: IntersectionObserverCallback,
@@ -51,19 +52,30 @@ export class FakeIntersectionObserver implements IntersectionObserver {
   }
 
   takeRecords(): IntersectionObserverEntry[] {
-    return [];
+    return this.records.splice(0);
   }
 
-  emit(target: Element, isIntersecting: boolean): void {
-    const entry: IntersectionObserverEntry = {
+  emit(target: Element, isIntersecting: boolean, time = performance.now()): void {
+    this.callback([this.createEntry(target, isIntersecting, time)], this);
+  }
+
+  queue(target: Element, isIntersecting: boolean, time = performance.now()): void {
+    this.records.push(this.createEntry(target, isIntersecting, time));
+  }
+
+  private createEntry(
+    target: Element,
+    isIntersecting: boolean,
+    time: number,
+  ): IntersectionObserverEntry {
+    return {
       boundingClientRect: new DOMRectReadOnly(),
       intersectionRatio: isIntersecting ? 1 : 0,
       intersectionRect: new DOMRectReadOnly(),
       isIntersecting,
       rootBounds: null,
       target,
-      time: performance.now(),
+      time,
     };
-    this.callback([entry], this);
   }
 }
